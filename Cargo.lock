@@ -39,6 +39,13 @@ dependencies = [
 [[package]]
 name = "ams2-i18n"
 version = "3.0.0"
+dependencies = [
+ "hex",
+ "serde_json",
+ "sha2",
+ "tempfile",
+ "thiserror",
+]
 
 [[package]]
 name = "ams2-platform"

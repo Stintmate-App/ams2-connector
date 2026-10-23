@@ -1,0 +1,229 @@
+{
+ "catalog_ik": "ams2/textcatalog/ec86d085d5b4",
+ "source_hashes": {
+  "flag_yellow": "0183e86e58f2",
+  "flag_double_yellow": "42ca0dd155f9",
+  "flag_yellow_cause": "cfce807adadf",
+  "flag_clear": "ac59b87cfa10",
+  "flag_blue": "e53781ccd457",
+  "flag_blue_unknown": "776b99b74a10",
+  "flag_slow_car": "e4e5c1469e7f",
+  "final_lap": "b2a003541e65",
+  "flag_red": "1e3f28c9c867",
+  "flag_black_white": "d32f2e4bf08f",
+  "flag_black_orange": "273ce29667d0",
+  "disqualified": "73578f850fbd",
+  "retired": "05ab681a7f4d",
+  "chequered": "d722c4c5bbfb",
+  "chequered_no_position": "51a524e5b42c",
+  "fcy_start": "69fdb528e816",
+  "fcy_pits_open": "d61b5c2c4f03",
+  "fcy_pits_lead_lap": "cbeb4d347581",
+  "fcy_last_lap": "8f2dc270934c",
+  "fcy_restart": "c896b08e248e",
+  "fcy_halt": "7ee258f9027c",
+  "penalty_drive_through": "99587eeaeb81",
+  "penalty_stop_go": "8c3f0680b3f3",
+  "penalty_served": "e17d880c1eda",
+  "rival_disqualified": "f5c9fe6f9807",
+  "rival_out": "18580f8b9983",
+  "radio_check": "f6f24fac1349",
+  "engineer_test": "a237598f29a3"
+ },
+ "validation": {
+  "flag_yellow": "needs a real race",
+  "flag_double_yellow": "needs a real race",
+  "flag_yellow_cause": "needs a real race",
+  "flag_clear": "needs a real race",
+  "flag_blue": "needs a real race",
+  "flag_blue_unknown": "needs a real race",
+  "flag_slow_car": "needs a real race",
+  "final_lap": "needs a real race",
+  "flag_red": "needs a real race",
+  "flag_black_white": "needs a real race",
+  "flag_black_orange": "needs a real race",
+  "disqualified": "needs a real race",
+  "retired": "needs a real race",
+  "chequered": "needs a real race",
+  "chequered_no_position": "needs a real race",
+  "fcy_start": "needs a real race",
+  "fcy_pits_open": "needs a real race",
+  "fcy_pits_lead_lap": "needs a real race",
+  "fcy_last_lap": "needs a real race",
+  "fcy_restart": "needs a real race",
+  "fcy_halt": "needs a real race",
+  "penalty_drive_through": "needs a real race",
+  "penalty_stop_go": "needs a real race",
+  "penalty_served": "needs a real race",
+  "rival_disqualified": "needs a real race",
+  "rival_out": "needs a real race",
+  "radio_check": "desk-tested",
+  "engineer_test": "desk-tested"
+ },
+ "actions_ik": "ams2/actions/0c17cbe8dae6",
+ "actions": [
+  {
+   "code": "test.ping",
+   "description": "Radio round trip: the connector answers and says its radio check on the driver's radio. Use it when the driver asks for a radio test, or to prove that the connector is alive.",
+   "timeout_s": 5,
+   "params": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+     "say": {
+      "type": "boolean",
+      "description": "Also play the radio check on the driver's radio (default true)."
+     }
+    }
+   },
+   "result": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "pong",
+     "announced"
+    ],
+    "properties": {
+     "pong": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "Always 'pong'."
+     },
+     "announced": {
+      "type": "boolean",
+      "description": "Pitwall accepted the radio check announcement."
+     },
+     "message_id": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "The announcement's id (list_connector_messages), when announced."
+     }
+    }
+   },
+   "example": {
+    "say": true
+   }
+  },
+  {
+   "code": "test.announce",
+   "description": "For desk tests of the radio calls: sends one announcement of the connector's own catalog with the given params; the driver hears the driver-audience codes. Param values are text and are converted by the code's param kinds (a lap time in seconds, a count as digits); a missing or unknown param is refused with bad_request naming it.",
+   "timeout_s": 5,
+   "params": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "code"
+    ],
+    "properties": {
+     "code": {
+      "type": "string",
+      "enum": [
+       "chequered",
+       "chequered_no_position",
+       "disqualified",
+       "engineer_test",
+       "fcy_halt",
+       "fcy_last_lap",
+       "fcy_pits_lead_lap",
+       "fcy_pits_open",
+       "fcy_restart",
+       "fcy_start",
+       "final_lap",
+       "flag_black_orange",
+       "flag_black_white",
+       "flag_blue",
+       "flag_blue_unknown",
+       "flag_clear",
+       "flag_double_yellow",
+       "flag_red",
+       "flag_slow_car",
+       "flag_yellow",
+       "flag_yellow_cause",
+       "penalty_drive_through",
+       "penalty_served",
+       "penalty_stop_go",
+       "radio_check",
+       "retired",
+       "rival_disqualified",
+       "rival_out"
+      ],
+      "description": "The catalog code to announce (list_connector_messages)."
+     },
+     "params": {
+      "type": "array",
+      "maxItems": 8,
+      "description": "The code's params, one entry per param it declares.",
+      "items": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "name",
+        "value"
+       ],
+       "description": "One param of the announcement.",
+       "properties": {
+        "name": {
+         "type": "string",
+         "maxLength": 32,
+         "description": "The param's name, as the catalog declares it."
+        },
+        "value": {
+         "type": "string",
+         "maxLength": 200,
+         "description": "The value as text."
+        }
+       }
+      }
+     }
+    }
+   },
+   "result": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": [
+     "announced"
+    ],
+    "properties": {
+     "announced": {
+      "type": "boolean",
+      "description": "Pitwall accepted the announcement."
+     },
+     "message_id": {
+      "type": "string",
+      "maxLength": 64,
+      "description": "The announcement's id, when announced."
+     },
+     "refused": {
+      "type": "string",
+      "maxLength": 300,
+      "description": "Why it was not announced (rate limit, Pitwall's refusal), when it was not."
+     }
+    }
+   },
+   "example": {
+    "code": "engineer_test",
+    "params": [
+     {
+      "name": "text",
+      "value": "radio test"
+     }
+    ]
+   }
+  }
+ ],
+ "guidance_ik": "ams2/guidance/e984c0f3e5e5",
+ "guidance": [
+  {
+   "id": "setup_from_capture",
+   "topic": "setup",
+   "when": "you read, log or compare a car setup",
+   "text": "AMS2 encrypts its setup files (`*.vts`): never try to read them. A setup is read from a capture of the in-game setup screen. Ask the driver to open the setup tab you need and press the capture button (or call `capture_screen` yourself when he asks), then find the capture with `list_captures`, open it with `get_capture` and read the values from the image. One tab per capture: ask for the next tab when you need it. Do not guess an unreadable value: ask for that tab again. Log the values in `team/cars/<car>/setups/...`."
+  },
+  {
+   "id": "garage_screens",
+   "topic": "capture",
+   "when": "the driver captures a game screen",
+   "text": "The capture button grabs the AMS2 window, wherever he presses it: a setup tab, the timing or results table, a championship page, a telemetry HUD page or a replay. Label each capture with `label_capture` for what it shows. Values on a capture are in the units the driver configured in the game (pressures, temperatures, speeds): read the unit from the screen and do not assume metric or imperial."
+  }
+ ]
+}

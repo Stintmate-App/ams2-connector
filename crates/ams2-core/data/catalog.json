@@ -1,0 +1,298 @@
+{
+ "schema": "stintmate-catalog/1",
+ "catalog": "connector.ams2",
+ "language": "en",
+ "language_name": "English",
+ "messages": {
+  "flag_yellow": {
+   "text": "Yellow flag, sector {sector}.",
+   "params": {
+    "sector": "int"
+   },
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 15,
+   "kind": "announcement",
+   "note": "Race control shows the driver a yellow flag. sector: 1, 2 or 3, where the driver is now.",
+   "group": "flags"
+  },
+  "flag_double_yellow": {
+   "text": "Double yellow, sector {sector}. Be ready to stop.",
+   "params": {
+    "sector": "int"
+   },
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 15,
+   "kind": "announcement",
+   "note": "A double yellow flag: the track may be blocked. sector: 1, 2 or 3.",
+   "group": "flags"
+  },
+  "flag_yellow_cause": {
+   "text": "Yellow for {cause}.",
+   "params": {
+    "cause": {
+     "kind": "enum",
+     "values": [
+      "solo_crash",
+      "vehicle_crash",
+      "obstruction"
+     ]
+    }
+   },
+   "values": {
+    "cause": {
+     "solo_crash": "a car off on its own",
+     "vehicle_crash": "a collision",
+     "obstruction": "a car blocking the track"
+    }
+   },
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 15,
+   "kind": "announcement",
+   "note": "Said right after a yellow flag when the game gives its reason.",
+   "group": "flags"
+  },
+  "flag_clear": {
+   "text": "Track clear, green flag.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 15,
+   "kind": "announcement",
+   "note": "The yellow is over and the track is clear again.",
+   "group": "flags"
+  },
+  "flag_blue": {
+   "text": "Blue flag, let {driver} through.",
+   "params": {
+    "driver": "text"
+   },
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 10,
+   "kind": "announcement",
+   "note": "A faster car a lap or more ahead is behind the driver. driver: its name.",
+   "group": "flags"
+  },
+  "flag_blue_unknown": {
+   "text": "Blue flag, let the faster car through.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 10,
+   "kind": "announcement",
+   "note": "Blue flag when the lapping car could not be identified.",
+   "group": "flags"
+  },
+  "flag_slow_car": {
+   "text": "Slow car ahead.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 10,
+   "kind": "announcement",
+   "note": "The white flag: a slow car on the track ahead.",
+   "group": "flags"
+  },
+  "final_lap": {
+   "text": "Final lap.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 30,
+   "kind": "announcement",
+   "note": "The race's last lap has begun.",
+   "group": "race"
+  },
+  "flag_red": {
+   "text": "Red flag. Slow down and come back to the pits.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 30,
+   "kind": "announcement",
+   "note": "The session is stopped.",
+   "group": "flags"
+  },
+  "flag_black_white": {
+   "text": "Black and white flag: warning for driving standards.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 20,
+   "kind": "announcement",
+   "note": "A warning for unsportsmanlike driving.",
+   "group": "flags"
+  },
+  "flag_black_orange": {
+   "text": "Black and orange flag: mechanical problem, box now.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 30,
+   "kind": "announcement",
+   "note": "Race control calls the car in for a mechanical problem.",
+   "group": "flags"
+  },
+  "disqualified": {
+   "text": "Black flag. You are disqualified.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 60,
+   "kind": "announcement",
+   "note": "The driver is disqualified (black flag or race state).",
+   "group": "race"
+  },
+  "retired": {
+   "text": "You are out of the race.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 60,
+   "kind": "announcement",
+   "note": "The driver's race state became retired or did not finish.",
+   "group": "race"
+  },
+  "chequered": {
+   "text": "Chequered flag. You finish {position}.",
+   "params": {
+    "position": "ordinal"
+   },
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 60,
+   "kind": "announcement",
+   "note": "The driver took the chequered flag. position: the finishing position.",
+   "group": "race"
+  },
+  "chequered_no_position": {
+   "text": "Chequered flag.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 60,
+   "kind": "announcement",
+   "note": "The driver took the chequered flag; the position is not known.",
+   "group": "race"
+  },
+  "fcy_start": {
+   "text": "Full course yellow. Safety car on track.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 20,
+   "kind": "announcement",
+   "note": "A full-course caution begins.",
+   "group": "safety_car"
+  },
+  "fcy_pits_open": {
+   "text": "Pits are open.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 20,
+   "kind": "announcement",
+   "note": "During the caution the pit lane opens.",
+   "group": "safety_car"
+  },
+  "fcy_pits_lead_lap": {
+   "text": "Pits open for the lead-lap cars.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 20,
+   "kind": "announcement",
+   "note": "During the caution the pit lane opens only for the cars on the lead lap.",
+   "group": "safety_car"
+  },
+  "fcy_last_lap": {
+   "text": "Safety car in this lap.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 30,
+   "kind": "announcement",
+   "note": "The caution ends at the end of this lap.",
+   "group": "safety_car"
+  },
+  "fcy_restart": {
+   "text": "Restart coming, get ready.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 20,
+   "kind": "announcement",
+   "note": "The race resumes after the caution.",
+   "group": "safety_car"
+  },
+  "fcy_halt": {
+   "text": "Race halted: follow the safety car into the pits.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 30,
+   "kind": "announcement",
+   "note": "The race is halted under the caution.",
+   "group": "safety_car"
+  },
+  "penalty_drive_through": {
+   "text": "Drive-through penalty. Box to serve it.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 60,
+   "kind": "announcement",
+   "note": "The driver must drive through the pit lane.",
+   "group": "penalties"
+  },
+  "penalty_stop_go": {
+   "text": "Stop-and-go penalty. Box to serve it.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 60,
+   "kind": "announcement",
+   "note": "The driver must stop in the pit box and go.",
+   "group": "penalties"
+  },
+  "penalty_served": {
+   "text": "Penalty served.",
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 30,
+   "kind": "announcement",
+   "note": "The drive-through or stop-and-go penalty was served.",
+   "group": "penalties"
+  },
+  "rival_disqualified": {
+   "text": "{driver} is disqualified.",
+   "params": {
+    "driver": "text"
+   },
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 60,
+   "kind": "announcement",
+   "note": "Another driver was disqualified. driver: the name.",
+   "group": "rivals"
+  },
+  "rival_out": {
+   "text": "{driver} is out of the race.",
+   "params": {
+    "driver": "text"
+   },
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 60,
+   "kind": "announcement",
+   "note": "Another driver retired. driver: the name.",
+   "group": "rivals"
+  },
+  "radio_check": {
+   "text": "Radio check from the AMS2 connector.",
+   "audience": "driver",
+   "priority": "low",
+   "ttl_s": 30,
+   "kind": "message",
+   "note": "A test of the announcement path, sent by hand.",
+   "group": "test"
+  },
+  "engineer_test": {
+   "text": "Test message for the engineer: {text}",
+   "params": {
+    "text": "text"
+   },
+   "audience": "agent",
+   "priority": "low",
+   "ttl_s": 300,
+   "kind": "message",
+   "note": "A test message for the race engineer, sent by hand. text: a free sentence.",
+   "group": "test"
+  }
+ }
+}

@@ -14,7 +14,14 @@ ams2-shm.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true
+sha2.workspace = true
+hex.workspace = true
 
 [dev-dependencies]
 flate2.workspace = true
 proptest.workspace = true
+criterion.workspace = true
+
+[[bench]]
+name = "detector"
+harness = false

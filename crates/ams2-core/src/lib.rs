@@ -10,23 +10,41 @@
 //! * [`setup`], [`names`], [`messages`]: the write API messages and how they are built.
 //! * [`testing`]: frame builders and the scripted session (also used by later tasks).
 //!
+//! Part II (PRY-057 A4):
+//!
+//! * [`frame`]: the neutral live frame (`connector.live_frame`, with the PRY-037 fields).
+//! * [`telemetry`]: the 32-byte `connector.telemetry` sample and its flags.
+//! * [`announce`]: the 28-code catalog, the event detector and the rate window.
+//! * [`actions`], [`guidance`]: the declared actions and guidance, as data.
+//!
 //! Nothing here reads a clock or a file: time comes in through [`tracker::Clock`].
 
+pub mod actions;
+pub mod announce;
 pub mod channels;
 pub mod codes;
+pub mod frame;
 pub mod garage;
+pub mod guidance;
 pub mod messages;
 pub mod names;
 pub mod rivals;
 pub mod setup;
+pub mod telemetry;
 pub mod testing;
 pub mod tracker;
 pub mod vocab;
 
 #[cfg(test)]
+mod frame_tests;
+#[cfg(test)]
 mod golden_tests;
 #[cfg(test)]
+mod parity_tests;
+#[cfg(test)]
 mod rivals_tests;
+#[cfg(test)]
+mod schema_check;
 #[cfg(test)]
 mod tracker_tests;
 

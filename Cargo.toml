@@ -23,6 +23,8 @@ ams2-shm = { path = "crates/ams2-shm" }
 ams2-core = { path = "crates/ams2-core" }
 ams2-platform = { path = "crates/ams2-platform" }
 ams2-i18n = { path = "crates/ams2-i18n" }
+# Moves to `tag = "v0.2.0"` at PRY-085 cutover.
+stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", rev = "b7565cc" }
 windows-sys = "0.61"
 zerocopy = { version = "0.8", features = ["derive", "alloc"] }
 thiserror = "2"
@@ -37,6 +39,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", default-features = false, features = ["fmt", "std", "registry"] }
 tracing-appender = "0.2"
 tempfile = "3"
+rmp-serde = "1"
 
 [profile.release]
 lto = "thin"

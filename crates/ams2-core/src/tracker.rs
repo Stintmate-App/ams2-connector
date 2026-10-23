@@ -412,6 +412,23 @@ fn nonzero(v: Option<f64>) -> Option<f64> {
     v.filter(|x| *x != 0.0)
 }
 
+/// The open session as the status shows it ([`SessionTracker::status_view`]).
+#[derive(Debug, Clone, PartialEq)]
+pub struct StatusView {
+    /// The sink's id.
+    pub session_id: u64,
+    /// Car id.
+    pub car: String,
+    /// Track id.
+    pub track: String,
+    /// Layout id.
+    pub layout: String,
+    /// AMS2 session state name.
+    pub session_type: String,
+    /// The open lap's stored number.
+    pub lap_number: Option<u32>,
+}
+
 /// The session / lap state machine (see the module docs).
 pub struct SessionTracker {
     clock: Box<dyn Clock>,
@@ -453,6 +470,24 @@ impl SessionTracker {
     /// before it moved (pit mode "driving out of the garage" at 0 km/h).
     pub fn in_garage(&self) -> bool {
         self.garage.in_garage
+    }
+
+    /// What the recorder's status shows of the open session (allocates: ask twice a second).
+    pub fn status_view(&self) -> Option<StatusView> {
+        let s = self.session.as_ref()?;
+        Some(StatusView {
+            session_id: s.id,
+            car: s.key.car.clone(),
+            track: s.key.track.clone(),
+            layout: s.key.variation.clone(),
+            session_type: s.session_type.clone(),
+            lap_number: self.lap.as_ref().map(|l| l.number),
+        })
+    }
+
+    /// Forgets the garage seat (the game is gone or a new mapping).
+    pub fn reset_garage(&mut self) {
+        self.garage.reset();
     }
 
     /// The sink's id of the open session.

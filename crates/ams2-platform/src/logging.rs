@@ -322,3 +322,43 @@ pub fn install_panic_hook() {
 pub fn log_path(dir: &Path, name: &str) -> PathBuf {
     dir.join(format!("{name}.log"))
 }
+
+/// The local time as ISO 8601 with the UTC offset (`2026-10-23T14:05:09+02:00`), with
+/// milliseconds when `millis` (`...09.123+02:00`): the format of the write API's timestamps.
+pub fn local_iso(millis: bool) -> String {
+    let t = now_local();
+    let off = local_offset_minutes();
+    let sign = if off < 0 { '-' } else { '+' };
+    let (h, m) = (off.abs() / 60, off.abs() % 60);
+    let ms = if millis {
+        format!(".{:03}", t.millis)
+    } else {
+        String::new()
+    };
+    format!(
+        "{:04}-{:02}-{:02}T{:02}:{:02}:{:02}{ms}{sign}{h:02}:{m:02}",
+        t.year, t.month, t.day, t.hour, t.minute, t.second
+    )
+}
+
+/// Minutes east of UTC of the local time zone now.
+#[cfg(windows)]
+pub fn local_offset_minutes() -> i32 {
+    use windows_sys::Win32::System::Time::{GetTimeZoneInformation, TIME_ZONE_INFORMATION};
+    // SAFETY: all-zero is a valid TIME_ZONE_INFORMATION; the out pointer is valid.
+    let mut tz: TIME_ZONE_INFORMATION = unsafe { std::mem::zeroed() };
+    let id = unsafe { GetTimeZoneInformation(&mut tz) };
+    let bias = tz.Bias
+        + match id {
+            1 => tz.StandardBias,
+            2 => tz.DaylightBias,
+            _ => 0,
+        };
+    -bias
+}
+
+/// Minutes east of UTC (non-Windows builds only exist for tooling: UTC).
+#[cfg(not(windows))]
+pub fn local_offset_minutes() -> i32 {
+    0
+}

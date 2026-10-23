@@ -55,10 +55,10 @@ fn wait_for(what: &str, secs: u64, mut f: impl FnMut() -> bool) {
 
 #[test]
 fn one_window_process_at_most_and_it_ends_when_asked_to_close() {
-    // The window needs a desktop with OpenGL; GitHub's Windows runners have neither, so the
-    // window process never starts there. Runs on a developer's PC.
-    if std::env::var_os("GITHUB_ACTIONS").is_some() {
-        eprintln!("skipped on GitHub Actions: no interactive desktop for the egui window");
+    // The window needs a desktop with OpenGL; GitHub-hosted runners have neither (the workflow
+    // sets STINTMATE_SHARED_RUNNER there). Runs on a developer's PC.
+    if std::env::var_os("STINTMATE_SHARED_RUNNER").is_some_and(|v| !v.is_empty()) {
+        eprintln!("skipped on a shared GitHub-hosted runner: no desktop with OpenGL");
         return;
     }
     let dir = tempfile::tempdir().unwrap();

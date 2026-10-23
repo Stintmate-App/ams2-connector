@@ -1,0 +1,337 @@
+{
+  "schema": "stintmate-catalog/1",
+  "catalog": "ams2-connector",
+  "language": "en",
+  "language_name": "English",
+  "messages": {
+    "app.name": {
+      "text": "AMS2 connector"
+    },
+    "data.source.workspace": {
+      "text": "In the Stintmate workspace {workspace} (source {source})",
+      "params": {
+        "workspace": "text",
+        "source": "text"
+      },
+      "note": "source = how the workspace was found (a code: argv, env, pointer)."
+    },
+    "detail.cpu": {
+      "text": "CPU {percent} %",
+      "params": {
+        "percent": "text"
+      },
+      "note": "The recorder's CPU use, e.g. 0.4."
+    },
+    "detail.forced_stop": {
+      "text": "Last stop was forced: the lap in progress may be lost"
+    },
+    "detail.game_not_running": {
+      "text": "Game not running"
+    },
+    "detail.game_running": {
+      "text": "Game running"
+    },
+    "detail.outbox": {
+      "text": {
+        "one": "{n} lap waiting for Pitwall",
+        "other": "{n} laps waiting for Pitwall"
+      },
+      "params": {
+        "n": "int"
+      },
+      "plural": "n"
+    },
+    "detail.pid": {
+      "text": "PID {pid}",
+      "params": {
+        "pid": "text"
+      },
+      "note": "The process id."
+    },
+    "detail.rejected": {
+      "text": {
+        "one": "{n} write refused by Pitwall: see the outbox folder",
+        "other": "{n} writes refused by Pitwall: see the outbox folder"
+      },
+      "params": {
+        "n": "int"
+      },
+      "plural": "n"
+    },
+    "exit.button": {
+      "text": "Exit"
+    },
+    "exit.tip": {
+      "text": "Stop every running service and quit the AMS2 connector"
+    },
+    "logs.alerts_only": {
+      "text": "Only warnings and errors"
+    },
+    "logs.copy": {
+      "text": "Copy last {n}",
+      "params": {
+        "n": "int"
+      }
+    },
+    "logs.none_yet": {
+      "text": "No log yet: {file}",
+      "params": {
+        "file": "text"
+      }
+    },
+    "logs.open": {
+      "text": "Open log file"
+    },
+    "logs.selector": {
+      "text": "Log"
+    },
+    "logs.ui": {
+      "text": "Connector app"
+    },
+    "nav.name": {
+      "text": "Screens"
+    },
+    "notice.crashed.title": {
+      "text": "{service} stopped unexpectedly",
+      "params": {
+        "service": "text"
+      },
+      "note": "Notification title."
+    },
+    "notice.forced.message": {
+      "text": "It did not stop within {seconds} s; the lap in progress may be lost.",
+      "params": {
+        "seconds": "text"
+      },
+      "note": "seconds = the stop timeout, a number."
+    },
+    "notice.forced.title": {
+      "text": "{service} stopped forcibly",
+      "params": {
+        "service": "text"
+      },
+      "note": "Notification title."
+    },
+    "notice.see_logs": {
+      "text": "See the Logs screen."
+    },
+    "notice.shm_error.message": {
+      "text": "Not recording. See the Logs screen."
+    },
+    "notice.shm_error.title": {
+      "text": "Recorder: unsupported shared memory version"
+    },
+    "notice.start_failed": {
+      "text": "{service} could not start",
+      "params": {
+        "service": "text"
+      },
+      "note": "Notification title."
+    },
+    "options.autostart": {
+      "text": "Start the AMS2 connector with Windows"
+    },
+    "options.autostart.note": {
+      "text": "Opens in the tray at logon and starts the services set to start with the app. Off by default."
+    },
+    "options.error.autostart_change": {
+      "text": "Cannot change the Windows autostart entry: {error}",
+      "params": {
+        "error": "text"
+      }
+    },
+    "options.error.autostart_read": {
+      "text": "Cannot read the Windows autostart entry: {error}",
+      "params": {
+        "error": "text"
+      }
+    },
+    "options.error.save": {
+      "text": "Cannot save the options: {error}",
+      "params": {
+        "error": "text"
+      }
+    },
+    "options.hz": {
+      "text": "Recorder sampling rate (advanced)"
+    },
+    "options.hz.name": {
+      "text": "Recorder sampling rate"
+    },
+    "options.hz.note": {
+      "text": "Applies the next time the recorder starts. Default 50 Hz."
+    },
+    "options.hz.suffix": {
+      "text": " Hz"
+    },
+    "options.minimized": {
+      "text": "Start minimized to the tray"
+    },
+    "options.minimized.note": {
+      "text": "Closing the window (X) always hides the app to the tray. Exit (bottom left, or the tray menu) stops every service and quits."
+    },
+    "options.start": {
+      "text": "Start {service} with the app",
+      "params": {
+        "service": "text"
+      },
+      "note": "service = a service's name (Recorder...)."
+    },
+    "options.start.note": {
+      "text": "Switching a service on or off on the Services screen changes this too: the services come back as you left them."
+    },
+    "options.start.recorder.note": {
+      "text": "On by default: laps are recorded only while it runs."
+    },
+    "page.logs": {
+      "text": "Logs"
+    },
+    "page.options": {
+      "text": "Options"
+    },
+    "page.services": {
+      "text": "Services"
+    },
+    "service.recorder": {
+      "text": "Recorder"
+    },
+    "services.data_folder": {
+      "text": "Data folder: {folder}",
+      "params": {
+        "folder": "text"
+      }
+    },
+    "services.open_data_folder": {
+      "text": "Open data folder"
+    },
+    "services.stopping": {
+      "text": "Stopping services…"
+    },
+    "startup.error.detail": {
+      "text": "workspace error {code}: {message}",
+      "params": {
+        "code": "text",
+        "message": "text"
+      },
+      "note": "code and message = the workspace error."
+    },
+    "startup.error.hint": {
+      "text": "No service was started and nothing was written. Fix the folder, then start the AMS2 connector again."
+    },
+    "startup.error.title": {
+      "text": "The AMS2 connector cannot start: its data folder is not usable."
+    },
+    "status.crashed": {
+      "text": "Stopped unexpectedly · see logs"
+    },
+    "status.game_waiting": {
+      "text": "Waiting for Automobilista 2"
+    },
+    "status.garage": {
+      "text": "In the garage"
+    },
+    "status.menus": {
+      "text": "In the menus"
+    },
+    "status.not_installed": {
+      "text": "Cannot start: the connector is not installed correctly · run `uv sync`"
+    },
+    "status.off": {
+      "text": "Off"
+    },
+    "status.ownership.adopted": {
+      "text": "Running (adopted)"
+    },
+    "status.ownership.external": {
+      "text": "Running (external, not tied to the app)"
+    },
+    "status.ownership.untied": {
+      "text": "Running (not tied to the app)"
+    },
+    "status.pitwall.absent": {
+      "text": "Pitwall not running"
+    },
+    "status.pitwall.connected": {
+      "text": "Connected to Pitwall"
+    },
+    "status.pitwall.refused": {
+      "text": "Refused by Pitwall · see logs"
+    },
+    "status.recorder.driving_offline": {
+      "text": "Recording · Pitwall not running: the laps wait for it"
+    },
+    "status.recorder.garage_offline": {
+      "text": "In the garage · Pitwall not running: the laps will wait for it"
+    },
+    "status.recorder.lap": {
+      "text": "lap {lap}",
+      "params": {
+        "lap": "text"
+      },
+      "note": "Part of the Recorder's state line. lap = the current lap number."
+    },
+    "status.recorder.off_game_running": {
+      "text": "Off · Automobilista 2 is running: laps are not recorded"
+    },
+    "status.recorder.recording": {
+      "text": "Recording"
+    },
+    "status.recorder.session": {
+      "text": "session {session}",
+      "params": {
+        "session": "text"
+      },
+      "note": "Part of the Recorder's state line. session = Pitwall's session id."
+    },
+    "status.recorder.stint": {
+      "text": "stint {stint}",
+      "params": {
+        "stint": "text"
+      },
+      "note": "Part of the Recorder's state line. stint = the stint number."
+    },
+    "status.shm_error": {
+      "text": "Error: unsupported shared memory version"
+    },
+    "status.starting": {
+      "text": "Starting…"
+    },
+    "status.stopping": {
+      "text": "Stopping…"
+    },
+    "status.tooltip_line": {
+      "text": "{service}: {state}",
+      "params": {
+        "service": "text",
+        "state": "text"
+      },
+      "note": "One line of the tray tooltip: a service's name and its state."
+    },
+    "tray.exit": {
+      "text": "Exit AMS2 connector"
+    },
+    "tray.logs": {
+      "text": "Open logs"
+    },
+    "tray.open": {
+      "text": "Open AMS2 connector"
+    },
+    "tray.service.start": {
+      "text": "{service}: Start",
+      "params": {
+        "service": "text"
+      },
+      "note": "Tray menu item: start a service."
+    },
+    "tray.service.stop": {
+      "text": "{service}: Stop",
+      "params": {
+        "service": "text"
+      },
+      "note": "Tray menu item: stop a service."
+    },
+    "tray.stopping": {
+      "text": "AMS2 connector: stopping services…"
+    }
+  }
+}

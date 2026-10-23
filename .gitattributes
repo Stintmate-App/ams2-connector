@@ -1,0 +1,2 @@
+crates/ams2-i18n/locales/*.json -text
+crates/ams2-i18n/fixtures/*.json -text

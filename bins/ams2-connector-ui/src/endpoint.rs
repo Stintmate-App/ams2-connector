@@ -179,7 +179,10 @@ impl ControlEndpoint {
         info.name = crate::CONNECTOR_NAME.into();
         info.version = crate::VERSION.into();
         let mut b = Endpoint::builder(info, cfg.key);
-        if let Some(p) = cfg.pipe {
+        if let Some(p) = cfg
+            .pipe
+            .or_else(|| ams2_platform::dev::pipe_path_if_dev(crate::ENDPOINT_ID))
+        {
             b = b.pipe(p);
         }
         if let Some(r) = cfg.registry {

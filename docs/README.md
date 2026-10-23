@@ -10,6 +10,7 @@ to Stintmate.
 |---|---|
 | [usage.md](usage.md) | Install and register, the tray and the window, options, start with Windows, managed mode, command lines, the data folder, race announcements, troubleshooting. |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Processes, threads, crates, data flow, the IPC links and declarations, the outbox, special cases of the game, performance with measured numbers, decisions and their reasons, tests. |
+| [installer.md](installer.md) | The installer: unattended parameters, progress lines, reasons and exit codes, what Stintmate does around it. |
 | [FINDINGS.md](FINDINGS.md) | What was learned about AMS2 with its evidence: shared memory layout, units and signs, game quirks, game files, calibrations and validation. Useful to anyone reading a simulator's data. |
 | [writing-a-connector.md](writing-a-connector.md) | A short guide for authors of other connectors, using this one as the map. |
 | [ui-spike.md](ui-spike.md) | The measurements behind the choice of UI toolkit. |

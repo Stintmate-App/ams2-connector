@@ -28,7 +28,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use stintmate_ipc::{MethodOpts, naming};
+use stintmate_ipc::MethodOpts;
 
 /// Status compared this often.
 pub const STATUS_CHECK: Duration = Duration::from_millis(500);
@@ -150,7 +150,7 @@ impl Recorder {
         let key = key_source(&cfg.workspace).map_err(|e| err(&e))?;
         let pipe = match &cfg.pitwall_pipe {
             Some(p) => p.clone(),
-            None => naming::pipe_path(PITWALL_ENDPOINT, None).map_err(|e| err(&e))?,
+            None => ams2_platform::dev::pipe_path(PITWALL_ENDPOINT).map_err(|e| err(&e))?,
         };
         let link = Arc::new(PitwallLink::new(&pipe, peer_info(SERVICE), key).map_err(|e| err(&e))?);
         let control = if cfg.no_control {
@@ -158,7 +158,7 @@ impl Recorder {
         } else {
             let pipe = match &cfg.control_pipe {
                 Some(p) => p.clone(),
-                None => naming::pipe_path(crate::link::APP_ID, None).map_err(|e| err(&e))?,
+                None => ams2_platform::dev::pipe_path(crate::link::APP_ID).map_err(|e| err(&e))?,
             };
             let key = key_source(&cfg.workspace).map_err(|e| err(&e))?;
             Some(Arc::new(

@@ -97,6 +97,43 @@ fn a_workspace_error_is_exit_3_for_register_and_unregister() {
 }
 
 #[test]
+fn register_check_writes_nothing_and_reports_the_three_outcomes() {
+    let dir = workspace();
+    let ws = dir.path().to_str().unwrap();
+    let o = run(&["--register", "--check", "--workspace", ws]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    assert!(!descriptor(dir.path()).exists(), "no descriptor written");
+    let data = descriptor(dir.path()).parent().unwrap().to_path_buf();
+    assert_eq!(
+        std::fs::read_dir(&data).unwrap().count(),
+        0,
+        "no test file left"
+    );
+
+    let missing = tempfile::tempdir().unwrap();
+    let missing_ws = missing.path().join("not-there");
+    let o = run(&[
+        "--register",
+        "--check",
+        "--workspace",
+        missing_ws.to_str().unwrap(),
+    ]);
+    assert_eq!(o.status.code(), Some(3), "{}", text(&o));
+
+    let blocked = workspace();
+    let conn = blocked.path().join("connectors");
+    std::fs::create_dir_all(&conn).unwrap();
+    std::fs::write(conn.join("ams2"), "a file").unwrap();
+    let o = run(&[
+        "--register",
+        "--check",
+        "--workspace",
+        blocked.path().to_str().unwrap(),
+    ]);
+    assert_eq!(o.status.code(), Some(1), "{}", text(&o));
+}
+
+#[test]
 fn bad_arguments_print_the_usage_with_every_option() {
     let o = run(&["--bogus"]);
     assert_eq!(o.status.code(), Some(2));

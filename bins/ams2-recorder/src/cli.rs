@@ -12,7 +12,6 @@ use std::path::Path;
 use std::sync::Arc;
 use std::time::Duration;
 use stintmate_ipc::codec::{self, Value};
-use stintmate_ipc::naming;
 
 /// `peer.process` of the test hook.
 pub const MESSAGE_CLI: &str = "message-cli";
@@ -141,9 +140,8 @@ pub fn announce_main(args: &[String], workspace: &Path, out: &mut dyn FnMut(Stri
     let setup = (|| {
         let pipe = match &parsed.pipe {
             Some(p) => p.clone(),
-            None => {
-                naming::pipe_path(crate::link::PITWALL_ENDPOINT, None).map_err(|e| e.to_string())?
-            }
+            None => ams2_platform::dev::pipe_path(crate::link::PITWALL_ENDPOINT)
+                .map_err(|e| e.to_string())?,
         };
         PitwallLink::new(
             &pipe,

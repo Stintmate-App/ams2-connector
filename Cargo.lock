@@ -115,6 +115,7 @@ version = "3.0.0"
 dependencies = [
  "serde",
  "serde_json",
+ "stintmate-ipc",
  "tempfile",
  "thiserror 2.0.21",
  "tracing",

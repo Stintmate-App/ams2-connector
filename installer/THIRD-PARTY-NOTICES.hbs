@@ -1,0 +1,24 @@
+Stintmate AMS2 Connector: third-party notices
+=============================================
+
+The connector's programs contain the open source software listed here. Each component is
+used under the licence shown; the licence texts follow the list.
+
+Overview of licences:
+{{#each overview}}
+  {{name}}: {{count}} crate(s)
+{{/each}}
+
+Components:
+{{#each licenses}}
+--------------------------------------------------------------------------------
+{{name}}
+--------------------------------------------------------------------------------
+Used by:
+{{#each used_by}}
+  {{crate.name}} {{crate.version}}{{#if crate.repository}} ({{crate.repository}}){{/if}}
+{{/each}}
+
+{{{text}}}
+
+{{/each}}

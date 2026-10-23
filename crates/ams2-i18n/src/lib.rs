@@ -54,7 +54,7 @@ pub fn embedded_messages() -> &'static Map<String, Value> {
 /// the SHA-256 of its canonical JSON (sorted keys, no spaces, UTF-8 as it is).
 pub fn embedded_document() -> (&'static Value, String) {
     let doc = embedded();
-    let canon = serde_json::to_string(doc).unwrap_or_default();
+    let canon = serde_json::to_string(&message::sorted(doc)).unwrap_or_default();
     (
         doc,
         hex::encode(Sha256::digest(canon.as_bytes()))[..12].to_string(),

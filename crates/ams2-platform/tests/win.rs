@@ -361,3 +361,17 @@ fn timer_one_shot_sleep_and_timeout() {
     timer.start_once(Duration::from_millis(10)).unwrap();
     assert!(timer.wait_timeout(Duration::from_secs(2)));
 }
+
+#[test]
+fn procinfo_sees_this_process_and_its_chain() {
+    use ams2_platform::procinfo::*;
+    let me = std::process::id();
+    let started = pid_start_time(me).expect("own start time");
+    assert!(process_alive(me, Some(started)));
+    assert!(!process_alive(me, Some(started + Duration::from_secs(60))));
+    assert!(!process_alive(0, None));
+    let chain = process_chain(me, 4);
+    assert_eq!(chain.first().map(|c| c.0), Some(me));
+    assert!(describe_process(Some(me), 4).contains(&me.to_string()));
+    assert_eq!(describe_process(None, 4), "unknown");
+}

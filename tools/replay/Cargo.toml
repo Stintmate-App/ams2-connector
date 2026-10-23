@@ -1,0 +1,17 @@
+[package]
+name = "ams2-replay"
+description = "Plays a raw capture or the scripted session into a test mapping with the real seqlock"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+ams2-shm.workspace = true
+ams2-core.workspace = true
+ams2-platform.workspace = true
+
+[dev-dependencies]

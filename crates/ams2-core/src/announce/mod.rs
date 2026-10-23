@@ -12,6 +12,8 @@ mod catalog_tests;
 #[cfg(test)]
 mod detector_tests;
 
-pub use catalog::{CATALOG_ID, catalog, catalog_ik, check_params, source_hash, validate_catalog};
+pub use catalog::{
+    CATALOG_ID, catalog, catalog_ik, check_params, parse_params, source_hash, validate_catalog,
+};
 pub use detector::{Announcement, EventDetector};
 pub use rate::{RATE_LIMIT, RATE_WINDOW_S, RateWindow};

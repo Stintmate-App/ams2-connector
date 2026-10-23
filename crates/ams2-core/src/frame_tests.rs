@@ -306,7 +306,7 @@ fn frame_lap_info_from_the_tracker() {
     // A certain cause leaves `invalid_cause_certain` out; a valid lap has only its type.
     let certain = LiveLap {
         invalid_cause_certain: true,
-        ..info.clone()
+        ..info
     };
     let opts = FrameOptions {
         lap_info: Some(&certain),

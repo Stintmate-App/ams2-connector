@@ -48,6 +48,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "ams2-measure"
+version = "3.0.0"
+dependencies = [
+ "ams2-core",
+ "ams2-platform",
+ "ams2-recorder",
+ "ams2-shm",
+ "serde_json",
+ "stintmate-ipc",
+ "windows-sys",
+]
+
+[[package]]
 name = "ams2-platform"
 version = "3.0.0"
 dependencies = [
@@ -74,6 +87,15 @@ dependencies = [
  "stintmate-ipc",
  "tempfile",
  "tracing",
+]
+
+[[package]]
+name = "ams2-replay"
+version = "3.0.0"
+dependencies = [
+ "ams2-core",
+ "ams2-platform",
+ "ams2-shm",
 ]
 
 [[package]]
@@ -965,7 +987,7 @@ dependencies = [
 [[package]]
 name = "stintmate-ipc"
 version = "0.2.0"
-source = "git+https://github.com/Stintmate-App/stintmate-ipc?rev=b7565cc#b7565cc4f2b97d49b75bee6fcfb903742cdb048a"
+source = "git+https://github.com/Stintmate-App/stintmate-ipc?rev=f0644a9#f0644a99a1acdf63b196ea393b8ed08b5ab9946c"
 dependencies = [
  "bytes",
  "crossbeam-channel",

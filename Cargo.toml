@@ -7,6 +7,8 @@ members = [
     "crates/ams2-i18n",
     "bins/ams2-recorder",
     "bins/ams2-connector-ui",
+    "tools/replay",
+    "tools/measure",
 ]
 
 [workspace.package]
@@ -24,7 +26,7 @@ ams2-core = { path = "crates/ams2-core" }
 ams2-platform = { path = "crates/ams2-platform" }
 ams2-i18n = { path = "crates/ams2-i18n" }
 # Moves to `tag = "v0.2.0"` at PRY-085 cutover.
-stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", rev = "b7565cc" }
+stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", rev = "f0644a9" }
 windows-sys = "0.61"
 zerocopy = { version = "0.8", features = ["derive", "alloc"] }
 thiserror = "2"

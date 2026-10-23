@@ -120,6 +120,10 @@ impl FakePitwall {
                                 ("lap", Value::from(n.fetch_add(1, Ordering::Relaxed) + 1)),
                                 ("stint", Value::from(1u32)),
                             ]),
+                            "pitwall.announce" => stintmate_ipc::codec::map([
+                                ("message_id", Value::from("m1")),
+                                ("at", Value::from("T")),
+                            ]),
                             _ => stintmate_ipc::codec::map::<[(&str, Value); 0], &str>([]),
                         })
                     },
@@ -153,6 +157,11 @@ impl FakePitwall {
             std::thread::sleep(Duration::from_millis(20));
         }
         false
+    }
+
+    /// The recorder's connection, once it is up.
+    pub fn peer(&self) -> Option<stintmate_ipc::blocking::Peer> {
+        self.endpoint.peers().into_iter().next()
     }
 
     pub fn stop(&self) {

@@ -58,6 +58,7 @@ fn start(pipe: &str) -> Run {
             "ISO".into(),
         )),
         now: None,
+        ..Overrides::default()
     };
     let mut rec = Recorder::build(cfg, ov).unwrap();
     rec.start_links();

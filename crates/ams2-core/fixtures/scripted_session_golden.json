@@ -1,0 +1,4776 @@
+[
+{
+"call": "start_session",
+"catalog": {
+"classes": [
+{
+"class_id": "G40Cup",
+"name": "Ginetta G40 Cup"
+}
+],
+"cars": [
+{
+"car_id": "Ginetta G40 Cup",
+"name": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"fuel_capacity_l": 40.0
+}
+],
+"tracks": [
+{
+"track_id": "OultonPark",
+"name": "Oulton Park"
+}
+],
+"layouts": [
+{
+"track_id": "OultonPark",
+"layout_id": "OultonPark_International",
+"name": "Oulton Park International",
+"length_m": 4316.89990234375
+}
+]
+},
+"params": {
+"started_at": "ISO",
+"session_type": "practice",
+"car_id": "Ginetta G40 Cup",
+"track_id": "OultonPark",
+"layout_id": "OultonPark_International",
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+}
+},
+"session_state": "PRACTICE"
+},
+{
+"call": "insert_setup",
+"snapshot": {
+"brake_bias_front_pct": 58.0,
+"abs_setting": -1,
+"tc_setting": -1,
+"wings": [
+0.0,
+0.0
+],
+"tyre_compound": [
+"Slick",
+"Slick",
+"Slick",
+"Slick"
+],
+"tyre_pressure_kpa": [
+165.0,
+165.0,
+160.0,
+160.0
+],
+"tyre_carcass_c": [
+19.0,
+19.0,
+19.0,
+19.0
+],
+"ambient_c": 18.0,
+"pressures_cold": true,
+"fuel_l": 20.0,
+"fuel_capacity_l": 40.0
+},
+"params": {
+"taken_at": "ISO",
+"reason": "session_start",
+"source": "telemetry",
+"brake_bias_front_pct": 58.0,
+"compound_front": "Slick",
+"compound_rear": "Slick",
+"pressure_fl_kpa": 165.0,
+"pressure_fr_kpa": 165.0,
+"pressure_rl_kpa": 160.0,
+"pressure_rr_kpa": 160.0,
+"fuel_l": 20.0
+}
+},
+{
+"call": "event",
+"type": "session_started",
+"fields": {
+"session_id": 1,
+"car": "Ginetta G40 Cup",
+"car_class": "G40Cup",
+"track": "OultonPark",
+"layout": "OultonPark_International",
+"track_length_m": 4316.9,
+"session_type": "PRACTICE",
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0
+}
+},
+{
+"call": "insert_pit_exit",
+"params": {
+"at": "ISO",
+"fuel_l": 20.0
+}
+},
+{
+"call": "insert_setup",
+"snapshot": {
+"brake_bias_front_pct": 58.0,
+"abs_setting": -1,
+"tc_setting": -1,
+"wings": [
+0.0,
+0.0
+],
+"tyre_compound": [
+"Slick",
+"Slick",
+"Slick",
+"Slick"
+],
+"tyre_pressure_kpa": [
+165.0,
+165.0,
+160.0,
+160.0
+],
+"tyre_carcass_c": [
+71.0,
+71.0,
+71.0,
+71.0
+],
+"ambient_c": 18.0,
+"pressures_cold": false,
+"fuel_l": 20.0,
+"fuel_capacity_l": 40.0
+},
+"params": {
+"taken_at": "ISO",
+"reason": "pit_exit",
+"source": "telemetry",
+"brake_bias_front_pct": 58.0,
+"compound_front": "Slick",
+"compound_rear": "Slick",
+"fuel_l": 20.0
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 2,
+"lap": 1,
+"name": "Tyler Groves",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"sectors": [],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": false,
+"position": 3,
+"crossed_at_s": 37.9,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 1,
+"lap": 1,
+"name": "Pol Riera",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"sectors": [
+5.0,
+35.0,
+null
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": false,
+"position": 2,
+"crossed_at_s": 69.1,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_lap",
+"n_rows": 971,
+"params": {
+"lap_type": "out",
+"on_track": true,
+"valid": true,
+"started_at": "ISO",
+"sim_lap": 1,
+"fuel_start_l": 19.998996257781982,
+"fuel_used_l": 2.508378028869629,
+"max_speed_kmh": 217.00000305175783,
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+},
+"sectors": [
+{},
+{},
+{}
+],
+"channels": {
+"t": {
+"n": 971,
+"first": -1.0,
+"last": -1.0,
+"sum": -971.0
+},
+"dist": {
+"n": 971,
+"first": 151.6666717529297,
+"last": 4316.42724609375,
+"sum": 2091375.71484375
+},
+"speed": {
+"n": 971,
+"first": 59.999996185302734,
+"last": 170.97396850585938,
+"sum": 149991.4372329712
+},
+"throttle": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"brake": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"clutch": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"steer": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"gear": {
+"n": 971,
+"first": 1.0,
+"last": 4.0,
+"sum": 3756.0
+},
+"rpm": {
+"n": 971,
+"first": 4750.0,
+"last": 4929.21875,
+"sum": 4439943.123535156
+},
+"g_lat": {
+"n": 971,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_long": {
+"n": 971,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_vert": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"x": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"y": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"z": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fuel": {
+"n": 971,
+"first": 19.99899673461914,
+"last": 17.490617752075195,
+"sum": 18248.11971092224
+},
+"abs": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"tc": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"invalid": {
+"n": 971,
+"first": 0.0,
+"last": 1.0,
+"sum": 881.0
+},
+"pit_mode": {
+"n": 971,
+"first": 3.0,
+"last": 0.0,
+"sum": 270.0
+},
+"fl_t_in": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"fl_t_mid": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"fl_t_out": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"fl_t_carcass": {
+"n": 971,
+"first": 70.99999237060547,
+"last": 82.09740447998047,
+"sum": 78114.14163970947
+},
+"fl_t_air": {
+"n": 971,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -265228.6440734863
+},
+"fl_pressure": {
+"n": 971,
+"first": 165.0,
+"last": 165.0,
+"sum": 160215.0
+},
+"fl_wear": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_brake_t": {
+"n": 971,
+"first": 410.0,
+"last": 520.9739379882812,
+"sum": 489841.4366760254
+},
+"fl_susp": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_susp_vel": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_ride": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_surface": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_rps": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_t_in": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"fr_t_mid": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"fr_t_out": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"fr_t_carcass": {
+"n": 971,
+"first": 70.99999237060547,
+"last": 82.09740447998047,
+"sum": 78114.14163970947
+},
+"fr_t_air": {
+"n": 971,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -265228.6440734863
+},
+"fr_pressure": {
+"n": 971,
+"first": 165.0,
+"last": 165.0,
+"sum": 160215.0
+},
+"fr_wear": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_brake_t": {
+"n": 971,
+"first": 410.0,
+"last": 520.9739379882812,
+"sum": 489841.4366760254
+},
+"fr_susp": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_susp_vel": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_ride": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_surface": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_rps": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_t_in": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"rl_t_mid": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"rl_t_out": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"rl_t_carcass": {
+"n": 971,
+"first": 70.99999237060547,
+"last": 82.09740447998047,
+"sum": 78114.14163970947
+},
+"rl_t_air": {
+"n": 971,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -265228.6440734863
+},
+"rl_pressure": {
+"n": 971,
+"first": 160.0,
+"last": 160.0,
+"sum": 155360.0
+},
+"rl_wear": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_brake_t": {
+"n": 971,
+"first": 410.0,
+"last": 520.9739379882812,
+"sum": 489841.4366760254
+},
+"rl_susp": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_susp_vel": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_ride": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_surface": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_rps": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_t_in": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"rr_t_mid": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"rr_t_out": {
+"n": 971,
+"first": 76.0,
+"last": 87.09739685058594,
+"sum": 82969.14372253418
+},
+"rr_t_carcass": {
+"n": 971,
+"first": 70.99999237060547,
+"last": 82.09740447998047,
+"sum": 78114.14163970947
+},
+"rr_t_air": {
+"n": 971,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -265228.6440734863
+},
+"rr_pressure": {
+"n": 971,
+"first": 160.0,
+"last": 160.0,
+"sum": 155360.0
+},
+"rr_wear": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_brake_t": {
+"n": 971,
+"first": 410.0,
+"last": 520.9739379882812,
+"sum": 489841.4366760254
+},
+"rr_susp": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_susp_vel": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_ride": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_surface": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_rps": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+}
+}
+}
+},
+{
+"call": "event",
+"type": "lap_completed",
+"fields": {
+"session_id": 1,
+"lap": 1,
+"game_lap": 1,
+"kind": "out",
+"complete": false,
+"valid": true,
+"lap_time_s": null,
+"time_source": null,
+"sectors_s": [
+null,
+null,
+null
+],
+"delta_session_best_s": null,
+"session_best": false,
+"fuel_used_l": 2.51,
+"fuel_left_l": 17.49,
+"fuel_laps_left": null,
+"max_speed_kmh": 217.0,
+"track_c": 26.0,
+"ambient_c": 18.0,
+"position": 1
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 2,
+"lap": 2,
+"name": "Tyler Groves",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 93.30000305175781,
+"time_source": "official",
+"sectors": [
+30.200000762939453,
+34.400001525878906,
+28.700000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 1,
+"crossed_at_s": 131.2,
+"sim_best_lap_s": 93.30000305175781,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 1,
+"lap": 2,
+"name": "Pol Riera",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 95.0999984741211,
+"time_source": "official",
+"sectors": [
+30.899999618530273,
+34.900001525878906,
+29.299997329711914
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 2,
+"crossed_at_s": 164.2,
+"sim_best_lap_s": 95.0999984741211,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_lap",
+"n_rows": 936,
+"params": {
+"lap_type": "flying",
+"on_track": true,
+"time_s": 93.5989990234375,
+"valid": true,
+"time_source": "official",
+"measured_time_s": 93.4991455078125,
+"started_at": "ISO",
+"sim_lap": 1,
+"fuel_start_l": 17.487741708755493,
+"fuel_used_l": 2.5967013835906982,
+"max_speed_kmh": 216.99989318847656,
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+},
+"sectors": [
+{
+"time_s": 30.299999237060547
+},
+{
+"time_s": 34.5
+},
+{
+"time_s": 28.798999786376953
+}
+],
+"channels": {
+"t": {
+"n": 936,
+"first": 0.0,
+"last": 93.4991455078125,
+"sum": 43757.77208986133
+},
+"dist": {
+"n": 936,
+"first": 4.302443504333496,
+"last": 4315.7470703125,
+"sum": 2078518.3730707169
+},
+"speed": {
+"n": 936,
+"first": 171.90711975097656,
+"last": 170.84112548828125,
+"sum": 155383.8703918457
+},
+"throttle": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"brake": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"clutch": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"steer": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"gear": {
+"n": 936,
+"first": 4.0,
+"last": 4.0,
+"sum": 3949.0
+},
+"rpm": {
+"n": 936,
+"first": 4957.21337890625,
+"last": 4925.23388671875,
+"sum": 4259066.111328125
+},
+"g_lat": {
+"n": 936,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_long": {
+"n": 936,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_vert": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"x": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"y": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"z": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fuel": {
+"n": 936,
+"first": 17.487741470336914,
+"last": 14.891040802001953,
+"sum": 15119.097640037537
+},
+"abs": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"tc": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"invalid": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"pit_mode": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_t_in": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"fl_t_mid": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"fl_t_out": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"fl_t_carcass": {
+"n": 936,
+"first": 82.1906967163086,
+"last": 82.08409881591797,
+"sum": 76378.38537597656
+},
+"fl_t_air": {
+"n": 936,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -255668.39428710938
+},
+"fl_pressure": {
+"n": 936,
+"first": 165.0,
+"last": 165.0,
+"sum": 154440.0
+},
+"fl_wear": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_brake_t": {
+"n": 936,
+"first": 521.9071044921875,
+"last": 520.8411254882812,
+"sum": 482983.87005615234
+},
+"fl_susp": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_susp_vel": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_ride": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_surface": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_rps": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_t_in": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"fr_t_mid": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"fr_t_out": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"fr_t_carcass": {
+"n": 936,
+"first": 82.1906967163086,
+"last": 82.08409881591797,
+"sum": 76378.38537597656
+},
+"fr_t_air": {
+"n": 936,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -255668.39428710938
+},
+"fr_pressure": {
+"n": 936,
+"first": 165.0,
+"last": 165.0,
+"sum": 154440.0
+},
+"fr_wear": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_brake_t": {
+"n": 936,
+"first": 521.9071044921875,
+"last": 520.8411254882812,
+"sum": 482983.87005615234
+},
+"fr_susp": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_susp_vel": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_ride": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_surface": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_rps": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_t_in": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"rl_t_mid": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"rl_t_out": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"rl_t_carcass": {
+"n": 936,
+"first": 82.1906967163086,
+"last": 82.08409881591797,
+"sum": 76378.38537597656
+},
+"rl_t_air": {
+"n": 936,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -255668.39428710938
+},
+"rl_pressure": {
+"n": 936,
+"first": 160.0,
+"last": 160.0,
+"sum": 149760.0
+},
+"rl_wear": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_brake_t": {
+"n": 936,
+"first": 521.9071044921875,
+"last": 520.8411254882812,
+"sum": 482983.87005615234
+},
+"rl_susp": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_susp_vel": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_ride": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_surface": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_rps": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_t_in": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"rr_t_mid": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"rr_t_out": {
+"n": 936,
+"first": 87.19071197509766,
+"last": 87.08411407470703,
+"sum": 81058.38716125488
+},
+"rr_t_carcass": {
+"n": 936,
+"first": 82.1906967163086,
+"last": 82.08409881591797,
+"sum": 76378.38537597656
+},
+"rr_t_air": {
+"n": 936,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -255668.39428710938
+},
+"rr_pressure": {
+"n": 936,
+"first": 160.0,
+"last": 160.0,
+"sum": 149760.0
+},
+"rr_wear": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_brake_t": {
+"n": 936,
+"first": 521.9071044921875,
+"last": 520.8411254882812,
+"sum": 482983.87005615234
+},
+"rr_susp": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_susp_vel": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_ride": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_surface": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_rps": {
+"n": 936,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+}
+}
+}
+},
+{
+"call": "event",
+"type": "lap_completed",
+"fields": {
+"session_id": 1,
+"lap": 2,
+"game_lap": 1,
+"kind": "flying",
+"complete": true,
+"valid": true,
+"lap_time_s": 93.599,
+"time_source": "official",
+"sectors_s": [
+30.3,
+34.5,
+28.799
+],
+"delta_session_best_s": null,
+"session_best": true,
+"fuel_used_l": 2.6,
+"fuel_left_l": 14.89,
+"fuel_laps_left": 5.7,
+"max_speed_kmh": 217.0,
+"track_c": 26.0,
+"ambient_c": 18.0,
+"position": 2
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 0,
+"lap": 1,
+"name": "leonardo",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": true,
+"time_s": 93.5989990234375,
+"time_source": "official",
+"sectors": [
+30.299999237060547,
+34.5,
+28.798999786376953
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 2,
+"crossed_at_s": 193.7,
+"sim_best_lap_s": 93.5989990234375,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 2,
+"lap": 3,
+"name": "Tyler Groves",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 93.29999923706055,
+"time_source": "sectors",
+"sectors": [
+30.299999237060547,
+34.29999923706055,
+28.700000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 1,
+"crossed_at_s": 224.5,
+"sim_best_lap_s": 93.30000305175781,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 1,
+"lap": 3,
+"name": "Pol Riera",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 95.0,
+"time_source": "official",
+"sectors": [
+30.799999237060547,
+34.900001525878906,
+29.299999237060547
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 3,
+"crossed_at_s": 259.2,
+"sim_best_lap_s": 95.0,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_lap",
+"n_rows": 927,
+"params": {
+"lap_type": "flying",
+"on_track": true,
+"time_s": 92.6989974975586,
+"valid": true,
+"time_source": "official",
+"measured_time_s": 92.59915924072266,
+"started_at": "ISO",
+"sim_lap": 2,
+"fuel_start_l": 14.888166189193726,
+"fuel_used_l": 2.597719430923462,
+"max_speed_kmh": 219.18912506103516,
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+},
+"sectors": [
+{
+"time_s": 30.0
+},
+{
+"time_s": 34.099998474121094
+},
+{
+"time_s": 28.5989990234375
+}
+],
+"channels": {
+"t": {
+"n": 927,
+"first": 0.0,
+"last": 92.59915924072266,
+"sum": 42919.87972535938
+},
+"dist": {
+"n": 927,
+"first": 3.6185553073883057,
+"last": 4316.75439453125,
+"sum": 2058656.6677000523
+},
+"speed": {
+"n": 927,
+"first": 171.77346801757812,
+"last": 172.756103515625,
+"sum": 155444.49752807617
+},
+"throttle": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"brake": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"clutch": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"steer": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"gear": {
+"n": 927,
+"first": 4.0,
+"last": 4.0,
+"sum": 3961.0
+},
+"rpm": {
+"n": 927,
+"first": 4953.20361328125,
+"last": 4982.68310546875,
+"sum": 4212284.927490234
+},
+"g_lat": {
+"n": 927,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_long": {
+"n": 927,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_vert": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"x": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"y": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"z": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fuel": {
+"n": 927,
+"first": 14.888166427612305,
+"last": 12.290447235107422,
+"sum": 12563.460946083069
+},
+"abs": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"tc": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"invalid": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"pit_mode": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_t_in": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"fl_t_mid": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"fl_t_out": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"fl_t_carcass": {
+"n": 927,
+"first": 82.17733001708984,
+"last": 82.27559661865234,
+"sum": 75799.44821929932
+},
+"fl_t_air": {
+"n": 927,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -253210.04434204102
+},
+"fl_pressure": {
+"n": 927,
+"first": 165.0,
+"last": 165.0,
+"sum": 152955.0
+},
+"fl_wear": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_brake_t": {
+"n": 927,
+"first": 521.7734375,
+"last": 522.756103515625,
+"sum": 479894.4966430664
+},
+"fl_susp": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_susp_vel": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_ride": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_surface": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_rps": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_t_in": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"fr_t_mid": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"fr_t_out": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"fr_t_carcass": {
+"n": 927,
+"first": 82.17733001708984,
+"last": 82.27559661865234,
+"sum": 75799.44821929932
+},
+"fr_t_air": {
+"n": 927,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -253210.04434204102
+},
+"fr_pressure": {
+"n": 927,
+"first": 165.0,
+"last": 165.0,
+"sum": 152955.0
+},
+"fr_wear": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_brake_t": {
+"n": 927,
+"first": 521.7734375,
+"last": 522.756103515625,
+"sum": 479894.4966430664
+},
+"fr_susp": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_susp_vel": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_ride": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_surface": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_rps": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_t_in": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"rl_t_mid": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"rl_t_out": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"rl_t_carcass": {
+"n": 927,
+"first": 82.17733001708984,
+"last": 82.27559661865234,
+"sum": 75799.44821929932
+},
+"rl_t_air": {
+"n": 927,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -253210.04434204102
+},
+"rl_pressure": {
+"n": 927,
+"first": 160.0,
+"last": 160.0,
+"sum": 148320.0
+},
+"rl_wear": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_brake_t": {
+"n": 927,
+"first": 521.7734375,
+"last": 522.756103515625,
+"sum": 479894.4966430664
+},
+"rl_susp": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_susp_vel": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_ride": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_surface": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_rps": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_t_in": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"rr_t_mid": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"rr_t_out": {
+"n": 927,
+"first": 87.1773452758789,
+"last": 87.2756118774414,
+"sum": 80434.44969177246
+},
+"rr_t_carcass": {
+"n": 927,
+"first": 82.17733001708984,
+"last": 82.27559661865234,
+"sum": 75799.44821929932
+},
+"rr_t_air": {
+"n": 927,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -253210.04434204102
+},
+"rr_pressure": {
+"n": 927,
+"first": 160.0,
+"last": 160.0,
+"sum": 148320.0
+},
+"rr_wear": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_brake_t": {
+"n": 927,
+"first": 521.7734375,
+"last": 522.756103515625,
+"sum": 479894.4966430664
+},
+"rr_susp": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_susp_vel": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_ride": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_surface": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_rps": {
+"n": 927,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+}
+}
+}
+},
+{
+"call": "event",
+"type": "lap_completed",
+"fields": {
+"session_id": 1,
+"lap": 3,
+"game_lap": 2,
+"kind": "flying",
+"complete": true,
+"valid": true,
+"lap_time_s": 92.699,
+"time_source": "official",
+"sectors_s": [
+30.0,
+34.1,
+28.599
+],
+"delta_session_best_s": -0.9,
+"session_best": true,
+"fuel_used_l": 2.6,
+"fuel_left_l": 12.29,
+"fuel_laps_left": 4.7,
+"max_speed_kmh": 219.2,
+"track_c": 26.0,
+"ambient_c": 18.0,
+"position": 1
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 0,
+"lap": 2,
+"name": "leonardo",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": true,
+"time_s": 92.6989974975586,
+"time_source": "official",
+"sectors": [
+30.0,
+34.099998474121094,
+28.5989990234375
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 1,
+"crossed_at_s": 286.4,
+"sim_best_lap_s": 92.6989974975586,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 2,
+"lap": 4,
+"name": "Tyler Groves",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 93.4000015258789,
+"time_source": "official",
+"sectors": [
+30.299999237060547,
+34.400001525878906,
+28.700000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 2,
+"crossed_at_s": 317.9,
+"sim_best_lap_s": 93.30000305175781,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 1,
+"lap": 4,
+"name": "Pol Riera",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 95.0,
+"time_source": "sectors",
+"sectors": [
+30.799999237060547,
+35.0,
+29.200000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 3,
+"crossed_at_s": 354.2,
+"sim_best_lap_s": 95.0,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_lap",
+"n_rows": 945,
+"params": {
+"lap_type": "flying",
+"on_track": true,
+"time_s": 94.4990005493164,
+"valid": false,
+"time_source": "official",
+"measured_time_s": 94.39913177490234,
+"started_at": "ISO",
+"sim_lap": 3,
+"fuel_start_l": 12.287540435791016,
+"fuel_used_l": 2.5957107543945312,
+"max_speed_kmh": 214.85147552490236,
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+},
+"sectors": [
+{
+"time_s": 30.600000381469727
+},
+{
+"time_s": 34.79999923706055
+},
+{
+"time_s": 29.099000930786133
+}
+],
+"channels": {
+"t": {
+"n": 945,
+"first": 0.0,
+"last": 94.39913177490234,
+"sum": 44603.764330767095
+},
+"dist": {
+"n": 945,
+"first": 4.679629802703857,
+"last": 4314.47265625,
+"sum": 2098112.922396183
+},
+"speed": {
+"n": 945,
+"first": 173.70846557617188,
+"last": 168.91224670410156,
+"sum": 155326.2445449829
+},
+"throttle": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"brake": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"clutch": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"steer": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"gear": {
+"n": 945,
+"first": 4.0,
+"last": 4.0,
+"sum": 3941.0
+},
+"rpm": {
+"n": 945,
+"first": 5011.25439453125,
+"last": 4867.3671875,
+"sum": 4301737.3369140625
+},
+"g_lat": {
+"n": 945,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_long": {
+"n": 945,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_vert": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"x": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"y": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"z": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fuel": {
+"n": 945,
+"first": 12.287540435791016,
+"last": 9.691829681396484,
+"sum": 10350.7309217453
+},
+"abs": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"tc": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"invalid": {
+"n": 945,
+"first": 0.0,
+"last": 1.0,
+"sum": 530.0
+},
+"pit_mode": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_t_in": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"fl_t_mid": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"fl_t_out": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"fl_t_carcass": {
+"n": 945,
+"first": 82.37084197998047,
+"last": 81.89122772216797,
+"sum": 76957.62294769287
+},
+"fl_t_air": {
+"n": 945,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -258126.74423217773
+},
+"fl_pressure": {
+"n": 945,
+"first": 165.0,
+"last": 165.0,
+"sum": 155925.0
+},
+"fl_wear": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_brake_t": {
+"n": 945,
+"first": 523.70849609375,
+"last": 518.9122314453125,
+"sum": 486076.24502563477
+},
+"fl_susp": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_susp_vel": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_ride": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_surface": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 14.0
+},
+"fl_rps": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_t_in": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"fr_t_mid": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"fr_t_out": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"fr_t_carcass": {
+"n": 945,
+"first": 82.37084197998047,
+"last": 81.89122772216797,
+"sum": 76957.62294769287
+},
+"fr_t_air": {
+"n": 945,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -258126.74423217773
+},
+"fr_pressure": {
+"n": 945,
+"first": 165.0,
+"last": 165.0,
+"sum": 155925.0
+},
+"fr_wear": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_brake_t": {
+"n": 945,
+"first": 523.70849609375,
+"last": 518.9122314453125,
+"sum": 486076.24502563477
+},
+"fr_susp": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_susp_vel": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_ride": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_surface": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_rps": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_t_in": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"rl_t_mid": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"rl_t_out": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"rl_t_carcass": {
+"n": 945,
+"first": 82.37084197998047,
+"last": 81.89122772216797,
+"sum": 76957.62294769287
+},
+"rl_t_air": {
+"n": 945,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -258126.74423217773
+},
+"rl_pressure": {
+"n": 945,
+"first": 160.0,
+"last": 160.0,
+"sum": 151200.0
+},
+"rl_wear": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_brake_t": {
+"n": 945,
+"first": 523.70849609375,
+"last": 518.9122314453125,
+"sum": 486076.24502563477
+},
+"rl_susp": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_susp_vel": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_ride": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_surface": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 14.0
+},
+"rl_rps": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_t_in": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"rr_t_mid": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"rr_t_out": {
+"n": 945,
+"first": 87.370849609375,
+"last": 86.89122772216797,
+"sum": 81682.62442779541
+},
+"rr_t_carcass": {
+"n": 945,
+"first": 82.37084197998047,
+"last": 81.89122772216797,
+"sum": 76957.62294769287
+},
+"rr_t_air": {
+"n": 945,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -258126.74423217773
+},
+"rr_pressure": {
+"n": 945,
+"first": 160.0,
+"last": 160.0,
+"sum": 151200.0
+},
+"rr_wear": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_brake_t": {
+"n": 945,
+"first": 523.70849609375,
+"last": 518.9122314453125,
+"sum": 486076.24502563477
+},
+"rr_susp": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_susp_vel": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_ride": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_surface": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_rps": {
+"n": 945,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+}
+}
+}
+},
+{
+"call": "event",
+"type": "lap_completed",
+"fields": {
+"session_id": 1,
+"lap": 4,
+"game_lap": 3,
+"kind": "flying",
+"complete": true,
+"valid": false,
+"lap_time_s": 94.499,
+"time_source": "official",
+"sectors_s": [
+30.6,
+34.8,
+29.099
+],
+"delta_session_best_s": null,
+"session_best": false,
+"fuel_used_l": 2.6,
+"fuel_left_l": 9.69,
+"fuel_laps_left": 3.7,
+"max_speed_kmh": 214.9,
+"track_c": 26.0,
+"ambient_c": 18.0,
+"position": 1
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 0,
+"lap": 3,
+"name": "leonardo",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": true,
+"time_s": 94.4990005493164,
+"time_source": "official",
+"sectors": [
+30.600000381469727,
+34.79999923706055,
+29.099000930786133
+],
+"valid": false,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 1,
+"crossed_at_s": 380.9,
+"sim_best_lap_s": 92.6989974975586,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 2,
+"lap": 5,
+"name": "Tyler Groves",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 93.30000305175781,
+"time_source": "official",
+"sectors": [
+30.200000762939453,
+34.400001525878906,
+28.700000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 2,
+"crossed_at_s": 411.2,
+"sim_best_lap_s": 93.30000305175781,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 1,
+"lap": 5,
+"name": "Pol Riera",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 95.0,
+"time_source": "sectors",
+"sectors": [
+30.799999237060547,
+35.0,
+29.200000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 3,
+"crossed_at_s": 449.2,
+"sim_best_lap_s": 95.0,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_lap",
+"n_rows": 1129,
+"params": {
+"lap_type": "in",
+"on_track": true,
+"valid": true,
+"started_at": "ISO",
+"sim_lap": 4,
+"fuel_start_l": 9.688988327980042,
+"fuel_used_l": 2.6710939407348633,
+"max_speed_kmh": 216.99747619628906,
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+},
+"sectors": [
+{
+"time_s": 30.399999618530273
+},
+{
+"time_s": 34.400001525878906
+},
+{}
+],
+"channels": {
+"t": {
+"n": 1129,
+"first": 0.0,
+"last": -1.0,
+"sum": 57024.24484529346
+},
+"dist": {
+"n": 1129,
+"first": 2.2900121212005615,
+"last": 120.32373046875,
+"sum": 2342534.6983597577
+},
+"speed": {
+"n": 1129,
+"first": 169.82479858398438,
+"last": 0.0,
+"sum": 159827.9849319458
+},
+"throttle": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"brake": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"clutch": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"steer": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"gear": {
+"n": 1129,
+"first": 4.0,
+"last": 0.0,
+"sum": 3976.0
+},
+"rpm": {
+"n": 1129,
+"first": 4894.744140625,
+"last": 4750.0,
+"sum": 5181039.570068359
+},
+"g_lat": {
+"n": 1129,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_long": {
+"n": 1129,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_vert": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"x": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"y": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"z": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fuel": {
+"n": 1129,
+"first": 9.68898868560791,
+"last": 17.017894744873047,
+"sum": 9683.751120567322
+},
+"abs": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"tc": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"invalid": {
+"n": 1129,
+"first": 0.0,
+"last": 1.0,
+"sum": 60.0
+},
+"pit_mode": {
+"n": 1129,
+"first": 0.0,
+"last": 2.0,
+"sum": 290.0
+},
+"fl_t_in": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"fl_t_mid": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"fl_t_out": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"fl_t_carcass": {
+"n": 1129,
+"first": 81.98247528076172,
+"last": 70.99999237060547,
+"sum": 89727.79512786865
+},
+"fl_t_air": {
+"n": 1129,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -308386.34310913086
+},
+"fl_pressure": {
+"n": 1129,
+"first": 165.0,
+"last": 165.0,
+"sum": 186285.0
+},
+"fl_wear": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_brake_t": {
+"n": 1129,
+"first": 519.8248291015625,
+"last": 410.0,
+"sum": 558577.9855957031
+},
+"fl_susp": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_susp_vel": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_ride": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_surface": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_rps": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_t_in": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"fr_t_mid": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"fr_t_out": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"fr_t_carcass": {
+"n": 1129,
+"first": 81.98247528076172,
+"last": 70.99999237060547,
+"sum": 89727.79512786865
+},
+"fr_t_air": {
+"n": 1129,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -308386.34310913086
+},
+"fr_pressure": {
+"n": 1129,
+"first": 165.0,
+"last": 165.0,
+"sum": 186285.0
+},
+"fr_wear": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_brake_t": {
+"n": 1129,
+"first": 519.8248291015625,
+"last": 410.0,
+"sum": 558577.9855957031
+},
+"fr_susp": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_susp_vel": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_ride": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_surface": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_rps": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_t_in": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"rl_t_mid": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"rl_t_out": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"rl_t_carcass": {
+"n": 1129,
+"first": 81.98247528076172,
+"last": 70.99999237060547,
+"sum": 89727.79512786865
+},
+"rl_t_air": {
+"n": 1129,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -308386.34310913086
+},
+"rl_pressure": {
+"n": 1129,
+"first": 160.0,
+"last": 160.0,
+"sum": 180640.0
+},
+"rl_wear": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_brake_t": {
+"n": 1129,
+"first": 519.8248291015625,
+"last": 410.0,
+"sum": 558577.9855957031
+},
+"rl_susp": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_susp_vel": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_ride": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_surface": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_rps": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_t_in": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"rr_t_mid": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"rr_t_out": {
+"n": 1129,
+"first": 86.98248291015625,
+"last": 76.0,
+"sum": 95372.79846191406
+},
+"rr_t_carcass": {
+"n": 1129,
+"first": 81.98247528076172,
+"last": 70.99999237060547,
+"sum": 89727.79512786865
+},
+"rr_t_air": {
+"n": 1129,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -308386.34310913086
+},
+"rr_pressure": {
+"n": 1129,
+"first": 160.0,
+"last": 160.0,
+"sum": 180640.0
+},
+"rr_wear": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_brake_t": {
+"n": 1129,
+"first": 519.8248291015625,
+"last": 410.0,
+"sum": 558577.9855957031
+},
+"rr_susp": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_susp_vel": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_ride": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_surface": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_rps": {
+"n": 1129,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+}
+}
+}
+},
+{
+"call": "event",
+"type": "lap_completed",
+"fields": {
+"session_id": 1,
+"lap": 5,
+"game_lap": 4,
+"kind": "in",
+"complete": false,
+"valid": true,
+"lap_time_s": null,
+"time_source": null,
+"sectors_s": [
+30.4,
+34.4,
+null
+],
+"delta_session_best_s": null,
+"session_best": false,
+"fuel_used_l": 2.67,
+"fuel_left_l": 7.02,
+"fuel_laps_left": 2.7,
+"max_speed_kmh": 217.0,
+"track_c": 26.0,
+"ambient_c": 18.0,
+"position": 1
+}
+},
+{
+"call": "insert_pit_exit",
+"params": {
+"at": "ISO",
+"fuel_l": 17.02
+}
+},
+{
+"call": "insert_setup",
+"snapshot": {
+"brake_bias_front_pct": 58.0,
+"abs_setting": -1,
+"tc_setting": -1,
+"wings": [
+0.0,
+0.0
+],
+"tyre_compound": [
+"Slick",
+"Slick",
+"Slick",
+"Slick"
+],
+"tyre_pressure_kpa": [
+165.0,
+165.0,
+160.0,
+160.0
+],
+"tyre_carcass_c": [
+71.0,
+71.0,
+71.0,
+71.0
+],
+"ambient_c": 18.0,
+"pressures_cold": false,
+"fuel_l": 17.02,
+"fuel_capacity_l": 40.0
+},
+"params": {
+"taken_at": "ISO",
+"reason": "pit_exit",
+"source": "telemetry",
+"brake_bias_front_pct": 58.0,
+"compound_front": "Slick",
+"compound_rear": "Slick",
+"fuel_l": 17.02
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 2,
+"lap": 6,
+"name": "Tyler Groves",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 93.29999923706055,
+"time_source": "sectors",
+"sectors": [
+30.299999237060547,
+34.29999923706055,
+28.700000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 2,
+"crossed_at_s": 504.5,
+"sim_best_lap_s": 93.30000305175781,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 1,
+"lap": 6,
+"name": "Pol Riera",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 95.0,
+"time_source": "sectors",
+"sectors": [
+30.799999237060547,
+35.0,
+29.200000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 3,
+"crossed_at_s": 544.2,
+"sim_best_lap_s": 95.0,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_lap",
+"n_rows": 971,
+"params": {
+"lap_type": "out",
+"on_track": true,
+"valid": true,
+"started_at": "ISO",
+"sim_lap": 4,
+"fuel_start_l": 17.016890048980713,
+"fuel_used_l": 2.524319887161255,
+"max_speed_kmh": 216.9986572265625,
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+},
+"sectors": [
+{},
+{},
+{}
+],
+"channels": {
+"t": {
+"n": 971,
+"first": -1.0,
+"last": -1.0,
+"sum": -971.0
+},
+"dist": {
+"n": 971,
+"first": 121.99039459228516,
+"last": 4313.23095703125,
+"sum": 2086093.1753845215
+},
+"speed": {
+"n": 971,
+"first": 59.999996185302734,
+"last": 170.34967041015625,
+"sum": 150944.64492797852
+},
+"throttle": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"brake": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"clutch": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"steer": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"gear": {
+"n": 971,
+"first": 1.0,
+"last": 4.0,
+"sum": 3792.0
+},
+"rpm": {
+"n": 971,
+"first": 4750.0,
+"last": 4910.48974609375,
+"sum": 4430739.357910156
+},
+"g_lat": {
+"n": 971,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_long": {
+"n": 971,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_vert": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"x": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"y": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"z": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fuel": {
+"n": 971,
+"first": 17.016889572143555,
+"last": 14.492569923400879,
+"sum": 15338.32437324524
+},
+"abs": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"tc": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"invalid": {
+"n": 971,
+"first": 1.0,
+"last": 1.0,
+"sum": 971.0
+},
+"pit_mode": {
+"n": 971,
+"first": 3.0,
+"last": 0.0,
+"sum": 252.0
+},
+"fl_t_in": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"fl_t_mid": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"fl_t_out": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"fl_t_carcass": {
+"n": 971,
+"first": 70.99999237060547,
+"last": 82.03496551513672,
+"sum": 78209.46283721924
+},
+"fl_t_air": {
+"n": 971,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -265228.6440734863
+},
+"fl_pressure": {
+"n": 971,
+"first": 165.0,
+"last": 165.0,
+"sum": 160215.0
+},
+"fl_wear": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_brake_t": {
+"n": 971,
+"first": 410.0,
+"last": 520.3496704101562,
+"sum": 490794.64599609375
+},
+"fl_susp": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_susp_vel": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_ride": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_surface": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_rps": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_t_in": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"fr_t_mid": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"fr_t_out": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"fr_t_carcass": {
+"n": 971,
+"first": 70.99999237060547,
+"last": 82.03496551513672,
+"sum": 78209.46283721924
+},
+"fr_t_air": {
+"n": 971,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -265228.6440734863
+},
+"fr_pressure": {
+"n": 971,
+"first": 165.0,
+"last": 165.0,
+"sum": 160215.0
+},
+"fr_wear": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_brake_t": {
+"n": 971,
+"first": 410.0,
+"last": 520.3496704101562,
+"sum": 490794.64599609375
+},
+"fr_susp": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_susp_vel": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_ride": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_surface": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_rps": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_t_in": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"rl_t_mid": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"rl_t_out": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"rl_t_carcass": {
+"n": 971,
+"first": 70.99999237060547,
+"last": 82.03496551513672,
+"sum": 78209.46283721924
+},
+"rl_t_air": {
+"n": 971,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -265228.6440734863
+},
+"rl_pressure": {
+"n": 971,
+"first": 160.0,
+"last": 160.0,
+"sum": 155360.0
+},
+"rl_wear": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_brake_t": {
+"n": 971,
+"first": 410.0,
+"last": 520.3496704101562,
+"sum": 490794.64599609375
+},
+"rl_susp": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_susp_vel": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_ride": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_surface": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_rps": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_t_in": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"rr_t_mid": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"rr_t_out": {
+"n": 971,
+"first": 76.0,
+"last": 87.03496551513672,
+"sum": 83064.46451568604
+},
+"rr_t_carcass": {
+"n": 971,
+"first": 70.99999237060547,
+"last": 82.03496551513672,
+"sum": 78209.46283721924
+},
+"rr_t_air": {
+"n": 971,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -265228.6440734863
+},
+"rr_pressure": {
+"n": 971,
+"first": 160.0,
+"last": 160.0,
+"sum": 155360.0
+},
+"rr_wear": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_brake_t": {
+"n": 971,
+"first": 410.0,
+"last": 520.3496704101562,
+"sum": 490794.64599609375
+},
+"rr_susp": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_susp_vel": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_ride": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_surface": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_rps": {
+"n": 971,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+}
+}
+}
+},
+{
+"call": "event",
+"type": "lap_completed",
+"fields": {
+"session_id": 1,
+"lap": 6,
+"game_lap": 4,
+"kind": "out",
+"complete": false,
+"valid": true,
+"lap_time_s": null,
+"time_source": null,
+"sectors_s": [
+null,
+null,
+null
+],
+"delta_session_best_s": null,
+"session_best": false,
+"fuel_used_l": 2.52,
+"fuel_left_l": 14.49,
+"fuel_laps_left": 5.6,
+"max_speed_kmh": 217.0,
+"track_c": 26.0,
+"ambient_c": 18.0,
+"position": 1
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 0,
+"lap": 4,
+"name": "leonardo",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": true,
+"sectors": [
+30.399999618530273,
+34.400001525878906,
+null
+],
+"valid": false,
+"pit": true,
+"pit_stops": 1,
+"from_line": true,
+"position": 1,
+"crossed_at_s": 590.9,
+"sim_best_lap_s": 92.6989974975586,
+"state": "RACING"
+},
+{
+"participant": 2,
+"lap": 7,
+"name": "Tyler Groves",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 93.4000015258789,
+"time_source": "official",
+"sectors": [
+30.299999237060547,
+34.400001525878906,
+28.700000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 2,
+"crossed_at_s": 597.9,
+"sim_best_lap_s": 93.30000305175781,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 1,
+"lap": 7,
+"name": "Pol Riera",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 95.0999984741211,
+"time_source": "official",
+"sectors": [
+30.899999618530273,
+34.900001525878906,
+29.299997329711914
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 3,
+"crossed_at_s": 639.3,
+"sim_best_lap_s": 95.0,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_lap",
+"n_rows": 932,
+"params": {
+"lap_type": "flying",
+"on_track": true,
+"time_s": 93.1989974975586,
+"valid": true,
+"time_source": "official",
+"measured_time_s": 93.09915161132812,
+"started_at": "ISO",
+"sim_lap": 5,
+"fuel_start_l": 14.489704370498657,
+"fuel_used_l": 2.598675489425659,
+"max_speed_kmh": 218.09034118652343,
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+},
+"sectors": [
+{
+"time_s": 30.200000762939453
+},
+{
+"time_s": 34.29999923706055
+},
+{
+"time_s": 28.698997497558594
+}
+],
+"channels": {
+"t": {
+"n": 932,
+"first": 0.0,
+"last": 93.09915161132812,
+"sum": 43384.37549867481
+},
+"dist": {
+"n": 932,
+"first": 1.0887097120285034,
+"last": 4315.77392578125,
+"sum": 2068162.0660270452
+},
+"speed": {
+"n": 932,
+"first": 171.2790985107422,
+"last": 171.7001953125,
+"sum": 155499.9716873169
+},
+"throttle": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"brake": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"clutch": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"steer": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"gear": {
+"n": 932,
+"first": 4.0,
+"last": 4.0,
+"sum": 3958.0
+},
+"rpm": {
+"n": 932,
+"first": 4938.373046875,
+"last": 4951.005859375,
+"sum": 4237099.135986328
+},
+"g_lat": {
+"n": 932,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_long": {
+"n": 932,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_vert": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"x": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"y": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"z": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fuel": {
+"n": 932,
+"first": 14.489704132080078,
+"last": 11.891029357910156,
+"sum": 12259.3913564682
+},
+"abs": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"tc": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"invalid": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"pit_mode": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_t_in": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"fl_t_mid": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"fl_t_out": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"fl_t_carcass": {
+"n": 932,
+"first": 82.12792205810547,
+"last": 82.17000579833984,
+"sum": 76129.99612426758
+},
+"fl_t_air": {
+"n": 932,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -254575.79431152344
+},
+"fl_pressure": {
+"n": 932,
+"first": 165.0,
+"last": 165.0,
+"sum": 153780.0
+},
+"fl_wear": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_brake_t": {
+"n": 932,
+"first": 521.2791137695312,
+"last": 521.7001953125,
+"sum": 481699.9725036621
+},
+"fl_susp": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_susp_vel": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_ride": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_surface": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_rps": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_t_in": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"fr_t_mid": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"fr_t_out": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"fr_t_carcass": {
+"n": 932,
+"first": 82.12792205810547,
+"last": 82.17000579833984,
+"sum": 76129.99612426758
+},
+"fr_t_air": {
+"n": 932,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -254575.79431152344
+},
+"fr_pressure": {
+"n": 932,
+"first": 165.0,
+"last": 165.0,
+"sum": 153780.0
+},
+"fr_wear": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_brake_t": {
+"n": 932,
+"first": 521.2791137695312,
+"last": 521.7001953125,
+"sum": 481699.9725036621
+},
+"fr_susp": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_susp_vel": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_ride": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_surface": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_rps": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_t_in": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"rl_t_mid": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"rl_t_out": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"rl_t_carcass": {
+"n": 932,
+"first": 82.12792205810547,
+"last": 82.17000579833984,
+"sum": 76129.99612426758
+},
+"rl_t_air": {
+"n": 932,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -254575.79431152344
+},
+"rl_pressure": {
+"n": 932,
+"first": 160.0,
+"last": 160.0,
+"sum": 149120.0
+},
+"rl_wear": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_brake_t": {
+"n": 932,
+"first": 521.2791137695312,
+"last": 521.7001953125,
+"sum": 481699.9725036621
+},
+"rl_susp": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_susp_vel": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_ride": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_surface": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_rps": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_t_in": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"rr_t_mid": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"rr_t_out": {
+"n": 932,
+"first": 87.1279067993164,
+"last": 87.1700210571289,
+"sum": 80789.99716186523
+},
+"rr_t_carcass": {
+"n": 932,
+"first": 82.12792205810547,
+"last": 82.17000579833984,
+"sum": 76129.99612426758
+},
+"rr_t_air": {
+"n": 932,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -254575.79431152344
+},
+"rr_pressure": {
+"n": 932,
+"first": 160.0,
+"last": 160.0,
+"sum": 149120.0
+},
+"rr_wear": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_brake_t": {
+"n": 932,
+"first": 521.2791137695312,
+"last": 521.7001953125,
+"sum": 481699.9725036621
+},
+"rr_susp": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_susp_vel": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_ride": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_surface": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_rps": {
+"n": 932,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+}
+}
+}
+},
+{
+"call": "event",
+"type": "lap_completed",
+"fields": {
+"session_id": 1,
+"lap": 7,
+"game_lap": 5,
+"kind": "flying",
+"complete": true,
+"valid": true,
+"lap_time_s": 93.199,
+"time_source": "official",
+"sectors_s": [
+30.2,
+34.3,
+28.699
+],
+"delta_session_best_s": 0.5,
+"session_best": false,
+"fuel_used_l": 2.6,
+"fuel_left_l": 11.89,
+"fuel_laps_left": 4.6,
+"max_speed_kmh": 218.1,
+"track_c": 26.0,
+"ambient_c": 18.0,
+"position": 1
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 0,
+"lap": 5,
+"name": "leonardo",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": true,
+"time_s": 93.1989974975586,
+"time_source": "official",
+"sectors": [
+30.200000762939453,
+34.29999923706055,
+28.698997497558594
+],
+"valid": true,
+"pit": false,
+"pit_stops": 1,
+"from_line": true,
+"position": 1,
+"crossed_at_s": 684.1,
+"sim_best_lap_s": 92.6989974975586,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 2,
+"lap": 8,
+"name": "Tyler Groves",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 93.30000305175781,
+"time_source": "official",
+"sectors": [
+30.200000762939453,
+34.400001525878906,
+28.700000762939453
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 2,
+"crossed_at_s": 691.2,
+"sim_best_lap_s": 93.30000305175781,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_participant_laps",
+"params": {
+"laps": [
+{
+"participant": 1,
+"lap": 8,
+"name": "Pol Riera",
+"car_id": "Ginetta G40 Cup",
+"class_id": "G40Cup",
+"is_player": false,
+"time_s": 95.0,
+"time_source": "official",
+"sectors": [
+30.799999237060547,
+34.900001525878906,
+29.299999237060547
+],
+"valid": true,
+"pit": false,
+"pit_stops": 0,
+"from_line": true,
+"position": 3,
+"crossed_at_s": 734.3,
+"sim_best_lap_s": 95.0,
+"state": "RACING"
+}
+]
+}
+},
+{
+"call": "insert_lap",
+"n_rows": 649,
+"params": {
+"lap_type": "in",
+"on_track": true,
+"valid": true,
+"started_at": "ISO",
+"sim_lap": 6,
+"fuel_start_l": 11.888140439987183,
+"fuel_used_l": 1.806786060333252,
+"max_speed_kmh": 216.9992889404297,
+"conditions": {
+"ambient_c": 18.0,
+"track_c": 26.0,
+"rain": 0.0,
+"wind_speed_ms": 0.0
+},
+"sectors": [
+{
+"time_s": 30.299999237060547
+},
+{},
+{}
+],
+"channels": {
+"t": {
+"n": 649,
+"first": 0.0,
+"last": 64.7995834350586,
+"sum": 21027.554705522954
+},
+"dist": {
+"n": 649,
+"first": 3.6695353984832764,
+"last": 3003.568115234375,
+"sum": 1009937.9391925335
+},
+"speed": {
+"n": 649,
+"first": 172.64195251464844,
+"last": 194.55384826660156,
+"sum": 108168.92098236084
+},
+"throttle": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"brake": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"clutch": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"steer": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"gear": {
+"n": 649,
+"first": 4.0,
+"last": 5.0,
+"sum": 2754.0
+},
+"rpm": {
+"n": 649,
+"first": 4979.25830078125,
+"last": 4586.61572265625,
+"sum": 2949367.6333007812
+},
+"g_lat": {
+"n": 649,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_long": {
+"n": 649,
+"first": -0.0,
+"last": -0.0,
+"sum": 0.0
+},
+"g_vert": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"x": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"y": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"z": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fuel": {
+"n": 649,
+"first": 11.888140678405762,
+"last": 10.081354141235352,
+"sum": 7108.569961547852
+},
+"abs": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"tc": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"invalid": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"pit_mode": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_t_in": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"fl_t_mid": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"fl_t_out": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"fl_t_carcass": {
+"n": 649,
+"first": 82.2641830444336,
+"last": 84.45537567138672,
+"sum": 53001.89116668701
+},
+"fl_t_air": {
+"n": 649,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -177274.34603881836
+},
+"fl_pressure": {
+"n": 649,
+"first": 165.0,
+"last": 165.0,
+"sum": 107085.0
+},
+"fl_wear": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_brake_t": {
+"n": 649,
+"first": 522.6419677734375,
+"last": 544.5538330078125,
+"sum": 335318.92071533203
+},
+"fl_susp": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_susp_vel": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_ride": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_surface": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fl_rps": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_t_in": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"fr_t_mid": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"fr_t_out": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"fr_t_carcass": {
+"n": 649,
+"first": 82.2641830444336,
+"last": 84.45537567138672,
+"sum": 53001.89116668701
+},
+"fr_t_air": {
+"n": 649,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -177274.34603881836
+},
+"fr_pressure": {
+"n": 649,
+"first": 165.0,
+"last": 165.0,
+"sum": 107085.0
+},
+"fr_wear": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_brake_t": {
+"n": 649,
+"first": 522.6419677734375,
+"last": 544.5538330078125,
+"sum": 335318.92071533203
+},
+"fr_susp": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_susp_vel": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_ride": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_surface": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"fr_rps": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_t_in": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"rl_t_mid": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"rl_t_out": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"rl_t_carcass": {
+"n": 649,
+"first": 82.2641830444336,
+"last": 84.45537567138672,
+"sum": 53001.89116668701
+},
+"rl_t_air": {
+"n": 649,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -177274.34603881836
+},
+"rl_pressure": {
+"n": 649,
+"first": 160.0,
+"last": 160.0,
+"sum": 103840.0
+},
+"rl_wear": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_brake_t": {
+"n": 649,
+"first": 522.6419677734375,
+"last": 544.5538330078125,
+"sum": 335318.92071533203
+},
+"rl_susp": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_susp_vel": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_ride": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_surface": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rl_rps": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_t_in": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"rr_t_mid": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"rr_t_out": {
+"n": 649,
+"first": 87.26419830322266,
+"last": 89.45538330078125,
+"sum": 56246.892082214355
+},
+"rr_t_carcass": {
+"n": 649,
+"first": 82.2641830444336,
+"last": 84.45537567138672,
+"sum": 53001.89116668701
+},
+"rr_t_air": {
+"n": 649,
+"first": -273.1499938964844,
+"last": -273.1499938964844,
+"sum": -177274.34603881836
+},
+"rr_pressure": {
+"n": 649,
+"first": 160.0,
+"last": 160.0,
+"sum": 103840.0
+},
+"rr_wear": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_brake_t": {
+"n": 649,
+"first": 522.6419677734375,
+"last": 544.5538330078125,
+"sum": 335318.92071533203
+},
+"rr_susp": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_susp_vel": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_ride": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_surface": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+},
+"rr_rps": {
+"n": 649,
+"first": 0.0,
+"last": 0.0,
+"sum": 0.0
+}
+}
+}
+},
+{
+"call": "event",
+"type": "lap_completed",
+"fields": {
+"session_id": 1,
+"lap": 8,
+"game_lap": 6,
+"kind": "in",
+"complete": false,
+"valid": true,
+"lap_time_s": null,
+"time_source": null,
+"sectors_s": [
+30.3,
+null,
+null
+],
+"delta_session_best_s": null,
+"session_best": false,
+"fuel_used_l": 1.81,
+"fuel_left_l": 10.08,
+"fuel_laps_left": 3.9,
+"max_speed_kmh": 217.0,
+"track_c": 26.0,
+"ambient_c": 18.0,
+"position": 1
+}
+},
+{
+"call": "end_session",
+"params": {
+"ended_at": "ISO"
+}
+},
+{
+"call": "event",
+"type": "session_ended",
+"fields": {
+"session_id": 1,
+"laps": 8,
+"discarded": false
+}
+}
+]

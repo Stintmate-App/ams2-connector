@@ -1,0 +1,29 @@
+[package]
+name = "ams2-connector-window"
+description = "The AMS2 connector's window: a short-lived process that shows the control app's services, options and logs (egui, glow); the tray process never loads it"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[lib]
+name = "ams2_connector_window"
+path = "src/lib.rs"
+
+[dependencies]
+ams2-connector-ui.workspace = true
+ams2-platform.workspace = true
+ams2-i18n.workspace = true
+stintmate-ipc.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+eframe = { version = "0.37", default-features = false, features = ["default_fonts", "glow"] }
+
+[build-dependencies]
+embed-resource = "3"
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -73,6 +73,8 @@ struct Inner {
     managed: bool,
     parent: Option<ParentWatch>,
     window_visible: bool,
+    /// The last request for the window process: a counter and `show`, `logs` or `hide`.
+    window_request: (u64, &'static str),
     exiting: bool,
     tray_available: bool,
     last_parent_check: Instant,
@@ -89,6 +91,7 @@ pub struct ControlApp {
     parent_watch: Box<dyn Fn(u32) -> ParentWatch + Send + Sync>,
     notices_rx: Mutex<Receiver<(String, String, String)>>,
     events_tx: Mutex<Sender<UiEvent>>,
+    latest: Mutex<Option<Snapshot>>,
     events_rx: Mutex<Option<Receiver<UiEvent>>>,
     endpoint: Mutex<Option<Arc<ControlEndpoint>>>,
     board: StatusBoard,
@@ -145,6 +148,7 @@ impl ControlApp {
                 managed: false,
                 parent: None,
                 window_visible: false,
+                window_request: (0, "none"),
                 exiting: false,
                 tray_available: env.tray_available,
                 last_parent_check: Instant::now(),
@@ -157,6 +161,7 @@ impl ControlApp {
             parent_watch: env.parent_watch,
             notices_rx: Mutex::new(nrx),
             events_tx: Mutex::new(etx),
+            latest: Mutex::new(None),
             events_rx: Mutex::new(Some(erx)),
             endpoint: Mutex::new(None),
             board,
@@ -171,7 +176,20 @@ impl ControlApp {
     }
 
     fn emit(&self, ev: UiEvent) {
+        let request = match &ev {
+            UiEvent::ShowWindow => Some("show"),
+            UiEvent::ShowLogs => Some("logs"),
+            UiEvent::HideWindow => Some("hide"),
+            _ => None,
+        };
+        if let Some(action) = request {
+            let mut g = lock(&self.inner);
+            g.window_request = (g.window_request.0 + 1, action);
+        }
         let _ = lock(&self.events_tx).send(ev);
+        if request.is_some() {
+            self.publish();
+        }
     }
 
     fn endpoint(&self) -> Option<Arc<ControlEndpoint>> {
@@ -627,6 +645,13 @@ impl ControlApp {
         lock(&self.inner).cfg.clone()
     }
 
+    /// The snapshot last published (cheap: no recomputation), or a fresh one before the
+    /// first publication. What the tray redraws from every second.
+    pub fn latest_snapshot(&self) -> Snapshot {
+        let latest = lock(&self.latest).clone();
+        latest.unwrap_or_else(|| self.snapshot())
+    }
+
     /// Everything to draw.
     pub fn snapshot(&self) -> Snapshot {
         let mut g = lock(&self.inner);
@@ -654,6 +679,7 @@ impl ControlApp {
             "managed": g.managed,
             "parent_pid": g.parent.as_ref().map(|p| p.pid),
             "window": if g.window_visible { "shown" } else { "hidden" },
+            "window_request": {"seq": g.window_request.0, "action": g.window_request.1},
             "exiting": g.exiting,
             "autostart": self.autostart.is_enabled().ok(),
             "config": g.cfg.to_json(),
@@ -717,6 +743,7 @@ impl ControlApp {
         drop(g);
         ep.set_state(&state);
         ep.set_snapshot(&snap.0);
+        *lock(&self.latest) = Some(snap);
     }
 
     /// An error notice: always on `control.notices`; a tray balloon only when standalone.

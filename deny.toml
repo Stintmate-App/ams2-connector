@@ -19,6 +19,13 @@ allow = [
 ]
 confidence-threshold = 0.9
 
+# The fonts egui embeds (the window process only): the SIL Open Font Licence 1.1 and the Ubuntu
+# Font Licence 1.0 allow redistribution with the notice, which THIRD-PARTY-NOTICES carries.
+# Allowed for this crate only, never in general.
+exceptions = [
+    { allow = ["OFL-1.1", "Ubuntu-font-1.0"], crate = "epaint_default_fonts" },
+]
+
 [advisories]
 version = 2
 yanked = "deny"

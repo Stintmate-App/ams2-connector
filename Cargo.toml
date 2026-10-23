@@ -7,6 +7,7 @@ members = [
     "crates/ams2-i18n",
     "bins/ams2-recorder",
     "bins/ams2-connector-ui",
+    "bins/ams2-connector-window",
     "tools/replay",
     "tools/measure",
 ]
@@ -25,6 +26,7 @@ ams2-shm = { path = "crates/ams2-shm" }
 ams2-core = { path = "crates/ams2-core" }
 ams2-platform = { path = "crates/ams2-platform" }
 ams2-i18n = { path = "crates/ams2-i18n" }
+ams2-connector-ui = { path = "bins/ams2-connector-ui" }
 # Moves to `tag = "v0.2.0"` at PRY-085 cutover.
 stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", rev = "0cb2a9e" }
 stintmate-ipc-check = { git = "https://github.com/Stintmate-App/stintmate-ipc", rev = "0cb2a9e" }

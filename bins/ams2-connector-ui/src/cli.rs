@@ -12,6 +12,7 @@ use ams2_platform::logging::{self, LogConfig};
 use ams2_platform::single::{Names, SingleInstance};
 use ams2_platform::workspace::SystemProbes;
 use std::path::PathBuf;
+use std::sync::mpsc::Receiver;
 use std::time::Duration;
 use stintmate_ipc::keyfile::{KeyFile, KeySource, default_key_path};
 
@@ -26,8 +27,6 @@ pub struct Args {
     pub parent_pid: Option<u32>,
     /// `--register`: write the descriptor and exit.
     pub register: bool,
-    /// `--window`: the window process (U1).
-    pub window: bool,
     /// `--workspace`.
     pub workspace: Option<String>,
     /// `--allow-synced`.
@@ -48,7 +47,6 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
             "--tray" => a.tray = true,
             "--managed" => a.managed = true,
             "--register" => a.register = true,
-            "--window" => a.window = true,
             "--parent-pid" => {
                 let v = it.next().ok_or("--parent-pid needs a value")?;
                 a.parent_pid = Some(v.parse().map_err(|_| "--parent-pid needs a number")?);
@@ -108,14 +106,25 @@ pub fn main(argv: Vec<String>) -> i32 {
     if args.register {
         return register(&args, &ui_exe, &names.ui);
     }
-    if args.window {
-        eprintln!("ams2-connector-ui: the window is not built yet (PRY-057 U1)");
-        return 2;
-    }
     let loc = match location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes) {
         Ok(l) => l,
         Err(e) => {
             eprintln!("{}", e.line());
+            #[cfg(windows)]
+            if !args.managed {
+                let t = Texts::english();
+                let body = format!(
+                    "{}
+
+{}
+
+{}",
+                    t.s("startup.error.title"),
+                    e.line(),
+                    t.s("startup.error.hint")
+                );
+                crate::dialog::error(&t.s("app.name"), &body);
+            }
             return WORKSPACE_ERROR_EXIT;
         }
     };
@@ -157,8 +166,7 @@ pub fn main(argv: Vec<String>) -> i32 {
         autostart: Autostart::new(Box::new(WinRunKey::default()), &ui_exe),
         texts: Texts::load(Some(&loc.workspace)),
         parent_watch: Box::new(crate::managed::ParentWatch::new),
-        // Until the tray exists there is nothing to come back from.
-        tray_available: false,
+        tray_available: tray_available(),
         time: None,
     });
     let events = app.take_events();
@@ -185,17 +193,63 @@ pub fn main(argv: Vec<String>) -> i32 {
     );
     app.start(args.parent_pid.filter(|_| args.managed));
     let ticker = app.spawn_ticker();
-    // Until the UI (U1) attaches, the events are only drained.
-    if let Some(rx) = events {
-        for ev in rx {
-            if ev == UiEvent::Quit {
-                break;
-            }
-        }
+    if let Some(events) = events {
+        run_ui(&app, events, &ui_exe, &loc, &args);
     }
     let _ = ticker.join();
     tracing::info!("AMS2 connector app exited");
     0
+}
+
+#[cfg(windows)]
+fn tray_available() -> bool {
+    crate::tray::tray_available()
+}
+
+#[cfg(not(windows))]
+fn tray_available() -> bool {
+    false
+}
+
+/// The UI of the process: the tray on this thread until the control app quits; the window is
+/// another process, started on demand.
+#[cfg(windows)]
+fn run_ui(
+    app: &std::sync::Arc<ControlApp>,
+    events: Receiver<UiEvent>,
+    ui_exe: &std::path::Path,
+    loc: &location::Location,
+    args: &Args,
+) {
+    use crate::window_host::WindowHost;
+    let host = std::sync::Arc::new(WindowHost::new(
+        WindowHost::sibling_exe(ui_exe),
+        loc.child_args(),
+    ));
+    let show_at_start = !args.tray && !app.config().start_minimized && !args.managed;
+    crate::tray::run(crate::tray::TrayRun {
+        app: app.clone(),
+        events,
+        texts: Texts::load(Some(&loc.workspace)),
+        host,
+        show_at_start,
+    });
+}
+
+/// Without a tray (not Windows) the events are only drained.
+#[cfg(not(windows))]
+fn run_ui(
+    _app: &std::sync::Arc<ControlApp>,
+    events: Receiver<UiEvent>,
+    _ui_exe: &std::path::Path,
+    _loc: &location::Location,
+    _args: &Args,
+) {
+    for ev in events {
+        if ev == UiEvent::Quit {
+            break;
+        }
+    }
 }
 
 #[cfg(test)]

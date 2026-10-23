@@ -98,3 +98,22 @@ working set is mostly the GL driver and fonts; a native UI would be far smaller,
 For U1: keep the off-screen start and the `CancelClose` pattern, set the exit flag before
 `Close`, open the window on demand and `request_repaint` from the services' threads, and test the
 real tray menu click and 150 % scaling at a desk.
+
+## U1 as built (PRY-057, decision D11)
+
+- `ams2-connector-ui.exe`: the tray process. `tray-icon` (menu from `tray_model`, built from the
+  snapshot and tested without a tray) on a plain Win32 message loop, balloons through
+  `Shell_NotifyIconW` (`NIF_INFO`, uID 1: the tray-icon crate numbers icons from 1 and this
+  process has one), a 1 s thread timer to notice the window process ended. No GPU, no egui.
+- `ams2-connector-window.exe`: a **second bin crate** (`bins/ams2-connector-window`), so egui and
+  eframe are in no dependency of the tray crate. It reads `ui.snapshot`, sends `ui.command`,
+  holds a single-instance mutex (`Local\Ams2Connector.Window`), reports `WindowVisible`, and
+  ends when its window closes. "Open" again starts nothing: the control app publishes
+  `window_request {seq, action}` in the snapshot and the window raises itself
+  (`AllowSetForegroundWindow` is granted to its pid by the tray).
+- The off-screen first-frame workaround of finding 1 is not needed: the window process exists to
+  be shown, and eframe shows it after the first painted frame (no empty flash).
+- Icons are drawn in code (`icons.rs`, our own artwork; `build.rs` writes the `.ico`); version
+  resources via `embed-resource`.
+- Measured (release, this PC, own processes, temporary workspace): see the U1 report in the
+  pull request; tooling is `cargo run --release --example tray_probe`.

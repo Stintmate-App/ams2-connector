@@ -22,6 +22,8 @@ const ACQUIRE_GRACE_MS: u32 = 250;
 pub struct Names {
     /// The control app's single-instance mutex.
     pub ui: String,
+    /// The window process's single-instance mutex.
+    pub window: String,
     /// The recorder's single-instance mutex.
     pub recorder: String,
     /// The recorder's stop event.
@@ -32,6 +34,7 @@ impl Default for Names {
     fn default() -> Self {
         Self {
             ui: "Local\\Ams2Connector.UI".into(),
+            window: "Local\\Ams2Connector.Window".into(),
             recorder: "Local\\Ams2Connector.Recorder".into(),
             recorder_stop: "Local\\Ams2Connector.Recorder.Stop".into(),
         }
@@ -53,6 +56,7 @@ impl Names {
         );
         Self {
             ui: format!("Local\\Ams2Connector.{id}.UI"),
+            window: format!("Local\\Ams2Connector.{id}.Window"),
             recorder: format!("Local\\Ams2Connector.{id}.Recorder"),
             recorder_stop: format!("Local\\Ams2Connector.{id}.Recorder.Stop"),
         }

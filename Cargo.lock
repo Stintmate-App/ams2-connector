@@ -2463,7 +2463,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stintmate-ipc"
 version = "0.2.0"
-source = "git+https://github.com/Stintmate-App/stintmate-ipc?rev=f45be37#f45be372887ad7c6df374056c10959ee02087796"
+source = "git+https://github.com/Stintmate-App/stintmate-ipc?tag=v0.2.0#465a89180fc9b86577ac8dbc3f1c15b21500a769"
 dependencies = [
  "bytes",
  "crossbeam-channel",
@@ -2482,7 +2482,7 @@ dependencies = [
 [[package]]
 name = "stintmate-ipc-check"
 version = "0.2.0"
-source = "git+https://github.com/Stintmate-App/stintmate-ipc?rev=f45be37#f45be372887ad7c6df374056c10959ee02087796"
+source = "git+https://github.com/Stintmate-App/stintmate-ipc?tag=v0.2.0#465a89180fc9b86577ac8dbc3f1c15b21500a769"
 dependencies = [
  "bytes",
  "serde_json",

@@ -156,6 +156,12 @@ fn median_ms(ts: &[i64]) -> f64 {
 
 #[test]
 fn one_sample_per_game_frame_phase_locked() {
+    // Real-time: one sample per 90 Hz frame. Shared GitHub-hosted runners skip frames under
+    // load (the workflow sets STINTMATE_SHARED_RUNNER there); runs on a PC or our own runner.
+    if std::env::var_os("STINTMATE_SHARED_RUNNER").is_some_and(|v| !v.is_empty()) {
+        eprintln!("skipped on a shared GitHub-hosted runner: frame timing is not reliable there");
+        return;
+    }
     let r = rig();
     let mut game = Game::start(&r.shm, 90.0);
     r.running();

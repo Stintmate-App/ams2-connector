@@ -27,9 +27,10 @@ ams2-core = { path = "crates/ams2-core" }
 ams2-platform = { path = "crates/ams2-platform" }
 ams2-i18n = { path = "crates/ams2-i18n" }
 ams2-connector-ui = { path = "bins/ams2-connector-ui" }
-# Moves to `tag = "v0.2.0"` at PRY-085 cutover.
-stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", rev = "f45be37" }
-stintmate-ipc-check = { git = "https://github.com/Stintmate-App/stintmate-ipc", rev = "f45be37" }
+# The IPC library, pinned to a release tag like any dependency (CI reads the private repository
+# with a read-only deploy key: .github/workflows/ci.yml).
+stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.2.0" }
+stintmate-ipc-check = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.2.0" }
 windows-sys = "0.61"
 zerocopy = { version = "0.8", features = ["derive", "alloc"] }
 thiserror = "2"

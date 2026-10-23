@@ -23,6 +23,11 @@ ams2-shm = { path = "crates/ams2-shm" }
 ams2-core = { path = "crates/ams2-core" }
 ams2-platform = { path = "crates/ams2-platform" }
 ams2-i18n = { path = "crates/ams2-i18n" }
+windows-sys = "0.61"
+zerocopy = { version = "0.8", features = ["derive", "alloc"] }
+thiserror = "2"
+proptest = "1"
+serde_json = "1"
 
 [profile.release]
 lto = "thin"

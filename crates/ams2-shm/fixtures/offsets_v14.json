@@ -1,0 +1,679 @@
+{
+ "shared_memory_version": 14,
+ "mapping_name": "$pcars2$",
+ "size": 20700,
+ "fields": {
+  "ParticipantInfo.mIsActive": {
+   "offset": 0,
+   "size": 1
+  },
+  "ParticipantInfo.mName": {
+   "offset": 1,
+   "size": 64
+  },
+  "ParticipantInfo.mWorldPosition": {
+   "offset": 68,
+   "size": 12
+  },
+  "ParticipantInfo.mCurrentLapDistance": {
+   "offset": 80,
+   "size": 4
+  },
+  "ParticipantInfo.mRacePosition": {
+   "offset": 84,
+   "size": 4
+  },
+  "ParticipantInfo.mLapsCompleted": {
+   "offset": 88,
+   "size": 4
+  },
+  "ParticipantInfo.mCurrentLap": {
+   "offset": 92,
+   "size": 4
+  },
+  "ParticipantInfo.mCurrentSector": {
+   "offset": 96,
+   "size": 4
+  },
+  "ParticipantInfo": {
+   "offset": 0,
+   "size": 100
+  },
+  "SharedMemory.mVersion": {
+   "offset": 0,
+   "size": 4
+  },
+  "SharedMemory.mBuildVersionNumber": {
+   "offset": 4,
+   "size": 4
+  },
+  "SharedMemory.mGameState": {
+   "offset": 8,
+   "size": 4
+  },
+  "SharedMemory.mSessionState": {
+   "offset": 12,
+   "size": 4
+  },
+  "SharedMemory.mRaceState": {
+   "offset": 16,
+   "size": 4
+  },
+  "SharedMemory.mViewedParticipantIndex": {
+   "offset": 20,
+   "size": 4
+  },
+  "SharedMemory.mNumParticipants": {
+   "offset": 24,
+   "size": 4
+  },
+  "SharedMemory.mParticipantInfo": {
+   "offset": 28,
+   "size": 6400
+  },
+  "SharedMemory.mUnfilteredThrottle": {
+   "offset": 6428,
+   "size": 4
+  },
+  "SharedMemory.mUnfilteredBrake": {
+   "offset": 6432,
+   "size": 4
+  },
+  "SharedMemory.mUnfilteredSteering": {
+   "offset": 6436,
+   "size": 4
+  },
+  "SharedMemory.mUnfilteredClutch": {
+   "offset": 6440,
+   "size": 4
+  },
+  "SharedMemory.mCarName": {
+   "offset": 6444,
+   "size": 64
+  },
+  "SharedMemory.mCarClassName": {
+   "offset": 6508,
+   "size": 64
+  },
+  "SharedMemory.mLapsInEvent": {
+   "offset": 6572,
+   "size": 4
+  },
+  "SharedMemory.mTrackLocation": {
+   "offset": 6576,
+   "size": 64
+  },
+  "SharedMemory.mTrackVariation": {
+   "offset": 6640,
+   "size": 64
+  },
+  "SharedMemory.mTrackLength": {
+   "offset": 6704,
+   "size": 4
+  },
+  "SharedMemory.mNumSectors": {
+   "offset": 6708,
+   "size": 4
+  },
+  "SharedMemory.mLapInvalidated": {
+   "offset": 6712,
+   "size": 1
+  },
+  "SharedMemory.mBestLapTime": {
+   "offset": 6716,
+   "size": 4
+  },
+  "SharedMemory.mLastLapTime": {
+   "offset": 6720,
+   "size": 4
+  },
+  "SharedMemory.mCurrentTime": {
+   "offset": 6724,
+   "size": 4
+  },
+  "SharedMemory.mSplitTimeAhead": {
+   "offset": 6728,
+   "size": 4
+  },
+  "SharedMemory.mSplitTimeBehind": {
+   "offset": 6732,
+   "size": 4
+  },
+  "SharedMemory.mSplitTime": {
+   "offset": 6736,
+   "size": 4
+  },
+  "SharedMemory.mEventTimeRemaining": {
+   "offset": 6740,
+   "size": 4
+  },
+  "SharedMemory.mPersonalFastestLapTime": {
+   "offset": 6744,
+   "size": 4
+  },
+  "SharedMemory.mWorldFastestLapTime": {
+   "offset": 6748,
+   "size": 4
+  },
+  "SharedMemory.mCurrentSector1Time": {
+   "offset": 6752,
+   "size": 4
+  },
+  "SharedMemory.mCurrentSector2Time": {
+   "offset": 6756,
+   "size": 4
+  },
+  "SharedMemory.mCurrentSector3Time": {
+   "offset": 6760,
+   "size": 4
+  },
+  "SharedMemory.mFastestSector1Time": {
+   "offset": 6764,
+   "size": 4
+  },
+  "SharedMemory.mFastestSector2Time": {
+   "offset": 6768,
+   "size": 4
+  },
+  "SharedMemory.mFastestSector3Time": {
+   "offset": 6772,
+   "size": 4
+  },
+  "SharedMemory.mPersonalFastestSector1Time": {
+   "offset": 6776,
+   "size": 4
+  },
+  "SharedMemory.mPersonalFastestSector2Time": {
+   "offset": 6780,
+   "size": 4
+  },
+  "SharedMemory.mPersonalFastestSector3Time": {
+   "offset": 6784,
+   "size": 4
+  },
+  "SharedMemory.mWorldFastestSector1Time": {
+   "offset": 6788,
+   "size": 4
+  },
+  "SharedMemory.mWorldFastestSector2Time": {
+   "offset": 6792,
+   "size": 4
+  },
+  "SharedMemory.mWorldFastestSector3Time": {
+   "offset": 6796,
+   "size": 4
+  },
+  "SharedMemory.mHighestFlagColour": {
+   "offset": 6800,
+   "size": 4
+  },
+  "SharedMemory.mHighestFlagReason": {
+   "offset": 6804,
+   "size": 4
+  },
+  "SharedMemory.mPitMode": {
+   "offset": 6808,
+   "size": 4
+  },
+  "SharedMemory.mPitSchedule": {
+   "offset": 6812,
+   "size": 4
+  },
+  "SharedMemory.mCarFlags": {
+   "offset": 6816,
+   "size": 4
+  },
+  "SharedMemory.mOilTempCelsius": {
+   "offset": 6820,
+   "size": 4
+  },
+  "SharedMemory.mOilPressureKPa": {
+   "offset": 6824,
+   "size": 4
+  },
+  "SharedMemory.mWaterTempCelsius": {
+   "offset": 6828,
+   "size": 4
+  },
+  "SharedMemory.mWaterPressureKPa": {
+   "offset": 6832,
+   "size": 4
+  },
+  "SharedMemory.mFuelPressureKPa": {
+   "offset": 6836,
+   "size": 4
+  },
+  "SharedMemory.mFuelLevel": {
+   "offset": 6840,
+   "size": 4
+  },
+  "SharedMemory.mFuelCapacity": {
+   "offset": 6844,
+   "size": 4
+  },
+  "SharedMemory.mSpeed": {
+   "offset": 6848,
+   "size": 4
+  },
+  "SharedMemory.mRpm": {
+   "offset": 6852,
+   "size": 4
+  },
+  "SharedMemory.mMaxRPM": {
+   "offset": 6856,
+   "size": 4
+  },
+  "SharedMemory.mBrake": {
+   "offset": 6860,
+   "size": 4
+  },
+  "SharedMemory.mThrottle": {
+   "offset": 6864,
+   "size": 4
+  },
+  "SharedMemory.mClutch": {
+   "offset": 6868,
+   "size": 4
+  },
+  "SharedMemory.mSteering": {
+   "offset": 6872,
+   "size": 4
+  },
+  "SharedMemory.mGear": {
+   "offset": 6876,
+   "size": 4
+  },
+  "SharedMemory.mNumGears": {
+   "offset": 6880,
+   "size": 4
+  },
+  "SharedMemory.mOdometerKM": {
+   "offset": 6884,
+   "size": 4
+  },
+  "SharedMemory.mAntiLockActive": {
+   "offset": 6888,
+   "size": 1
+  },
+  "SharedMemory.mLastOpponentCollisionIndex": {
+   "offset": 6892,
+   "size": 4
+  },
+  "SharedMemory.mLastOpponentCollisionMagnitude": {
+   "offset": 6896,
+   "size": 4
+  },
+  "SharedMemory.mBoostActive": {
+   "offset": 6900,
+   "size": 1
+  },
+  "SharedMemory.mBoostAmount": {
+   "offset": 6904,
+   "size": 4
+  },
+  "SharedMemory.mOrientation": {
+   "offset": 6908,
+   "size": 12
+  },
+  "SharedMemory.mLocalVelocity": {
+   "offset": 6920,
+   "size": 12
+  },
+  "SharedMemory.mWorldVelocity": {
+   "offset": 6932,
+   "size": 12
+  },
+  "SharedMemory.mAngularVelocity": {
+   "offset": 6944,
+   "size": 12
+  },
+  "SharedMemory.mLocalAcceleration": {
+   "offset": 6956,
+   "size": 12
+  },
+  "SharedMemory.mWorldAcceleration": {
+   "offset": 6968,
+   "size": 12
+  },
+  "SharedMemory.mExtentsCentre": {
+   "offset": 6980,
+   "size": 12
+  },
+  "SharedMemory.mTyreFlags": {
+   "offset": 6992,
+   "size": 16
+  },
+  "SharedMemory.mTerrain": {
+   "offset": 7008,
+   "size": 16
+  },
+  "SharedMemory.mTyreY": {
+   "offset": 7024,
+   "size": 16
+  },
+  "SharedMemory.mTyreRPS": {
+   "offset": 7040,
+   "size": 16
+  },
+  "SharedMemory.mTyreSlipSpeed": {
+   "offset": 7056,
+   "size": 16
+  },
+  "SharedMemory.mTyreTemp": {
+   "offset": 7072,
+   "size": 16
+  },
+  "SharedMemory.mTyreGrip": {
+   "offset": 7088,
+   "size": 16
+  },
+  "SharedMemory.mTyreHeightAboveGround": {
+   "offset": 7104,
+   "size": 16
+  },
+  "SharedMemory.mTyreLateralStiffness": {
+   "offset": 7120,
+   "size": 16
+  },
+  "SharedMemory.mTyreWear": {
+   "offset": 7136,
+   "size": 16
+  },
+  "SharedMemory.mBrakeDamage": {
+   "offset": 7152,
+   "size": 16
+  },
+  "SharedMemory.mSuspensionDamage": {
+   "offset": 7168,
+   "size": 16
+  },
+  "SharedMemory.mBrakeTempCelsius": {
+   "offset": 7184,
+   "size": 16
+  },
+  "SharedMemory.mTyreTreadTemp": {
+   "offset": 7200,
+   "size": 16
+  },
+  "SharedMemory.mTyreLayerTemp": {
+   "offset": 7216,
+   "size": 16
+  },
+  "SharedMemory.mTyreCarcassTemp": {
+   "offset": 7232,
+   "size": 16
+  },
+  "SharedMemory.mTyreRimTemp": {
+   "offset": 7248,
+   "size": 16
+  },
+  "SharedMemory.mTyreInternalAirTemp": {
+   "offset": 7264,
+   "size": 16
+  },
+  "SharedMemory.mCrashState": {
+   "offset": 7280,
+   "size": 4
+  },
+  "SharedMemory.mAeroDamage": {
+   "offset": 7284,
+   "size": 4
+  },
+  "SharedMemory.mEngineDamage": {
+   "offset": 7288,
+   "size": 4
+  },
+  "SharedMemory.mAmbientTemperature": {
+   "offset": 7292,
+   "size": 4
+  },
+  "SharedMemory.mTrackTemperature": {
+   "offset": 7296,
+   "size": 4
+  },
+  "SharedMemory.mRainDensity": {
+   "offset": 7300,
+   "size": 4
+  },
+  "SharedMemory.mWindSpeed": {
+   "offset": 7304,
+   "size": 4
+  },
+  "SharedMemory.mWindDirectionX": {
+   "offset": 7308,
+   "size": 4
+  },
+  "SharedMemory.mWindDirectionY": {
+   "offset": 7312,
+   "size": 4
+  },
+  "SharedMemory.mCloudBrightness": {
+   "offset": 7316,
+   "size": 4
+  },
+  "SharedMemory.mSequenceNumber": {
+   "offset": 7320,
+   "size": 4
+  },
+  "SharedMemory.mWheelLocalPositionY": {
+   "offset": 7324,
+   "size": 16
+  },
+  "SharedMemory.mSuspensionTravel": {
+   "offset": 7340,
+   "size": 16
+  },
+  "SharedMemory.mSuspensionVelocity": {
+   "offset": 7356,
+   "size": 16
+  },
+  "SharedMemory.mAirPressure": {
+   "offset": 7372,
+   "size": 16
+  },
+  "SharedMemory.mEngineSpeed": {
+   "offset": 7388,
+   "size": 4
+  },
+  "SharedMemory.mEngineTorque": {
+   "offset": 7392,
+   "size": 4
+  },
+  "SharedMemory.mWings": {
+   "offset": 7396,
+   "size": 8
+  },
+  "SharedMemory.mHandBrake": {
+   "offset": 7404,
+   "size": 4
+  },
+  "SharedMemory.mCurrentSector1Times": {
+   "offset": 7408,
+   "size": 256
+  },
+  "SharedMemory.mCurrentSector2Times": {
+   "offset": 7664,
+   "size": 256
+  },
+  "SharedMemory.mCurrentSector3Times": {
+   "offset": 7920,
+   "size": 256
+  },
+  "SharedMemory.mFastestSector1Times": {
+   "offset": 8176,
+   "size": 256
+  },
+  "SharedMemory.mFastestSector2Times": {
+   "offset": 8432,
+   "size": 256
+  },
+  "SharedMemory.mFastestSector3Times": {
+   "offset": 8688,
+   "size": 256
+  },
+  "SharedMemory.mFastestLapTimes": {
+   "offset": 8944,
+   "size": 256
+  },
+  "SharedMemory.mLastLapTimes": {
+   "offset": 9200,
+   "size": 256
+  },
+  "SharedMemory.mLapsInvalidated": {
+   "offset": 9456,
+   "size": 64
+  },
+  "SharedMemory.mRaceStates": {
+   "offset": 9520,
+   "size": 256
+  },
+  "SharedMemory.mPitModes": {
+   "offset": 9776,
+   "size": 256
+  },
+  "SharedMemory.mOrientations": {
+   "offset": 10032,
+   "size": 768
+  },
+  "SharedMemory.mSpeeds": {
+   "offset": 10800,
+   "size": 256
+  },
+  "SharedMemory.mCarNames": {
+   "offset": 11056,
+   "size": 4096
+  },
+  "SharedMemory.mCarClassNames": {
+   "offset": 15152,
+   "size": 4096
+  },
+  "SharedMemory.mEnforcedPitStopLap": {
+   "offset": 19248,
+   "size": 4
+  },
+  "SharedMemory.mTranslatedTrackLocation": {
+   "offset": 19252,
+   "size": 64
+  },
+  "SharedMemory.mTranslatedTrackVariation": {
+   "offset": 19316,
+   "size": 64
+  },
+  "SharedMemory.mBrakeBias": {
+   "offset": 19380,
+   "size": 4
+  },
+  "SharedMemory.mTurboBoostPressure": {
+   "offset": 19384,
+   "size": 4
+  },
+  "SharedMemory.mTyreCompound": {
+   "offset": 19388,
+   "size": 160
+  },
+  "SharedMemory.mPitSchedules": {
+   "offset": 19548,
+   "size": 256
+  },
+  "SharedMemory.mHighestFlagColours": {
+   "offset": 19804,
+   "size": 256
+  },
+  "SharedMemory.mHighestFlagReasons": {
+   "offset": 20060,
+   "size": 256
+  },
+  "SharedMemory.mNationalities": {
+   "offset": 20316,
+   "size": 256
+  },
+  "SharedMemory.mSnowDensity": {
+   "offset": 20572,
+   "size": 4
+  },
+  "SharedMemory.mSessionDuration": {
+   "offset": 20576,
+   "size": 4
+  },
+  "SharedMemory.mSessionAdditionalLaps": {
+   "offset": 20580,
+   "size": 4
+  },
+  "SharedMemory.mTyreTempLeft": {
+   "offset": 20584,
+   "size": 16
+  },
+  "SharedMemory.mTyreTempCenter": {
+   "offset": 20600,
+   "size": 16
+  },
+  "SharedMemory.mTyreTempRight": {
+   "offset": 20616,
+   "size": 16
+  },
+  "SharedMemory.mDrsState": {
+   "offset": 20632,
+   "size": 4
+  },
+  "SharedMemory.mRideHeight": {
+   "offset": 20636,
+   "size": 16
+  },
+  "SharedMemory.mJoyPad0": {
+   "offset": 20652,
+   "size": 4
+  },
+  "SharedMemory.mDPad": {
+   "offset": 20656,
+   "size": 4
+  },
+  "SharedMemory.mAntiLockSetting": {
+   "offset": 20660,
+   "size": 4
+  },
+  "SharedMemory.mTractionControlSetting": {
+   "offset": 20664,
+   "size": 4
+  },
+  "SharedMemory.mErsDeploymentMode": {
+   "offset": 20668,
+   "size": 4
+  },
+  "SharedMemory.mErsAutoModeEnabled": {
+   "offset": 20672,
+   "size": 1
+  },
+  "SharedMemory.mClutchTemp": {
+   "offset": 20676,
+   "size": 4
+  },
+  "SharedMemory.mClutchWear": {
+   "offset": 20680,
+   "size": 4
+  },
+  "SharedMemory.mClutchOverheated": {
+   "offset": 20684,
+   "size": 1
+  },
+  "SharedMemory.mClutchSlipping": {
+   "offset": 20685,
+   "size": 1
+  },
+  "SharedMemory.mYellowFlagState": {
+   "offset": 20688,
+   "size": 4
+  },
+  "SharedMemory.mSessionIsPrivate": {
+   "offset": 20692,
+   "size": 1
+  },
+  "SharedMemory.mLaunchStage": {
+   "offset": 20696,
+   "size": 4
+  },
+  "SharedMemory": {
+   "offset": 0,
+   "size": 20700
+  }
+ }
+}

@@ -28,15 +28,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       # stintmate-ipc is a private repository: a read-only deploy key (secret
-      # STINTMATE_IPC_DEPLOY_KEY) and git over SSH for that one URL; cargo uses the git CLI.
-      - uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.STINTMATE_IPC_DEPLOY_KEY }}
-      # PowerShell: bash is not on the PATH of our runner's service.
+      # STINTMATE_IPC_DEPLOY_KEY) and git over SSH for that one URL; cargo uses the git CLI. No
+      # ssh-agent (its files are not where our runner's ssh looks): the key in the job's temp
+      # folder (gone with the job) and GitHub's published host key pinned.
       - name: Fetch stintmate-ipc over SSH
+        env:
+          DEPLOY_KEY: ${{ secrets.STINTMATE_IPC_DEPLOY_KEY }}
         run: |
-          git config --global url."git@github.com:Stintmate-App/stintmate-ipc".insteadOf "https://github.com/Stintmate-App/stintmate-ipc"
+          $dir = Join-Path $env:RUNNER_TEMP "ssh"
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $key = Join-Path $dir "deploy_key"
+          [IO.File]::WriteAllText($key, ($env:DEPLOY_KEY -replace "`r`n", "`n").Trim() + "`n")
+          icacls $key /inheritance:r /grant:r "${env:USERNAME}:R" | Out-Null
+          $known = Join-Path $dir "known_hosts"
+          [IO.File]::WriteAllText($known, "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl`n")
+          $k = $key.Replace('\', '/'); $h = $known.Replace('\', '/')
+          Add-Content -Path $env:GITHUB_ENV -Value "GIT_SSH_COMMAND=ssh -i '$k' -o IdentitiesOnly=yes -o UserKnownHostsFile='$h' -o StrictHostKeyChecking=yes"
           Add-Content -Path $env:GITHUB_ENV -Value "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+          git config --global url."git@github.com:Stintmate-App/stintmate-ipc".insteadOf "https://github.com/Stintmate-App/stintmate-ipc"
       - name: Toolchain (from rust-toolchain.toml)
         run: |
           rustup toolchain install

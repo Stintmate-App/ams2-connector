@@ -1,0 +1,416 @@
+//! The AMS2 connector's announcement catalog `connector.ams2` (PRY-052, PRY-041).
+//!
+//! The connector never composes user text (application contract 4.4): it declares this catalog
+//! with `pitwall.catalog.declare` at every connection and then sends only a code and its
+//! params (`pitwall.announce`). The catalog is data (`data/catalog.json`, written from the
+//! Python connector's by `scripts/gen_announce_fixtures.py`) in the team's catalog format:
+//! `text` with `{name}` placeholders, `params`, `values` for `enum` params, a `note`, and per
+//! message `audience`, `priority`, `ttl_s`, `kind` and `group`. The source hash of a message and
+//! the idempotency key of the whole catalog are the Python connector's, byte for byte (canonical
+//! JSON: sorted keys, no spaces, no ASCII escaping).
+
+use serde_json::{Map, Value};
+use sha2::{Digest, Sha256};
+use std::sync::OnceLock;
+
+/// The catalog's id.
+pub const CATALOG_ID: &str = "connector.ams2";
+/// Catalog format.
+pub const SCHEMA: &str = "stintmate-catalog/1";
+/// Valid audiences.
+pub const AUDIENCES: [&str; 2] = ["driver", "agent"];
+/// Valid groups (contract 4.4, PRY-058).
+pub const GROUPS: [&str; 11] = [
+    "laps",
+    "fuel",
+    "setup",
+    "flags",
+    "safety_car",
+    "penalties",
+    "race",
+    "rivals",
+    "car",
+    "test",
+    "other",
+];
+/// Valid priorities.
+pub const PRIORITIES: [&str; 3] = ["low", "normal", "high"];
+/// Valid message kinds.
+pub const KINDS: [&str; 2] = ["announcement", "message"];
+/// Smallest `ttl_s`.
+pub const TTL_MIN: i64 = 1;
+/// Largest `ttl_s`.
+pub const TTL_MAX: i64 = 600;
+/// Longest filled text.
+pub const MAX_TEXT: usize = 200;
+/// Longest value a text param is expected to carry when filled (a driver's name).
+pub const TYPICAL_TEXT_PARAM: usize = 32;
+/// Param kinds of the format.
+pub const PARAM_KINDS: [&str; 12] = [
+    "text",
+    "int",
+    "decimal",
+    "gap",
+    "lap_time",
+    "ordinal",
+    "distance_m",
+    "speed",
+    "temperature",
+    "litres",
+    "laps",
+    "enum",
+];
+/// `validation` status of a code only seen in synthetic tests.
+pub const NEEDS_RACE: &str = "needs a real race";
+/// `validation` status of a code tried by hand.
+pub const DESK_TESTED: &str = "desk-tested";
+
+static CATALOG: OnceLock<Value> = OnceLock::new();
+
+/// The whole catalog (parsed once from the embedded data).
+pub fn catalog() -> &'static Value {
+    CATALOG.get_or_init(|| {
+        serde_json::from_str(include_str!("../../data/catalog.json"))
+            .expect("data/catalog.json is valid JSON")
+    })
+}
+
+/// The messages by code.
+pub fn messages() -> &'static Map<String, Value> {
+    catalog()["messages"]
+        .as_object()
+        .expect("the catalog has messages")
+}
+
+/// What has been checked for a code (docs/test.md runs fill this in); `None`: not a code.
+pub fn validation(code: &str) -> Option<&'static str> {
+    match code {
+        "radio_check" | "engineer_test" => Some(DESK_TESTED),
+        c if messages().contains_key(c) => Some(NEEDS_RACE),
+        _ => None,
+    }
+}
+
+/// The catalog's codes, sorted.
+pub fn codes() -> Vec<&'static str> {
+    messages().keys().map(String::as_str).collect()
+}
+
+/// Canonical JSON: sorted keys, no spaces, non-ASCII kept (Python's
+/// `json.dumps(sort_keys=True, separators=(",", ":"), ensure_ascii=False)`).
+pub fn canonical(v: &Value) -> String {
+    serde_json::to_string(v).expect("a JSON value serializes")
+}
+
+/// The first 12 hex digits of the SHA-256 of `text`.
+pub fn sha12(text: &str) -> String {
+    let mut h = hex::encode(Sha256::digest(text.as_bytes()));
+    h.truncate(12);
+    h
+}
+
+fn is_falsy(v: &Value) -> bool {
+    match v {
+        Value::Null => true,
+        Value::Object(m) => m.is_empty(),
+        Value::Array(a) => a.is_empty(),
+        _ => false,
+    }
+}
+
+/// The source hash of a message (catalogs.md section 8): the first 12 hex digits of the SHA-256
+/// of `{"params", "text"[, "values"]}` as canonical JSON.
+pub fn source_hash(message: &Value) -> String {
+    let mut obj = Map::new();
+    let params = match message.get("params") {
+        Some(p) if !is_falsy(p) => p.clone(),
+        _ => Value::Object(Map::new()),
+    };
+    obj.insert("params".into(), params);
+    obj.insert("text".into(), message["text"].clone());
+    if let Some(v) = message.get("values") {
+        obj.insert("values".into(), v.clone());
+    }
+    sha12(&canonical(&Value::Object(obj)))
+}
+
+/// The idempotency key of the catalog declaration: `ams2/textcatalog/<sha12 of the catalog>`.
+pub fn catalog_ik(catalog: &Value) -> String {
+    format!(
+        "{}/textcatalog/{}",
+        crate::CONNECTOR_ID,
+        sha12(&canonical(catalog))
+    )
+}
+
+fn param_kind(spec: &Value) -> Option<&str> {
+    match spec {
+        Value::String(s) => Some(s),
+        Value::Object(m) => m.get("kind").and_then(Value::as_str),
+        _ => None,
+    }
+}
+
+fn is_int(v: &Value) -> bool {
+    v.as_number().is_some_and(|n| n.is_i64() || n.is_u64())
+}
+
+/// `^[a-z][a-z0-9_]{0,31}$`: codes and param names.
+fn valid_name(s: &str) -> bool {
+    let b = s.as_bytes();
+    (1..=32).contains(&b.len())
+        && b[0].is_ascii_lowercase()
+        && b[1..]
+            .iter()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || *c == b'_')
+}
+
+/// The `{name}` placeholders of a text, or `None` when it does not parse (catalogs.md 4.1:
+/// `{{` and `}}` are literal braces, any other brace is an error).
+pub fn placeholders(text: &str) -> Option<Vec<String>> {
+    let b = text.as_bytes();
+    let mut names = Vec::new();
+    let mut i = 0;
+    while i < b.len() {
+        match b[i] {
+            b'{' => {
+                if b.get(i + 1) == Some(&b'{') {
+                    i += 2;
+                    continue;
+                }
+                let end = i + 1 + text[i + 1..].find('}')?;
+                let name = &text[i + 1..end];
+                if !valid_name(name) {
+                    return None;
+                }
+                names.push(name.to_string());
+                i = end + 1;
+            }
+            b'}' => {
+                if b.get(i + 1) == Some(&b'}') {
+                    i += 2;
+                    continue;
+                }
+                return None;
+            }
+            _ => i += 1,
+        }
+    }
+    Some(names)
+}
+
+fn has_control(text: &str) -> bool {
+    text.chars().any(|c| (c as u32) < 0x20 || c as u32 == 0x7F)
+}
+
+/// `None` when `params` fit `code`'s declaration, else an English reason naming the param (the
+/// connector checks before sending; Pitwall refuses the same with `bad_request`).
+pub fn check_params(code: &str, params: &Value, messages: &Map<String, Value>) -> Option<String> {
+    let Some(msg) = messages.get(code) else {
+        return Some(format!("unknown code {code:?}"));
+    };
+    let Some(given) = params.as_object() else {
+        return Some("params must be a map".into());
+    };
+    let empty = Map::new();
+    let declared = msg
+        .get("params")
+        .and_then(Value::as_object)
+        .unwrap_or(&empty);
+    for name in given.keys() {
+        if !declared.contains_key(name) {
+            return Some(format!("param {name:?} is not declared for {code}"));
+        }
+    }
+    for (name, spec) in declared {
+        let Some(value) = given.get(name) else {
+            return Some(format!("param {name:?} is missing for {code}"));
+        };
+        match param_kind(spec) {
+            Some("text") => {
+                if !value.is_string() {
+                    return Some(format!("param {name:?} must be text"));
+                }
+            }
+            Some("int" | "laps") => {
+                if !is_int(value) {
+                    return Some(format!("param {name:?} must be an integer"));
+                }
+            }
+            Some("ordinal") => {
+                if !is_int(value) || value.as_i64().is_none_or(|n| n < 1) {
+                    return Some(format!("param {name:?} must be an integer >= 1"));
+                }
+            }
+            Some("enum") => {
+                let allowed = spec
+                    .get("values")
+                    .and_then(Value::as_array)
+                    .cloned()
+                    .unwrap_or_default();
+                if !allowed.contains(value) {
+                    return Some(format!(
+                        "param {name:?}: {value} is not one of {}",
+                        Value::Array(allowed)
+                    ));
+                }
+            }
+            _ => {
+                if !value
+                    .as_number()
+                    .is_some_and(|n| n.as_f64().is_some_and(f64::is_finite))
+                {
+                    return Some(format!("param {name:?} must be a number"));
+                }
+            }
+        }
+    }
+    None
+}
+
+/// Every problem of a connector catalog, as English lines (empty: valid): the checks of
+/// catalogs.md sections 2-4 and 9 that apply to a source catalog, plus the PRY-052 fields.
+pub fn validate_catalog(catalog: &Value) -> Vec<String> {
+    let mut out = Vec::new();
+    if catalog.get("schema").and_then(Value::as_str) != Some(SCHEMA) {
+        out.push(format!("schema must be {SCHEMA}"));
+    }
+    if catalog.get("catalog").and_then(Value::as_str) != Some(CATALOG_ID) {
+        out.push(format!("catalog must be {CATALOG_ID}"));
+    }
+    if !catalog
+        .get("language")
+        .and_then(Value::as_str)
+        .is_some_and(|s| !s.is_empty())
+    {
+        out.push("language is required".into());
+    }
+    let Some(messages) = catalog
+        .get("messages")
+        .and_then(Value::as_object)
+        .filter(|m| !m.is_empty())
+    else {
+        out.push("messages must be a non-empty map".into());
+        return out;
+    };
+    let empty = Map::new();
+    for (code, msg) in messages {
+        let at = format!("{code}:");
+        if !valid_name(code) {
+            out.push(format!("{at} code does not match ^[a-z][a-z0-9_]{{0,31}}$"));
+        }
+        let Some(msg) = msg.as_object() else {
+            out.push(format!("{at} not a map"));
+            continue;
+        };
+        let Some(text) = msg
+            .get("text")
+            .and_then(Value::as_str)
+            .filter(|t| !t.trim().is_empty())
+        else {
+            out.push(format!("{at} text must be a non-empty string"));
+            continue;
+        };
+        if has_control(text) {
+            out.push(format!("{at} control character in text"));
+        }
+        let params = msg
+            .get("params")
+            .and_then(Value::as_object)
+            .unwrap_or(&empty);
+        match placeholders(text) {
+            None => out.push(format!("{at} bad placeholder")),
+            Some(names) => {
+                let mut used: Vec<&str> = names.iter().map(String::as_str).collect();
+                used.sort_unstable();
+                used.dedup();
+                let declared: Vec<&str> = params.keys().map(String::as_str).collect();
+                if used != declared {
+                    out.push(format!(
+                        "{at} placeholders {used:?} differ from params {declared:?}"
+                    ));
+                }
+            }
+        }
+        let mut filled = text.chars().count();
+        for (name, spec) in params {
+            let kind = param_kind(spec);
+            if !kind.is_some_and(|k| PARAM_KINDS.contains(&k)) {
+                out.push(format!(
+                    "{at} param {name:?} has an unknown kind {:?}",
+                    kind.unwrap_or("None")
+                ));
+                continue;
+            }
+            match kind {
+                Some("text") => filled += TYPICAL_TEXT_PARAM,
+                Some("enum") => {
+                    let allowed: Vec<&str> = spec
+                        .get("values")
+                        .and_then(Value::as_array)
+                        .map(|a| a.iter().filter_map(Value::as_str).collect())
+                        .unwrap_or_default();
+                    let texts = msg
+                        .get("values")
+                        .and_then(|v| v.get(name))
+                        .and_then(Value::as_object);
+                    match texts {
+                        Some(t)
+                            if !allowed.is_empty()
+                                && t.len() == allowed.len()
+                                && allowed.iter().all(|a| t.contains_key(*a)) =>
+                        {
+                            let strs: Vec<&str> = t.values().filter_map(Value::as_str).collect();
+                            filled += strs.iter().map(|s| s.chars().count()).max().unwrap_or(0);
+                            if strs.iter().any(|s| has_control(s)) {
+                                out.push(format!("{at} control character in values of {name:?}"));
+                            }
+                        }
+                        _ => out.push(format!(
+                            "{at} enum {name:?} needs values with a text for each"
+                        )),
+                    }
+                }
+                _ => filled += 8,
+            }
+        }
+        if filled > MAX_TEXT {
+            out.push(format!(
+                "{at} longer than {MAX_TEXT} characters when filled"
+            ));
+        }
+        let in_list = |key: &str, list: &[&str]| {
+            msg.get(key)
+                .and_then(Value::as_str)
+                .is_some_and(|a| list.contains(&a))
+        };
+        if !in_list("audience", &AUDIENCES) {
+            out.push(format!("{at} audience must be one of {AUDIENCES:?}"));
+        }
+        if !in_list("priority", &PRIORITIES) {
+            out.push(format!("{at} priority must be one of {PRIORITIES:?}"));
+        }
+        if !msg
+            .get("ttl_s")
+            .filter(|v| is_int(v))
+            .and_then(Value::as_i64)
+            .is_some_and(|t| (TTL_MIN..=TTL_MAX).contains(&t))
+        {
+            out.push(format!(
+                "{at} ttl_s must be an integer {TTL_MIN}..{TTL_MAX}"
+            ));
+        }
+        if !in_list("group", &GROUPS) {
+            out.push(format!("{at} group must be one of {GROUPS:?}"));
+        }
+        if msg.contains_key("kind") && !in_list("kind", &KINDS) {
+            out.push(format!("{at} kind must be one of {KINDS:?}"));
+        }
+        if let Some(n) = msg.get("note")
+            && !n.as_str().is_some_and(|n| !has_control(n))
+        {
+            out.push(format!("{at} note must be plain text"));
+        }
+    }
+    out
+}

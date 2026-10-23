@@ -2,8 +2,16 @@ name: ci
 
 # Minutes are limited (free organisation, Windows counts double): CI runs by hand only
 # (Actions > ci > Run workflow); every check runs locally before each merge (README, "Building").
+# It runs on the organisation's own Windows runner `stintmate-win` (no GitHub minutes; private
+# repositories and workflow_dispatch only); `windows-latest` is the fallback when it is down.
 on:
   workflow_dispatch:
+    inputs:
+      runner:
+        description: Where to run
+        type: choice
+        options: [stintmate-win, windows-latest]
+        default: stintmate-win
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -13,8 +21,10 @@ permissions:
   contents: read
 
 jobs:
-  rust:
-    runs-on: windows-latest
+  # One job: every job pays the runner's start, and the runner takes one job at a time.
+  ci:
+    runs-on: ${{ inputs.runner == 'windows-latest' && 'windows-latest' || fromJSON('["self-hosted", "stintmate-win"]') }}
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       # stintmate-ipc is a private repository: a read-only deploy key (secret
@@ -36,26 +46,13 @@ jobs:
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace
         env:
-          # Real-time and desktop tests skip themselves on shared GitHub-hosted runners.
+          # Real-time tests skip themselves on GitHub's shared runners (they run on ours).
           STINTMATE_SHARED_RUNNER: ${{ runner.environment == 'github-hosted' && '1' || '' }}
-
-  deny:
-    # The cargo-deny binary (not its Docker action: the container would not see the SSH agent).
-    # The graph is Windows' (deny.toml).
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      # stintmate-ipc is a private repository: a read-only deploy key (secret
-      # STINTMATE_IPC_DEPLOY_KEY) and git over SSH for that one URL; cargo uses the git CLI.
-      - uses: webfactory/ssh-agent@v0.9.1
-        with:
-          ssh-private-key: ${{ secrets.STINTMATE_IPC_DEPLOY_KEY }}
-      - name: Fetch stintmate-ipc over SSH
-        shell: bash
-        run: |
-          git config --global url."git@github.com:Stintmate-App/stintmate-ipc".insteadOf "https://github.com/Stintmate-App/stintmate-ipc"
-          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
-      - uses: taiki-e/install-action@v2
+          # No CI runner has a desktop with OpenGL (ours runs as a service): the window's test skips.
+          STINTMATE_NO_DESKTOP: "1"
+      # cargo-deny: installed on stintmate-win; GitHub's runner installs it here.
+      - if: runner.environment == 'github-hosted'
+        uses: taiki-e/install-action@v2
         with:
           tool: cargo-deny
       - run: cargo deny check licenses advisories bans sources

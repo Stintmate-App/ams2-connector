@@ -88,6 +88,8 @@ fn child(a: &[String]) {
         game_check: Some(Arc::new(|| true)),
         ..Overrides::default()
     };
+    let t0 = Instant::now();
+    ams2_platform::proc::lower_process_priority(); // as the recorder's main does
     let mut rec = Recorder::build(cfg, ov).expect("the recorder builds");
     rec.enable_stats(cap);
     let stop = Arc::new(AtomicBool::new(false));
@@ -100,7 +102,8 @@ fn child(a: &[String]) {
     let st = rec.loop_stats().cloned().unwrap_or_default();
     println!(
         "STATS {}",
-        json!({"periods": st.periods, "ticks": st.ticks})
+        json!({"periods": st.periods, "ticks": st.ticks, "stages": st.stages,
+               "first_frame_s": st.first_frame_at.map(|t| t.duration_since(t0).as_secs_f64())})
     );
 }
 
@@ -466,6 +469,32 @@ fn report(
             pct(&ticks, 0.5) * 1e6,
             pct(&ticks, 0.99) * 1e6,
             ticks[ticks.len() - 1] * 1e6
+        );
+    }
+    let stages: Vec<Vec<f64>> = stats["stages"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .filter_map(|x| serde_json::from_value(x.clone()).ok())
+                .collect()
+        })
+        .unwrap_or_default();
+    if !stages.is_empty() {
+        let names = ["snapshot", "tracker", "live publish", "detector + status"];
+        let parts: Vec<String> = names
+            .iter()
+            .enumerate()
+            .map(|(i, n)| {
+                let v = sorted(stages.iter().filter_map(|s| s.get(i).copied()).collect());
+                format!("{n} {:.1}", pct(&v, 0.5) * 1e6)
+            })
+            .collect();
+        println!("tick stages (median), us: {}", parts.join(", "));
+    }
+    if let Some(f) = stats["first_frame_s"].as_f64() {
+        println!(
+            "start (build + links + mapping) to the first snapshot: {:.1} ms",
+            f * 1e3
         );
     }
 }

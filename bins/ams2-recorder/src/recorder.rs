@@ -79,6 +79,11 @@ pub struct LoopStats {
     pub periods: Vec<f64>,
     /// Seconds one tick took.
     pub ticks: Vec<f64>,
+    /// Seconds per stage of the ticks that saw a frame (QPC probes): snapshot, tracker, live
+    /// publish, detector + status.
+    pub stages: Vec<[f64; 4]>,
+    /// When the first tick with a frame ended (start to first snapshot).
+    pub first_frame_at: Option<Instant>,
 }
 
 struct FnClock(Arc<dyn Fn() -> f64 + Send + Sync>, Option<String>);
@@ -319,6 +324,8 @@ impl Recorder {
         self.stats = Some(LoopStats {
             periods: Vec::with_capacity(capacity),
             ticks: Vec::with_capacity(capacity),
+            stages: Vec::with_capacity(capacity),
+            first_frame_at: None,
         });
     }
 
@@ -401,6 +408,7 @@ impl Recorder {
         let Some(src) = self.source.as_mut() else {
             return;
         };
+        let probe = self.stats.is_some().then(Instant::now);
         let mut new_frame = false;
         match src.snapshot(&mut self.frame) {
             Ok(SnapshotOutcome::Frame(seq)) => {
@@ -431,6 +439,7 @@ impl Recorder {
             self.housekeeping(true);
             return;
         }
+        let t1 = probe.map(|_| Instant::now());
         self.tracker.process(&self.frame, &mut self.sink);
         self.hints
             .in_garage
@@ -438,6 +447,7 @@ impl Recorder {
         self.hints
             .flying
             .store(self.tracker.lap_not_out(), Ordering::Relaxed);
+        let t2 = probe.map(|_| Instant::now());
         if new_frame {
             self.live.publish(
                 &self.frame,
@@ -448,6 +458,7 @@ impl Recorder {
                 },
             );
         }
+        let t3 = probe.map(|_| Instant::now());
         self.sync_key();
         if self.announced_seq != Some(seq) {
             // the detector sees each game frame once
@@ -457,6 +468,15 @@ impl Recorder {
             }
         }
         self.housekeeping(false);
+        if let (Some(t0), Some(t1), Some(t2), Some(t3), Some(s)) =
+            (probe, t1, t2, t3, self.stats.as_mut())
+            && s.stages.len() < s.stages.capacity()
+        {
+            let d = |a: Instant, b: Instant| b.duration_since(a).as_secs_f64();
+            s.first_frame_at.get_or_insert_with(Instant::now);
+            s.stages
+                .push([d(t0, t1), d(t1, t2), d(t2, t3), d(t3, Instant::now())]);
+        }
     }
 
     /// The status, built every 0.5 s (or when forced or something changed) and sent only when it
@@ -481,6 +501,7 @@ impl Recorder {
             std::process::id(),
             self.cfg.hz
         );
+        ams2_platform::proc::raise_thread_priority();
         self.start_links();
         self.housekeeping(true);
         let period = Duration::from_secs_f64(1.0 / self.cfg.hz);

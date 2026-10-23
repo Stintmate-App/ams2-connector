@@ -63,6 +63,7 @@ fn main() {
         no_control: false,
         shm_name: None,
     };
+    ams2_platform::proc::lower_process_priority();
     match Recorder::build(cfg, Overrides::default()) {
         Ok(mut rec) => rec.run(&|| stop.is_set()),
         Err(e) => {

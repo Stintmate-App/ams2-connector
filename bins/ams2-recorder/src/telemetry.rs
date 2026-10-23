@@ -2,7 +2,7 @@
 //!
 //! Produced only while Pitwall subscribes. The thread reads the 4-byte sequence number of its
 //! own read-only view of the mapping once per expected game frame (phase-locked: it sleeps
-//! until the next frame is due, polls every 1 ms once it is due and not there, every 5 ms with
+//! until the next frame is due, polls every 0.25 ms once it is due and not there, every 5 ms with
 //! no frame for two periods) and reads the dozen fields it needs straight from the view. Rules:
 //!
 //! * `t_ns` is taken right after reading a changed sequence number, never at send time;
@@ -35,7 +35,7 @@ use stintmate_ipc::{Error, StreamChannel};
 /// The sequence number while no frame is expected (menus, pause).
 const POLL: f64 = 0.005;
 /// Once the next frame is due and not there yet.
-const DUE_POLL: f64 = 0.001;
+const DUE_POLL: f64 = 0.000_25;
 /// Wake this long after the frame is expected.
 const LATE: f64 = 0.0003;
 /// The expected phase moves this much earlier per frame (re-locks every few frames).
@@ -297,6 +297,7 @@ impl Inner {
 
     /// The sampling loop (see the module docs).
     fn run(&self) {
+        ams2_platform::proc::raise_thread_priority();
         let timer = WaitableTimer::new().ok();
         let sleep = |secs: f64| {
             let d = Duration::from_secs_f64(secs.max(0.0));

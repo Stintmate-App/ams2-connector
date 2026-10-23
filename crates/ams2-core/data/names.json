@@ -1,0 +1,14 @@
+{
+  "sim": "ams2",
+  "sim_name": "Automobilista 2",
+  "classes": {
+    "G40Cup": "Ginetta G40 Cup",
+    "TC60S2": "Touring 60s S2"
+  },
+  "cars": {},
+  "tracks": {},
+  "layouts": {
+    "OultonPark/OultonPark_International": "Oulton Park International",
+    "Road_Atlanta/Road_Atlanta": "Road Atlanta (full course)"
+  }
+}

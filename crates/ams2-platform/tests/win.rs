@@ -54,7 +54,7 @@ fn inheritable(h: HANDLE) -> bool {
 
 #[test]
 fn default_names_are_the_production_ones() {
-    let n = Names::default();
+    let n = Names::production();
     assert_eq!(n.ui, "Local\\Ams2Connector.UI");
     assert_eq!(n.recorder, "Local\\Ams2Connector.Recorder");
     assert_eq!(n.recorder_stop, "Local\\Ams2Connector.Recorder.Stop");
@@ -374,4 +374,19 @@ fn procinfo_sees_this_process_and_its_chain() {
     assert_eq!(chain.first().map(|c| c.0), Some(me));
     assert!(describe_process(Some(me), 4).contains(&me.to_string()));
     assert_eq!(describe_process(None, 4), "unknown");
+}
+
+#[test]
+fn tagged_names_are_separate_from_the_production_ones() {
+    let p = Names::production();
+    let t = Names::tagged("desk1");
+    assert_eq!(t.ui, r"Local\Ams2Connector.Dev-desk1.UI");
+    for (a, b) in [
+        (&p.ui, &t.ui),
+        (&p.window, &t.window),
+        (&p.recorder, &t.recorder),
+        (&p.recorder_stop, &t.recorder_stop),
+    ] {
+        assert_ne!(a, b);
+    }
 }

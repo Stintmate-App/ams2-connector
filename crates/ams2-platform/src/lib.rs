@@ -4,12 +4,14 @@
 //!   connector's data folder;
 //! - [`logging`]: `tracing` to `<data>\<name>.log`, the Python connector's line format,
 //!   non-blocking, with a size cap;
+//! - [`dev`]: the development-only instance tag (`AMS2_CONNECTOR_DEV_INSTANCE`): names and pipes;
 //! - [`single`]: the named mutex (single instance) and the named stop event;
 //! - [`procinfo`]: is a PID alive, and its process chain (for logs);
 //! - [`proc`]: process helpers (image name, start time, kill-on-close job object, spawn
 //!   suspended) and [`game`], the "is AMS2 running" check;
 //! - [`timer`]: the high-resolution waitable timer for the 50 Hz loop.
 
+pub mod dev;
 pub mod location;
 pub mod logging;
 pub mod workspace;

@@ -287,7 +287,7 @@ pub fn main(argv: Vec<String>) -> i32 {
     // Single instance: a second launch asks the running one to show itself (or to be managed).
     let instance = SingleInstance::acquire(&names.ui);
     if !matches!(&instance, Ok(i) if !i.already_running()) {
-        let pipe = stintmate_ipc::naming::pipe_path(crate::ENDPOINT_ID, None).unwrap_or_default();
+        let pipe = ams2_platform::dev::pipe_path(crate::ENDPOINT_ID).unwrap_or_default();
         let (method, params) = match args.parent_pid.filter(|_| args.managed) {
             Some(pid) => ("control.managed", serde_json::json!({"parent_pid": pid})),
             None => ("control.show", serde_json::json!({})),
@@ -362,7 +362,7 @@ fn run_quit(args: &Args, names: &Names) -> i32 {
         .ok()
         .map(|l| l.workspace);
     let key_path = default_key_path(workspace.as_deref());
-    let pipe = stintmate_ipc::naming::pipe_path(crate::ENDPOINT_ID, None).unwrap_or_default();
+    let pipe = ams2_platform::dev::pipe_path(crate::ENDPOINT_ID).unwrap_or_default();
     quit(
         names,
         &pipe,

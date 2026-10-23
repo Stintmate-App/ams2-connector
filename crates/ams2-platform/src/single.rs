@@ -31,7 +31,18 @@ pub struct Names {
 }
 
 impl Default for Names {
+    /// The production names, or the tagged ones when `AMS2_CONNECTOR_DEV_INSTANCE` is set.
     fn default() -> Self {
+        match crate::dev::tag() {
+            Some(t) => Self::tagged(&t),
+            None => Self::production(),
+        }
+    }
+}
+
+impl Names {
+    /// The production names, ignoring `AMS2_CONNECTOR_DEV_INSTANCE`.
+    pub fn production() -> Self {
         Self {
             ui: "Local\\Ams2Connector.UI".into(),
             window: "Local\\Ams2Connector.Window".into(),
@@ -39,9 +50,17 @@ impl Default for Names {
             recorder_stop: "Local\\Ams2Connector.Recorder.Stop".into(),
         }
     }
-}
 
-impl Names {
+    /// The names of the development instance `tag` (see [`crate::dev`]).
+    pub fn tagged(tag: &str) -> Self {
+        Self {
+            ui: format!("Local\\Ams2Connector.Dev-{tag}.UI"),
+            window: format!("Local\\Ams2Connector.Dev-{tag}.Window"),
+            recorder: format!("Local\\Ams2Connector.Dev-{tag}.Recorder"),
+            recorder_stop: format!("Local\\Ams2Connector.Dev-{tag}.Recorder.Stop"),
+        }
+    }
+
     /// Names that no other process uses (process id, clock and a counter in them), for tests.
     pub fn unique(tag: &str) -> Self {
         use std::sync::atomic::{AtomicU32, Ordering};

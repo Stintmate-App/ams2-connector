@@ -76,7 +76,7 @@ fn run() -> i32 {
         return 0;
     }
     let pipe = args.pipe.clone().unwrap_or_else(|| {
-        stintmate_ipc::naming::pipe_path(ams2_connector_ui::ENDPOINT_ID, None).unwrap_or_default()
+        ams2_platform::dev::pipe_path(ams2_connector_ui::ENDPOINT_ID).unwrap_or_default()
     });
     let key_path = args
         .key_file

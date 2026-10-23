@@ -1,0 +1,12 @@
+[package]
+name = "ams2-recorder"
+description = "The AMS2 recorder: reads the game at 50 Hz and records through Pitwall"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]

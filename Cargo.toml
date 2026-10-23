@@ -1,0 +1,29 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/ams2-shm",
+    "crates/ams2-core",
+    "crates/ams2-platform",
+    "crates/ams2-i18n",
+    "bins/ams2-recorder",
+    "bins/ams2-connector-ui",
+]
+
+[workspace.package]
+version = "3.0.0"
+edition = "2024"
+rust-version = "1.88"
+license = "Apache-2.0"
+repository = "https://github.com/Stintmate-App/ams2-connector"
+authors = ["The Stintmate authors"]
+publish = false
+
+[workspace.dependencies]
+ams2-shm = { path = "crates/ams2-shm" }
+ams2-core = { path = "crates/ams2-core" }
+ams2-platform = { path = "crates/ams2-platform" }
+ams2-i18n = { path = "crates/ams2-i18n" }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1

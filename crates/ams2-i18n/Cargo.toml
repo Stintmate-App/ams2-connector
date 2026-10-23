@@ -1,0 +1,12 @@
+[package]
+name = "ams2-i18n"
+description = "The AMS2 connector's texts: the catalogs contract loader and the English catalog"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]

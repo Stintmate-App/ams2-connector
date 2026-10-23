@@ -1,0 +1,12 @@
+[package]
+name = "ams2-connector-ui"
+description = "The AMS2 connector's control app: tray, window and the recorder's supervision"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]

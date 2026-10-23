@@ -1,0 +1,12 @@
+[package]
+name = "ams2-core"
+description = "The connector's logic without Windows or IPC: sessions, laps, announcements, live frame"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]

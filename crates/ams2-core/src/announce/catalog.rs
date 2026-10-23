@@ -93,13 +93,15 @@ pub fn validation(code: &str) -> Option<&'static str> {
 
 /// The catalog's codes, sorted.
 pub fn codes() -> Vec<&'static str> {
-    messages().keys().map(String::as_str).collect()
+    let mut codes: Vec<&str> = messages().keys().map(String::as_str).collect();
+    codes.sort_unstable(); // sorted whatever the JSON map keeps
+    codes
 }
 
 /// Canonical JSON: sorted keys, no spaces, non-ASCII kept (Python's
 /// `json.dumps(sort_keys=True, separators=(",", ":"), ensure_ascii=False)`).
 pub fn canonical(v: &Value) -> String {
-    serde_json::to_string(v).expect("a JSON value serializes")
+    serde_json::to_string(&sorted(v)).expect("a JSON value serializes")
 }
 
 /// The first 12 hex digits of the SHA-256 of `text`.
@@ -448,4 +450,22 @@ pub fn validate_catalog(catalog: &Value) -> Vec<String> {
         }
     }
     out
+}
+
+/// A copy of `v` with every object's keys in sorted order, whatever the `serde_json` map is
+/// (another crate of the build may turn on `preserve_order`).
+fn sorted(v: &Value) -> Value {
+    match v {
+        Value::Object(m) => {
+            let mut keys: Vec<&String> = m.keys().collect();
+            keys.sort();
+            Value::Object(
+                keys.into_iter()
+                    .map(|k| (k.clone(), sorted(&m[k])))
+                    .collect(),
+            )
+        }
+        Value::Array(a) => Value::Array(a.iter().map(sorted).collect()),
+        other => other.clone(),
+    }
 }

@@ -4,7 +4,7 @@
 //! rules of `test_actions.py` / `test_guidance.py` that need no link.
 
 use crate::actions::{actions, actions_ik};
-use crate::announce::catalog::{catalog, catalog_ik, codes, messages, source_hash};
+use crate::announce::catalog::{canonical, catalog, catalog_ik, codes, messages, source_hash};
 use crate::guidance::{items, items_ik};
 use crate::schema_check;
 use serde_json::Value;
@@ -38,7 +38,9 @@ fn catalog_idempotency_key_equals_the_pythons() {
 #[test]
 fn actions_equal_the_pythons_and_so_does_their_key() {
     let p = parity();
-    assert_eq!(actions(), &p["actions"]);
+    // Compared as canonical JSON: a build that turns on `preserve_order` (the conformance
+    // check) does not change what is declared.
+    assert_eq!(canonical(actions()), canonical(&p["actions"]));
     assert_eq!(actions_ik(actions()), p["actions_ik"].as_str().unwrap());
 }
 

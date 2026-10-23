@@ -124,8 +124,8 @@ pub fn source_hash(msg: &Value) -> String {
     if let Some(values) = msg.get("values") {
         obj.insert("values".into(), values.clone());
     }
-    // `Map` is a sorted map (the `preserve_order` feature is off), so the output is canonical.
-    let json = serde_json::to_string(&Value::Object(obj)).unwrap_or_default();
+    // Sorted explicitly: another crate of the build may turn on `preserve_order`.
+    let json = serde_json::to_string(&sorted(&Value::Object(obj))).unwrap_or_default();
     hex::encode(Sha256::digest(json.as_bytes()))[..12].to_string()
 }
 
@@ -394,5 +394,23 @@ pub fn check_file(doc: &Value, folder: &str, catalog: &str) -> Result<(), Reason
     match language {
         Some(l) if l.to_lowercase() == folder.to_lowercase() => Ok(()),
         _ => Err(Reason::LanguageMismatch),
+    }
+}
+
+/// A copy of `v` with every object's keys in sorted order, whatever the `serde_json` map is
+/// (another crate of the build may turn on `preserve_order`).
+pub(crate) fn sorted(v: &Value) -> Value {
+    match v {
+        Value::Object(m) => {
+            let mut keys: Vec<&String> = m.keys().collect();
+            keys.sort();
+            Value::Object(
+                keys.into_iter()
+                    .map(|k| (k.clone(), sorted(&m[k])))
+                    .collect(),
+            )
+        }
+        Value::Array(a) => Value::Array(a.iter().map(sorted).collect()),
+        other => other.clone(),
     }
 }

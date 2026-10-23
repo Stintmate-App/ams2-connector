@@ -66,7 +66,7 @@ hidden, recorder not installed, three runs each.
 | `t_ns` after the frame (median) | <= 0.5 ms | 1.02 / 1.51 / 1.50 | 0.533 / 0.537 / 0.538 | within 0.04 ms |
 | Tick median (with the stage probes) | <= 5 us | 9.4 / 15.4 / 12.7 | 9.6 / 9.8 / 9.4 | **no** |
 | Allocations on the loop, steady state | 0 per tick | not measured | 0 on 23 of 25 ticks; see below | **no** |
-| A 90 s lap encoded + stored | <= 5 ms | not measured | 8.7 ms (2.59 MB file) | **no** |
+| A 90 s lap encoded + stored | <= 5 ms | not measured | 4.7-5.0 ms (1.30 MB file, 4500 samples; `lap_bytes` test) | yes (marginal) |
 | Start to first snapshot (in process) | <= 0.3 s | not measured | 1.8 / 1.8 / 2.0 ms | yes |
 
 Tick stages (QPC probes, median of the ticks that saw a frame): snapshot 2.2 us, tracker
@@ -106,8 +106,9 @@ Tick stages (QPC probes, median of the ticks that saw a frame): snapshot 2.2 us,
   pipe write). Needs a per-thread split next.
 * Tick median: the tracker (4.1 us) and the 20 kB snapshot copy (2.2 us) dominate; skipping
   the live-frame publish while nobody asks would save 1.2 us, not enough on its own.
-* Lap encode + store 8.7 ms for a 2.59 MB file (one sample; the Python baseline wrote 1.30 MB
-  in 12 + 2.1 ms). The file is twice Python's size, so the encoding should be compared with
-  Python's byte for byte before tuning it.
+* Lap encode + store 4.7-5.0 ms for a 1,298,613 byte file (message, value, encode, write, fsync,
+  rename; Python: 1.30 MB in 12 + 2.1 ms). The earlier 2.59 MB / 8.7 ms came from the
+  `lap_write` test, whose synthetic frames never reached the line properly: the saved "lap"
+  held 9000 samples (two laps). The encoding is byte-equal to Python's (`lap_bytes` test).
 * Start to first snapshot is measured inside the process (build, links, mapping, first tick);
   process creation is not included.

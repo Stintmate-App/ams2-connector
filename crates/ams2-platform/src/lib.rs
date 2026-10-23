@@ -1,3 +1,28 @@
-//! Windows helpers of the AMS2 connector: workspace, logging, processes, timers.
+//! Windows helpers of the AMS2 connector, shared by both executables.
 //!
-//! Skeleton (PRY-057 R0): the code arrives in the next tasks.
+//! - [`workspace`]: the Stintmate workspace resolver (contract v1) and [`location`], the
+//!   connector's data folder;
+//! - [`logging`]: `tracing` to `<data>\<name>.log`, the Python connector's line format,
+//!   non-blocking, with a size cap;
+//! - [`single`]: the named mutex (single instance) and the named stop event;
+//! - [`proc`]: process helpers (image name, start time, kill-on-close job object, spawn
+//!   suspended) and [`game`], the "is AMS2 running" check;
+//! - [`timer`]: the high-resolution waitable timer for the 50 Hz loop.
+
+pub mod location;
+pub mod logging;
+pub mod workspace;
+
+#[cfg(windows)]
+pub mod game;
+#[cfg(windows)]
+pub mod proc;
+#[cfg(windows)]
+pub mod single;
+#[cfg(windows)]
+pub mod timer;
+#[cfg(windows)]
+mod win;
+
+#[cfg(windows)]
+pub use win::{OwnedHandle, Win32Error};

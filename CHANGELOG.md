@@ -5,7 +5,9 @@
 - Installer (`installer/ams2-connector.iss`, `scripts/build-installer.ps1`): per user, no
   administrator rights; an unattended mode for Stintmate (`/WORKSPACE`, `/MANAGED`, `/PROGRESS`:
   JSON progress lines, reasons `connector_running`, `no_workspace`, `register_failed`, `disk`),
-  documented in `docs/installer.md`. `cargo deny`, `cargo about` and a `.sha256` are part of the build.
+  documented in `docs/installer.md`. The workspace is checked before anything is copied
+  (`ams2-connector-ui.exe --register --check`); no rollback, a late `--register` failure ends
+  with status 9 and `"installed":true`; unattended runs never close Stintmate. `cargo deny`, `cargo about` and a `.sha256` are part of the build.
 - `AMS2_CONNECTOR_DEV_INSTANCE=<tag>` (development only): a second connector with its own
   mutexes and pipes, for tests next to an installed one.
 

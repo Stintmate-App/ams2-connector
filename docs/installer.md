@@ -17,7 +17,9 @@ itself checks nothing about where it came from.
   run it unmanaged next to Stintmate's own instance. (`ams2-connector-ui.exe` still works when
   started by hand.)
 - Registers the connector with Stintmate: `ams2-connector-ui.exe --register [--workspace <dir>]`
-  writes `<workspace>\connectors\ams2\connector.json`, which is how Stintmate finds it.
+  writes `<workspace>\connectors\ams2\connector.json`, which is how Stintmate finds it. Before
+  copying anything, the same exe (extracted to a temporary folder) runs `--register --check`:
+  exit 0 the descriptor can be written, 3 workspace error, 1 cannot write; it writes nothing else.
 - **Never starts the connector** and never touches the workspace's data (logs, outbox,
   settings). Uninstalling removes the programs and the descriptor, never the data.
 - A **development build** (`scripts\build-installer.ps1 -Dev`, file name `...-dev-setup.exe`)
@@ -43,7 +45,9 @@ AMS2-Connector-<version>-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART ^
 
 The uninstaller (`unins000.exe` in the install folder; the command is in the registry's
 `UninstallString`) takes `/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /MANAGED /PROGRESS` the same
-way. It uses the workspace the installation registered in.
+way. It uses the workspace the installation registered in. Inno's uninstaller runs from a copy
+of itself, so the original process can end **before** the `done` line is written: after it ends,
+wait for the `done` line with a timeout (for example 10 s) before reading the outcome.
 
 ## Progress file
 
@@ -54,13 +58,14 @@ outcome (the process exit status below is the backup).
 
 | Line | When |
 |---|---|
-| `{"stage":"prepare"}` | the setup checks for a running connector and (unattended) for a workspace |
+| `{"stage":"prepare"}` | the setup checks for a running connector and for the workspace (`--register --check`) |
 | `{"stage":"files","done":37,"total":100}` | copying the files (or removing them, in the uninstaller); `done` rises from 0 to 100 and `total` is always 100: it is a percentage, not bytes. A line is written whenever the percentage changes; 0 first, 100 when the files are in place |
 | `{"stage":"register"}` | running `--register` (installer) |
 | `{"stage":"unregister"}` | running `--unregister` (uninstaller) |
 | `{"stage":"done","ok":true}` | finished |
 | `{"stage":"done","ok":true,"warning":"unregister_failed"}` | uninstalled, but the descriptor could not be removed (Stintmate will find a connector that does not start: remove `<workspace>\connectors\ams2\connector.json`) |
-| `{"stage":"done","ok":false,"reason":"..."}` | failed; nothing is left half-installed (see "Failure" below) |
+| `{"stage":"done","ok":false,"reason":"..."}` | failed before anything was copied (or while copying: `disk`) |
+| `{"stage":"done","ok":false,"reason":"register_failed","installed":true}` | the files are installed but `--register` failed (rare: the workspace was checked before the copy) |
 
 A successful install, for example:
 
@@ -79,37 +84,35 @@ A failed one: `{"stage":"prepare"}` then `{"stage":"done","ok":false,"reason":"c
 
 | `reason` | Meaning | Inno Setup exit status |
 |---|---|---|
-| `connector_running` | one of the connector's programs (`ams2-connector-ui.exe`, `ams2-recorder.exe`, `ams2-connector-window.exe`, matched by image path inside the install folder) runs, and with `/MANAGED` the setup does not close it; or it could not be closed | 7 (install), non-zero (uninstall) |
-| `no_workspace` | unattended and no workspace: `/WORKSPACE` names a missing folder, or none is given and neither `STINTMATE_WORKSPACE` nor the pointer file exists (checked before copying anything); or `--register` found the folder unusable (exit 3: not a workspace, inside OneDrive, ...) | 7 when checked before copying; 5 when `--register` fails after copying |
-| `register_failed` | `--register` failed for another reason (exit 1: the descriptor cannot be written) | 5 |
+| `connector_running` | one of the connector's programs (`ams2-connector-ui.exe`, `ams2-recorder.exe`, `ams2-connector-window.exe`, matched by image path inside the install folder) runs and was not closed: with `/MANAGED` the setup never closes it; unattended without `/MANAGED` it only closes an unmanaged one | 7 (install), non-zero (uninstall) |
+| `no_workspace` | unattended and no usable workspace: `/WORKSPACE` names a missing folder, or none is given and neither `STINTMATE_WORKSPACE` nor the pointer file exists, or `--register --check` exits 3 (not a workspace, inside OneDrive, ...). Always checked before copying | 7 |
+| `register_failed` | before copying: `--register --check` exits 1 (the descriptor cannot be written, e.g. `connectors\ams2` is a file). After copying (`"installed":true`): `--register` failed | 7 before copying; 9 installed but not registered |
 | `disk` | the files could not be written (disk full, a locked file, no permission), or the setup was cut short while copying | 4 |
 | `cancelled` | interactive only: the person cancelled before the copy started | 2 |
 
-Exit status 0 is success. Inno Setup reports an `Abort` raised during the installation as 5
-("cancelled during the installation"); the progress file's `reason` tells the real cause, so
-**decide on the progress file**, not on the status.
+Exit status 0 is success. The progress file's `reason` is the authority; the status is the backup.
 
-### Failure leaves nothing behind
+### Nothing is rolled back
 
-A failed `--register` after the files were copied **rolls the installation back** (Inno Setup
-removes what it copied; whether an upgrade also gets its replaced files back is to be verified in the review). Reasoning: a half-installed connector
-that Stintmate cannot find would never start and nobody would notice; failing cleanly lets the
-caller retry. The cheap failures (`connector_running`, a missing workspace) are all checked
-before the first file is touched. After a rolled-back upgrade over a running installation the
-previous version is what remains. For the case of `no_workspace` with files wanted anyway, run
-the setup interactively: it installs and tells the person to finish Stintmate's first run
-(the connector registers itself when it starts).
+Every failure that can be foreseen is found **before the first file is copied**: a running
+connector, no workspace, a workspace whose `connectors\ams2` cannot be written. A failure while
+copying (`disk`) is Inno Setup's own. If `--register` fails after the copy (rare), the files
+stay (a rollback would not restore the files an upgrade replaced), the status is 9 and the done
+line carries `"installed":true`: the caller may run `ams2-connector-ui.exe --register
+--workspace <dir>` itself from the install folder, or run the setup again. For `no_workspace`
+with files wanted anyway, run the setup interactively: it installs and tells the person to finish
+Stintmate's first run (the connector registers itself when it starts).
 
 ## Interactive and silent behaviour
 
 | Run | A connector of this installation is running |
 |---|---|
 | `/MANAGED` (unattended) | fails with `connector_running`; nothing is closed |
-| unattended without `/MANAGED` | `ams2-connector-ui.exe --quit`; when Stintmate manages it (`--quit` exits 4), the installed Stintmate is closed through its documented `stintmate.exe --running` / `--quit-all` **without asking** (an idle Stintmate; a busy one, with a session being recorded, makes the setup fail with `connector_running`) |
-| interactive | the same, but it **asks** before closing Stintmate and, while a session is recorded, offers Retry or Cancel |
+| unattended without `/MANAGED` | `ams2-connector-ui.exe --quit`; an unmanaged connector is closed. When Stintmate manages it (`--quit` exits 4) the setup fails with `connector_running`: **it never closes Stintmate** |
+| interactive | the same, but for a managed connector it **asks** to close the installed Stintmate (`stintmate.exe --running` / `--quit-all`) and, while a session is recorded, offers Retry or Cancel |
 
 Only processes that run from the install folder count; another copy of the connector, or the
-older Python one, is never counted nor stopped. Interactive, when `--register` exits 3 (no
+older Python one, is never counted nor stopped. Interactive, when `--register --check` exits 3 (no
 workspace): an information box ("open Stintmate and finish its first run; the connector
 registers itself when it starts") and the installation succeeds.
 

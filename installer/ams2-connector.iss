@@ -77,6 +77,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: "{#Stage}\ams2-connector-ui.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\ams2-connector-window.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\ams2-recorder.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Extracted to {tmp} by PrepareToInstall, to check the workspace before anything is copied.
+Source: "{#Stage}\ams2-connector-ui.exe"; DestDir: "{tmp}"; Flags: dontcopy
 Source: "{#Stage}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
@@ -100,6 +102,7 @@ var
   ProgressFile: String;   { /PROGRESS=<file>, '' when not asked }
   FailReason: String;     { the "reason" of the done line }
   Started: Boolean;       { the files started to be copied (or removed) }
+  Installed: Boolean;     { the files are installed but --register failed }
   Finished: Boolean;      { the run completed }
   LastPercent: Integer;
   Warning: String;        { a note for the done line of a successful run }
@@ -182,6 +185,12 @@ procedure EmitDone;
 var
   Reason: String;
 begin
+  if Installed and (FailReason <> '') then
+  begin
+    { the files are in place; only the registration failed }
+    Emit('{"stage":"done","ok":false,"reason":' + JsonString(FailReason) + ',"installed":true}');
+    Exit;
+  end;
   if Finished then
   begin
     if Warning <> '' then
@@ -324,14 +333,18 @@ begin
   W := Workspace;
   while (Length(W) > 3) and (W[Length(W)] = '\') do
     Delete(W, Length(W), 1);
+  { a root such as C:\ would escape the closing quote: double its backslash }
+  if (W <> '') and (W[Length(W)] = '\') then
+    W := W + '\';
   if W <> '' then
     Result := ' --workspace "' + W + '"';
 end;
 
 { Leaves none of the connector's programs running, or returns the reason it could not.
   /MANAGED: Stintmate stopped the connector, so one still running is a failure and nothing is
-  closed. Otherwise: ask the control app to exit (--quit); when Stintmate manages it (exit 4),
-  close Stintmate (asking, unless the run is silent) and wait for it to stop the connector. }
+  closed. Otherwise: ask the control app to exit (--quit). A connector Stintmate manages (exit
+  4) is Stintmate's to stop: a silent run fails (it never closes Stintmate), an interactive one
+  asks to close Stintmate and waits for it to stop the connector. }
 function EnsureConnectorStopped(const Workspace: String): String;
 var
   Code: Integer;
@@ -350,8 +363,13 @@ begin
   if FileExists(ExpandConstant('{app}\' + UiName)) then
     if Exec(ExpandConstant('{app}\' + UiName), '--quit' + WorkspaceArgs(Workspace), '', SW_HIDE, ewWaitUntilTerminated, Code) then
       Managed := Code = ExitManaged;
-  if WaitStopped(3) then
+  if (not Managed) and WaitStopped(3) then
     Exit;
+  if IsSilent then
+  begin
+    Result := 'connector_running';
+    Exit;
+  end;
   What := 'continue the installation';
   if IsUninstaller then
     What := 'remove the AMS2 connector';
@@ -419,7 +437,22 @@ begin
   EmitDone;
 end;
 
+{ Checks the workspace before anything is copied: the new control app, extracted to the temp folder, runs
+  --register --check (resolves the workspace, creates and removes a test file where the
+  descriptor goes, writes nothing else). Returns its exit status, or 1 when it cannot run. }
+function CheckWorkspace(const Workspace: String): Integer;
+var
+  Code: Integer;
+begin
+  ExtractTemporaryFile(UiName);
+  if not Exec(ExpandConstant('{tmp}\' + UiName), '--register --check' + WorkspaceArgs(Workspace), '', SW_HIDE, ewWaitUntilTerminated, Code) then
+    Code := 1;
+  Result := Code;
+end;
+
 function PrepareToInstall(var NeedsRestart: Boolean): String;
+var
+  Check: Integer;
 begin
   Result := '';
   Emit('{"stage":"prepare"}');
@@ -427,6 +460,19 @@ begin
   begin
     FailReason := 'no_workspace';
     Result := 'No Stintmate workspace was found (/WORKSPACE, or the one Stintmate saved).';
+    Exit;
+  end;
+  Check := CheckWorkspace(CmdValue('WORKSPACE'));
+  if (Check = ExitWorkspaceError) and WizardSilent then
+  begin
+    FailReason := 'no_workspace';
+    Result := 'The Stintmate workspace is not usable (/WORKSPACE, or the one Stintmate saved).';
+    Exit;
+  end;
+  if (Check <> 0) and (Check <> ExitWorkspaceError) then
+  begin
+    FailReason := 'register_failed';
+    Result := 'The connector''s folder in the Stintmate workspace (connectors\ams2) cannot be written. Nothing was installed.';
     Exit;
   end;
   FailReason := EnsureConnectorStopped(CmdValue('WORKSPACE'));
@@ -463,7 +509,9 @@ begin
   if Code = 0 then
   begin
     if Workspace <> '' then
-      RememberWorkspace(Workspace);
+      RememberWorkspace(Workspace)
+    else
+      ForgetWorkspace;   { registered through the pointer: the uninstaller resolves it itself }
     Exit;
   end;
   if (Code = ExitWorkspaceError) and not WizardSilent then
@@ -473,14 +521,23 @@ begin
       'No Stintmate workspace was found yet. Open Stintmate and finish its first run; the connector registers itself when it starts.', mbInformation, MB_OK);
     Exit;
   end;
+  { rare, the workspace was checked before the copy: the files stay (Abort cannot undo them) and
+    the run ends with exit status 9 and "installed":true }
+  Installed := True;
   if Code = ExitWorkspaceError then
     FailReason := 'no_workspace'
   else
     FailReason := 'register_failed';
   if not WizardSilent then
-    MsgBox('The AMS2 connector could not be registered with Stintmate (code ' + IntToStr(Code) + '). Nothing was installed. See the log in the workspace folder connectors\ams2, or run the setup again.', mbCriticalError, MB_OK);
-  { Abort during the installation rolls it back: no half-installed connector is left behind }
-  Abort;
+    MsgBox('The AMS2 connector is installed, but it could not be registered with Stintmate (code ' + IntToStr(Code) + '). Run the setup again, or start the connector once: it registers itself. See the log in the workspace folder connectors\ams2.', mbCriticalError, MB_OK);
+end;
+
+function GetCustomSetupExitCode: Integer;
+begin
+  if Installed and (FailReason <> '') then
+    Result := 9
+  else
+    Result := 0;
 end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
@@ -488,6 +545,7 @@ begin
   if CurStep = ssInstall then
   begin
     Started := True;
+    LastPercent := 0;     { the 0 line is written here; progress adds one line per change }
     EmitFiles(0);
   end
   else if CurStep = ssPostInstall then

@@ -32,11 +32,11 @@ jobs:
       - uses: webfactory/ssh-agent@v0.9.1
         with:
           ssh-private-key: ${{ secrets.STINTMATE_IPC_DEPLOY_KEY }}
+      # PowerShell: bash is not on the PATH of our runner's service.
       - name: Fetch stintmate-ipc over SSH
-        shell: bash
         run: |
           git config --global url."git@github.com:Stintmate-App/stintmate-ipc".insteadOf "https://github.com/Stintmate-App/stintmate-ipc"
-          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
+          Add-Content -Path $env:GITHUB_ENV -Value "CARGO_NET_GIT_FETCH_WITH_CLI=true"
       - name: Toolchain (from rust-toolchain.toml)
         run: |
           rustup toolchain install

@@ -38,6 +38,11 @@ fn parse(rest: Vec<String>) -> Result<Args, String> {
 }
 
 fn main() {
+    if std::env::args().nth(1).as_deref() == Some("--version") {
+        ams2_platform::console::attach_parent_output();
+        println!("ams2-connector-window {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
     std::process::exit(run());
 }
 

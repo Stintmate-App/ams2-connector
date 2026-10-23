@@ -50,3 +50,6 @@ rmp-serde = "1"
 [profile.release]
 lto = "thin"
 codegen-units = 1
+# Symbols stripped from release binaries; unwinding stays (no panic = "abort"): a panic in a
+# thread is caught and logged by the panic hook.
+strip = "symbols"

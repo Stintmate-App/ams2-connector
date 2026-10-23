@@ -35,9 +35,9 @@ BEGIN
     BLOCK "040904B0"
     BEGIN
       VALUE "CompanyName", "Stintmate\0"
-      VALUE "FileDescription", "AMS2 connector\0"
+      VALUE "FileDescription", "AMS2 connector window\0"
       VALUE "FileVersion", "{version}\0"
-      VALUE "InternalName", "ams2-connector-ui\0"
+      VALUE "InternalName", "ams2-connector-window\0"
       VALUE "LegalCopyright", "Apache-2.0\0"
       VALUE "OriginalFilename", "ams2-connector-window.exe\0"
       VALUE "ProductName", "Stintmate AMS2 connector\0"

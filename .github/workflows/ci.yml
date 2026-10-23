@@ -19,6 +19,16 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+      # stintmate-ipc is a private repository: a read-only deploy key (secret
+      # STINTMATE_IPC_DEPLOY_KEY) and git over SSH for that one URL; cargo uses the git CLI.
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.STINTMATE_IPC_DEPLOY_KEY }}
+      - name: Fetch stintmate-ipc over SSH
+        shell: bash
+        run: |
+          git config --global url."git@github.com:Stintmate-App/stintmate-ipc".insteadOf "https://github.com/Stintmate-App/stintmate-ipc"
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
       - name: Toolchain (from rust-toolchain.toml)
         run: |
           rustup toolchain install
@@ -29,10 +39,22 @@ jobs:
       - run: cargo test --workspace
 
   deny:
-    # cargo-deny-action is a Docker action: Linux runners only. The graph is Windows' (deny.toml).
+    # The cargo-deny binary (not its Docker action: the container would not see the SSH agent).
+    # The graph is Windows' (deny.toml).
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: EmbarkStudios/cargo-deny-action@v2
+      # stintmate-ipc is a private repository: a read-only deploy key (secret
+      # STINTMATE_IPC_DEPLOY_KEY) and git over SSH for that one URL; cargo uses the git CLI.
+      - uses: webfactory/ssh-agent@v0.9.1
         with:
-          command: check licenses advisories bans sources
+          ssh-private-key: ${{ secrets.STINTMATE_IPC_DEPLOY_KEY }}
+      - name: Fetch stintmate-ipc over SSH
+        shell: bash
+        run: |
+          git config --global url."git@github.com:Stintmate-App/stintmate-ipc".insteadOf "https://github.com/Stintmate-App/stintmate-ipc"
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-deny
+      - run: cargo deny check licenses advisories bans sources

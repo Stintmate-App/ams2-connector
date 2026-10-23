@@ -899,7 +899,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -1255,7 +1255,7 @@ checksum = "3640c1c38b8e4e43584d8df18be5fc6b0aa314ce6ebf51b53313d4306cca8e46"
 dependencies = [
  "hermit-abi",
  "libc",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2237,7 +2237,7 @@ dependencies = [
  "errno",
  "libc",
  "linux-raw-sys 0.12.1",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2463,7 +2463,7 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 [[package]]
 name = "stintmate-ipc"
 version = "0.2.0"
-source = "git+https://github.com/Stintmate-App/stintmate-ipc?rev=0cb2a9e#0cb2a9e809beac82e39c45f49addd37ca3b672ac"
+source = "git+https://github.com/Stintmate-App/stintmate-ipc?rev=f45be37#f45be372887ad7c6df374056c10959ee02087796"
 dependencies = [
  "bytes",
  "crossbeam-channel",
@@ -2482,7 +2482,7 @@ dependencies = [
 [[package]]
 name = "stintmate-ipc-check"
 version = "0.2.0"
-source = "git+https://github.com/Stintmate-App/stintmate-ipc?rev=0cb2a9e#0cb2a9e809beac82e39c45f49addd37ca3b672ac"
+source = "git+https://github.com/Stintmate-App/stintmate-ipc?rev=f45be37#f45be372887ad7c6df374056c10959ee02087796"
 dependencies = [
  "bytes",
  "serde_json",
@@ -2528,7 +2528,7 @@ dependencies = [
  "getrandom",
  "once_cell",
  "rustix 1.1.5",
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -2987,7 +2987,7 @@ version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2a7b1c03c876122aa43f3020e6c3c3ee5c05081c9a00739faf7503aeba10d22"
 dependencies = [
- "windows-sys 0.61.2",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
@@ -3143,7 +3143,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7d6f32a0ff4a9f6f01231eb2059cc85479330739333e0e58cadf03b6af2cca10"
 dependencies = [
  "cfg-if",
- "windows-sys 0.61.2",
+ "windows-sys 0.59.0",
 ]
 
 [[package]]

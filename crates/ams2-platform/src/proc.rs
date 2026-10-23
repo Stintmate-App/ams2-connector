@@ -282,6 +282,31 @@ pub fn quote_arg(arg: &str) -> String {
     out
 }
 
+/// Puts this process at below-normal priority (plan 1.1: the recorder never competes with the
+/// game). The control app already starts it so; this covers a recorder started by hand.
+pub fn lower_process_priority() {
+    // SAFETY: the pseudo handle of this process; a failure leaves the priority as it was.
+    unsafe {
+        windows_sys::Win32::System::Threading::SetPriorityClass(
+            windows_sys::Win32::System::Threading::GetCurrentProcess(),
+            BELOW_NORMAL_PRIORITY_CLASS,
+        );
+    }
+}
+
+/// Raises the calling thread one step within its process's class (the recorder's timed
+/// threads: the 50 Hz loop and the telemetry sampler; still below a normal-priority process's
+/// normal threads when the process is below normal).
+pub fn raise_thread_priority() {
+    use windows_sys::Win32::System::Threading::{
+        GetCurrentThread, SetThreadPriority, THREAD_PRIORITY_ABOVE_NORMAL,
+    };
+    // SAFETY: the pseudo handle of this thread; a failure leaves the priority as it was.
+    unsafe {
+        SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
+    }
+}
+
 /// Start `argv` suspended, windowless, below-normal priority, with no console streams and no
 /// inherited handles. `extra_flags` are further `CreateProcess` creation flags.
 pub fn spawn_suspended(

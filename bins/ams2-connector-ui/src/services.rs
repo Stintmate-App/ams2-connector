@@ -94,6 +94,7 @@ pub trait Host: Send + Sync {
 #[cfg(windows)]
 pub struct WinHost {
     job: std::sync::Mutex<ams2_platform::proc::KillOnCloseJob>,
+    game: std::sync::Mutex<ams2_platform::game::GameProbe>,
 }
 
 #[cfg(windows)]
@@ -101,6 +102,7 @@ impl Default for WinHost {
     fn default() -> Self {
         Self {
             job: std::sync::Mutex::new(ams2_platform::proc::KillOnCloseJob::create()),
+            game: std::sync::Mutex::new(ams2_platform::game::GameProbe::new()),
         }
     }
 }
@@ -172,7 +174,10 @@ impl Host for WinHost {
         self.job.lock().unwrap_or_else(|p| p.into_inner()).close();
     }
     fn game_running(&self) -> bool {
-        ams2_platform::game::game_running()
+        self.game
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .running()
     }
 }
 
@@ -696,6 +701,18 @@ impl ServiceManager {
             t.state = Some(state.clone());
         }
         state
+    }
+
+    /// Something may change without an event: a service runs (its process can end), is wanted
+    /// (a restart is due), is stopping, or an instance the app did not start was seen. The
+    /// supervisor ticks every second then, and only rarely when this is false.
+    pub fn busy(&self) -> bool {
+        self.tracks.values().any(|t| {
+            t.child.is_some()
+                || t.was_running
+                || t.stop_requested_at.is_some()
+                || (t.want_on && t.restart_at.is_some())
+        })
     }
 
     /// The game's process exists, from the same cached check (`control.state` when no service

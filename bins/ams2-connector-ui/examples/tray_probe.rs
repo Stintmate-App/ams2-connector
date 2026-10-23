@@ -24,7 +24,11 @@ fn main() {
         K32GetProcessMemoryInfo, PROCESS_MEMORY_COUNTERS,
     };
     use windows_sys::Win32::System::Threading::{
-        GetCurrentProcess, GetProcessTimes, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION,
+        GetCurrentProcess, GetCurrentThread, GetProcessTimes, OpenProcess,
+        PROCESS_QUERY_LIMITED_INFORMATION,
+    };
+    use windows_sys::Win32::System::WindowsProgramming::{
+        QueryProcessCycleTime, QueryThreadCycleTime,
     };
 
     const KEY: Key = [5u8; 32];
@@ -102,15 +106,41 @@ fn main() {
         m.WorkingSetSize as f64 / 1_048_576.0
     }
 
+    /// Exact CPU cycles of a process (not the 15.6 ms tick-sampled times).
+    fn cycles(h: windows_sys::Win32::Foundation::HANDLE) -> u64 {
+        let mut c = 0u64;
+        // SAFETY: a valid process handle and out pointer.
+        unsafe { QueryProcessCycleTime(h, &mut c) };
+        c
+    }
+    /// One core's cycles per second, from a 0.5 s busy loop on this thread.
+    fn cycles_per_second() -> f64 {
+        let (mut a, mut b) = (0u64, 0u64);
+        // SAFETY: the pseudo handle of this thread and out pointers.
+        unsafe {
+            let me = GetCurrentThread();
+            QueryThreadCycleTime(me, &mut a);
+            let t0 = std::time::Instant::now();
+            while t0.elapsed() < Duration::from_millis(500) {
+                std::hint::spin_loop();
+            }
+            QueryThreadCycleTime(me, &mut b);
+            (b - a) as f64 / t0.elapsed().as_secs_f64()
+        }
+    }
+
     let (app2, host2) = (app.clone(), host.clone());
     let driver = std::thread::spawn(move || {
+        let hz = cycles_per_second();
         std::thread::sleep(Duration::from_secs(3));
         // SAFETY: the pseudo handle of this process.
         let me = unsafe { GetCurrentProcess() };
-        let (c0, w0) = (cpu_ms(me), std::time::Instant::now());
+        let (c0, y0, w0) = (cpu_ms(me), cycles(me), std::time::Instant::now());
         std::thread::sleep(Duration::from_secs(idle));
         let wall = w0.elapsed().as_secs_f64() * 1000.0;
         let tray_cpu = cpu_ms(me) - c0;
+        // Exact cycles; the probe thread itself only sleeps in this window.
+        let tray_cycles_pct = (cycles(me) - y0) as f64 / hz / (wall / 1000.0) * 100.0;
         let tray_ws = ws_mb(me);
         // Open the window through the tray's own path (a menu click would send this command).
         app2.dispatch(Command::ShowWindow).unwrap();
@@ -124,7 +154,9 @@ fn main() {
         let out = serde_json::json!({
             "tray_idle_secs": idle,
             "tray_cpu_ms": tray_cpu,
-            "tray_cpu_percent_of_one_core": tray_cpu / wall * 100.0,
+            "tray_cpu_percent_of_one_core_sampled": tray_cpu / wall * 100.0,
+            "tray_cpu_percent_of_one_core": tray_cycles_pct,
+            "core_ghz": hz / 1e9,
             "tray_working_set_mb": tray_ws,
             "window_pid": pid,
             "window_working_set_mb": ws_mb(h),

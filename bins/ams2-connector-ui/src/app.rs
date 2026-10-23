@@ -18,7 +18,7 @@ use serde_json::{Value as Json, json};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, Sender, channel};
-use std::sync::{Arc, Mutex, MutexGuard, Weak};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard, Weak};
 use std::time::{Duration, Instant};
 use stintmate_ipc::error::{Error, RemoteError};
 
@@ -26,6 +26,14 @@ use stintmate_ipc::error::{Error, RemoteError};
 const QUIT_DELAY: Duration = Duration::from_millis(50);
 /// The supervisor's period.
 pub const TICK: Duration = Duration::from_millis(1000);
+/// The supervisor period while nothing runs, nothing is wanted and the app is standalone: the
+/// only changes it still has to look for are an instance started by someone else (its mutex)
+/// and the game starting (a window lookup); everything else arrives as an event (a command, a
+/// service's `service.status`) and refreshes at once.
+pub const IDLE_TICK: Duration = Duration::from_secs(5);
+/// How long the cached autostart value (the `Run` key) is trusted; the app's own changes
+/// refresh it at once.
+pub const AUTOSTART_TTL: Duration = Duration::from_secs(30);
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|p| p.into_inner())
@@ -96,6 +104,12 @@ pub struct ControlApp {
     endpoint: Mutex<Option<Arc<ControlEndpoint>>>,
     board: StatusBoard,
     stopping: AtomicBool,
+    /// Wakes the ticker early (a service became busy, the app is exiting).
+    wake: (Mutex<bool>, Condvar),
+    /// The ticker is in its long idle wait.
+    idle: AtomicBool,
+    /// The autostart value and when it was read.
+    autostart_cache: Mutex<Option<(Option<bool>, Instant)>>,
     me: Weak<ControlApp>,
 }
 
@@ -166,6 +180,9 @@ impl ControlApp {
             endpoint: Mutex::new(None),
             board,
             stopping: AtomicBool::new(false),
+            wake: (Mutex::new(false), Condvar::new()),
+            idle: AtomicBool::new(false),
+            autostart_cache: Mutex::new(None),
             me: me.clone(),
         })
     }
@@ -281,7 +298,9 @@ impl ControlApp {
         self.refresh();
     }
 
-    /// Runs [`tick`](Self::tick) every [`TICK`] on a thread until [`stop_ticker`](Self::stop_ticker).
+    /// Runs [`tick`](Self::tick) on a thread until [`stop_ticker`](Self::stop_ticker): every
+    /// [`TICK`] while [`period`](Self::period) says so, else every [`IDLE_TICK`] (woken early
+    /// when a service becomes busy). Between ticks the thread sleeps on a condition variable.
     pub fn spawn_ticker(self: &Arc<Self>) -> std::thread::JoinHandle<()> {
         let app = self.clone();
         std::thread::Builder::new()
@@ -289,15 +308,62 @@ impl ControlApp {
             .spawn(move || {
                 while !app.stopping.load(Ordering::SeqCst) {
                     app.tick();
-                    std::thread::sleep(TICK);
+                    let period = app.period();
+                    app.idle.store(period > TICK, Ordering::SeqCst);
+                    let (m, cv) = &app.wake;
+                    let woken = lock(m);
+                    let (mut woken, _) = cv
+                        .wait_timeout_while(woken, period, |w| {
+                            !*w && !app.stopping.load(Ordering::SeqCst)
+                        })
+                        .unwrap_or_else(std::sync::PoisonError::into_inner);
+                    *woken = false;
                 }
             })
             .expect("a thread starts")
     }
 
+    /// The next supervisor period: [`TICK`] while a service is busy (see
+    /// [`ServiceManager::busy`]), [`PARENT_CHECK`] in managed mode, else [`IDLE_TICK`].
+    pub fn period(&self) -> Duration {
+        let g = lock(&self.inner);
+        if g.manager.busy() {
+            TICK
+        } else if g.parent.is_some() {
+            PARENT_CHECK
+        } else {
+            IDLE_TICK
+        }
+    }
+
+    fn wake_ticker(&self) {
+        let (m, cv) = &self.wake;
+        *lock(m) = true;
+        cv.notify_all();
+    }
+
     /// Ends the ticker thread.
     pub fn stop_ticker(&self) {
         self.stopping.store(true, Ordering::SeqCst);
+        self.wake_ticker();
+    }
+
+    /// The autostart value, read from the `Run` key at most every [`AUTOSTART_TTL`].
+    fn autostart_enabled(&self) -> Option<bool> {
+        let mut c = lock(&self.autostart_cache);
+        match *c {
+            Some((v, at)) if at.elapsed() < AUTOSTART_TTL => v,
+            _ => {
+                let v = self.autostart.is_enabled().ok();
+                *c = Some((v, Instant::now()));
+                v
+            }
+        }
+    }
+
+    /// Forgets the cached autostart value (the app changed it).
+    fn autostart_changed(&self) {
+        *lock(&self.autostart_cache) = None;
     }
 
     /// Exit: stops every service cleanly (forced after the stop timeout), closes the job and
@@ -476,6 +542,7 @@ impl ControlApp {
                     self.autostart.disable()
                 }
                 .and_then(|()| self.autostart.is_enabled());
+                self.autostart_changed();
                 let now = r.map_err(|e| {
                     remote(
                         "internal",
@@ -606,6 +673,7 @@ impl ControlApp {
                     self.autostart.disable()
                 }
                 .map_err(|e| e.to_string())?;
+                self.autostart_changed();
                 self.publish();
             }
             Command::SetOptions(change) => self.set_options(&change)?,
@@ -681,7 +749,7 @@ impl ControlApp {
             "window": if g.window_visible { "shown" } else { "hidden" },
             "window_request": {"seq": g.window_request.0, "action": g.window_request.1},
             "exiting": g.exiting,
-            "autostart": self.autostart.is_enabled().ok(),
+            "autostart": self.autostart_enabled(),
             "config": g.cfg.to_json(),
             "data_dir": self.data_dir.display().to_string(),
             "data_source": self.data_source,
@@ -699,7 +767,7 @@ impl ControlApp {
             "app": crate::APP_ID, "pid": std::process::id(), "version": crate::VERSION,
             "managed": g.managed, "parent_pid": g.parent.as_ref().map(|p| p.pid),
             "window": if g.window_visible { "shown" } else { "hidden" },
-            "exiting": g.exiting, "autostart": self.autostart.is_enabled().ok(),
+            "exiting": g.exiting, "autostart": self.autostart_enabled(),
             "level": status::overall_level(states).as_str(),
             "services": states.iter().map(service_summary).collect::<Vec<_>>(),
             "connector": {"id": crate::CONNECTOR_ID, "name": crate::CONNECTOR_NAME,
@@ -723,19 +791,27 @@ impl ControlApp {
             let rx = lock(&self.notices_rx);
             rx.try_iter().collect()
         };
-        {
+        let busy = {
             let mut g = lock(&self.inner);
             g.manager.poll();
+            g.manager.busy()
+        };
+        if busy && self.idle.load(Ordering::SeqCst) {
+            self.idle.store(false, Ordering::SeqCst);
+            self.wake_ticker();
         }
         for (service, title, message) in notices {
             self.notify(&service, &title, &message);
         }
         self.publish();
-        self.emit(UiEvent::Changed);
     }
 
-    fn publish(&self) {
-        let Some(ep) = self.endpoint() else { return };
+    /// Publishes `control.state` and `ui.snapshot` (the endpoint pushes only what changed) and
+    /// tells the UI when the snapshot changed; true then.
+    fn publish(&self) -> bool {
+        let Some(ep) = self.endpoint() else {
+            return false;
+        };
         let mut g = lock(&self.inner);
         let states = g.manager.states();
         let state = self.state_value(&mut g, &states);
@@ -743,7 +819,14 @@ impl ControlApp {
         drop(g);
         ep.set_state(&state);
         ep.set_snapshot(&snap.0);
-        *lock(&self.latest) = Some(snap);
+        let mut latest = lock(&self.latest);
+        if latest.as_ref() == Some(&snap) {
+            return false;
+        }
+        *latest = Some(snap);
+        drop(latest);
+        self.emit(UiEvent::Changed);
+        true
     }
 
     /// An error notice: always on `control.notices`; a tray balloon only when standalone.

@@ -227,7 +227,7 @@ pub struct LapEvent {
 }
 
 /// The open lap for the live frame (PRY-037).
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LiveLap {
     /// `formation`, `out`, `in` or `flying` as known so far.
     pub lap_type: &'static str,
@@ -483,6 +483,11 @@ impl SessionTracker {
             session_type: s.session_type.clone(),
             lap_number: self.lap.as_ref().map(|l| l.number),
         })
+    }
+
+    /// The open lap is not an out lap (for the telemetry flag `FLYING`); no allocation.
+    pub fn lap_not_out(&self) -> bool {
+        self.lap.as_ref().is_some_and(|l| !l.out_lap)
     }
 
     /// Forgets the garage seat (the game is gone or a new mapping).

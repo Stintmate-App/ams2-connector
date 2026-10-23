@@ -81,6 +81,28 @@ impl Mapping {
         self.region_size
     }
 
+    /// The sequence number, read atomically (4 bytes; odd while the game writes).
+    pub fn sequence(&self) -> u32 {
+        // SAFETY: the view is at least FRAME_SIZE bytes, page aligned; the offset is 4-aligned.
+        unsafe { &*(self.view.add(crate::SEQUENCE_OFFSET) as *const core::sync::atomic::AtomicU32) }
+            .load(core::sync::atomic::Ordering::Acquire)
+    }
+
+    /// Reads one field straight from the view (a volatile read: no copy of the frame). The
+    /// caller checks the sequence number before and after, as for a snapshot.
+    ///
+    /// # Panics
+    /// When the field would not lie inside the frame or `offset` is not aligned for `T`.
+    pub fn read_field<T: zerocopy::FromBytes + Copy>(&self, offset: usize) -> T {
+        assert!(
+            offset + size_of::<T>() <= FRAME_SIZE && offset.is_multiple_of(align_of::<T>()),
+            "field outside the frame"
+        );
+        // SAFETY: inside the mapped, page-aligned view and aligned for `T` (checked above);
+        // every bit pattern is valid for a `FromBytes` type.
+        unsafe { core::ptr::read_volatile(self.view.add(offset) as *const T) }
+    }
+
     /// Seqlock snapshot with an explicit retry bound.
     pub fn snapshot_with(&self, out: &mut SharedMemory, max_retries: u32) -> SnapshotOutcome {
         // SAFETY: the view is at least FRAME_SIZE bytes (checked in open) and page aligned.

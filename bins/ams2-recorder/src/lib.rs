@@ -6,7 +6,11 @@
 //! * [`announcer`]: announcements and the per-connection declarations.
 
 pub mod announcer;
+pub mod cli;
 pub mod link;
+pub mod live;
 pub mod outbox;
 pub mod recorder;
+pub mod serve;
 pub mod sink;
+pub mod telemetry;

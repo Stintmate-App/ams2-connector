@@ -23,6 +23,8 @@ pub mod single;
 pub mod timer;
 #[cfg(windows)]
 mod win;
+#[cfg(windows)]
+pub mod window;
 
 #[cfg(windows)]
 pub use win::{OwnedHandle, Win32Error};

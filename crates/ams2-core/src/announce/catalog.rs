@@ -151,6 +151,41 @@ fn param_kind(spec: &Value) -> Option<&str> {
     }
 }
 
+/// `NAME=VALUE` pairs typed by the code's param kinds (`int`, `ordinal`, `laps` as integers,
+/// the number kinds as floats, the rest as text): the test hook's and `test.announce`'s
+/// parsing. The error is the English line to show.
+pub fn parse_params(code: &str, pairs: &[String]) -> Result<Map<String, Value>, String> {
+    let declared = messages()
+        .get(code)
+        .and_then(|m| m.get("params"))
+        .and_then(Value::as_object);
+    let mut out = Map::new();
+    for pair in pairs {
+        let Some((name, value)) = pair.split_once('=').filter(|(n, _)| !n.is_empty()) else {
+            return Err(format!("--param {pair:?}: use NAME=VALUE"));
+        };
+        let kind = declared.and_then(|d| d.get(name)).and_then(param_kind);
+        let typed = match kind {
+            Some("int" | "ordinal" | "laps") => value
+                .trim()
+                .parse::<i64>()
+                .map(Value::from)
+                .map_err(|_| format!("invalid literal for int() with base 10: {value:?}"))?,
+            Some(
+                "decimal" | "gap" | "lap_time" | "distance_m" | "speed" | "temperature" | "litres",
+            ) => value
+                .trim()
+                .parse::<f64>()
+                .ok()
+                .and_then(|f| serde_json::Number::from_f64(f).map(Value::Number))
+                .ok_or_else(|| format!("could not convert string to float: {value:?}"))?,
+            _ => Value::String(value.to_owned()),
+        };
+        out.insert(name.to_owned(), typed);
+    }
+    Ok(out)
+}
+
 fn is_int(v: &Value) -> bool {
     v.as_number().is_some_and(|n| n.is_i64() || n.is_u64())
 }

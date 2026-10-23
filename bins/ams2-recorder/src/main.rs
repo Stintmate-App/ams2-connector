@@ -4,10 +4,18 @@ use ams2_platform::location::{self, WORKSPACE_ERROR_EXIT, WorkspaceArgs};
 use ams2_platform::logging::{self, LogConfig};
 use ams2_platform::single::{Names, SingleInstance, StopEvent};
 use ams2_platform::workspace::SystemProbes;
+use ams2_recorder::cli;
 use ams2_recorder::recorder::{Config, Overrides, Recorder};
 
 fn main() {
     let args = WorkspaceArgs::parse(std::env::args().skip(1));
+    if let Some(sub) = args
+        .rest
+        .first()
+        .filter(|s| cli::SUBCOMMANDS.contains(&s.as_str()))
+    {
+        std::process::exit(subcommand(sub, &args));
+    }
     let mut hz = 50.0;
     let mut pitwall_pipe = None;
     let mut control_pipe = None;
@@ -63,4 +71,38 @@ fn main() {
         }
     }
     drop(instance);
+}
+
+/// `announce`, `codes`, `diagnose`, `capture-raw`: print to stdout, exit with the code.
+fn subcommand(sub: &str, args: &WorkspaceArgs) -> i32 {
+    let rest = &args.rest[1..];
+    let mut out = |line: String| println!("{line}");
+    let shm_name = || {
+        rest.iter()
+            .position(|a| a == "--shm-name")
+            .and_then(|i| rest.get(i + 1))
+            .cloned()
+    };
+    match sub {
+        "codes" => {
+            cli::codes(&mut out);
+            0
+        }
+        "diagnose" => cli::diagnose(shm_name().as_deref(), &mut out),
+        "announce" => {
+            match location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes) {
+                Ok(loc) => cli::announce_main(rest, &loc.workspace, &mut out),
+                Err(e) => {
+                    eprintln!("{}", e.line());
+                    WORKSPACE_ERROR_EXIT
+                }
+            }
+        }
+        #[cfg(feature = "capture-raw")]
+        "capture-raw" => cli::capture_raw(rest, &mut out),
+        _ => {
+            eprintln!("ams2-recorder: {sub} is not available in this build");
+            2
+        }
+    }
 }

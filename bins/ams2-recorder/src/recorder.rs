@@ -12,7 +12,10 @@ use crate::link::{
     ControlLink, PITWALL_ENDPOINT, PitwallLink, SERVICE, StatusPublisher, Transport, key_source,
     peer_info,
 };
+use crate::live::{Hints, LiveBuffer, LiveServer, Meta};
+use crate::serve::{ActionServer, capture_target};
 use crate::sink::{CLOSE_DRAIN, PitwallSink};
+use crate::telemetry::{Telemetry, mapping_opener};
 use ams2_core::announce::EventDetector;
 use ams2_core::garage;
 use ams2_core::tracker::{Clock, SessionTracker};
@@ -25,7 +28,7 @@ use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::{Duration, Instant};
-use stintmate_ipc::naming;
+use stintmate_ipc::{MethodOpts, naming};
 
 /// Status compared this often.
 pub const STATUS_CHECK: Duration = Duration::from_millis(500);
@@ -65,6 +68,17 @@ pub struct Overrides {
     pub clock: Option<(Arc<dyn Fn() -> f64 + Send + Sync>, String)>,
     /// Replaces the wall clock of the loop (staleness, status cadence).
     pub now: Option<Arc<dyn Fn() -> Instant + Send + Sync>>,
+    /// Replaces "does the game's process exist?" for `connector.live_frame`.
+    pub game_check: Option<Arc<dyn Fn() -> bool + Send + Sync>>,
+}
+
+/// Per-tick timings of the loop, for `tools/measure` (off unless enabled).
+#[derive(Debug, Default, Clone)]
+pub struct LoopStats {
+    /// Seconds between the starts of consecutive ticks.
+    pub periods: Vec<f64>,
+    /// Seconds one tick took.
+    pub ticks: Vec<f64>,
 }
 
 struct FnClock(Arc<dyn Fn() -> f64 + Send + Sync>, Option<String>);
@@ -117,6 +131,10 @@ pub struct Recorder {
     started: Instant,
     /// +1 at every (re)mapping.
     pub map_generation: u64,
+    live: Arc<LiveBuffer>,
+    hints: Arc<Hints>,
+    telemetry: Telemetry,
+    stats: Option<LoopStats>,
 }
 
 impl Recorder {
@@ -180,7 +198,48 @@ impl Recorder {
             .now
             .unwrap_or_else(|| Arc::new(Instant::now) as Arc<dyn Fn() -> Instant + Send + Sync>);
         let t = now();
+        let live = Arc::new(LiveBuffer::default());
+        let hints = Arc::new(Hints::default());
+        let game_check = ov
+            .game_check
+            .unwrap_or_else(|| Arc::new(ams2_platform::game::game_running));
+        let server = Arc::new(LiveServer {
+            buffer: live.clone(),
+            game_running: game_check,
+            now: now.clone(),
+        });
+        let io = |e: stintmate_ipc::Error| e.to_string();
+        link.client
+            .method(
+                "connector.live_frame",
+                MethodOpts::default().inline(true),
+                move |_ctx, _params| server.answer(),
+            )
+            .map_err(io)?;
+        link.client
+            .method(
+                "connector.capture_target",
+                MethodOpts::default(),
+                |_ctx, _params| capture_target(),
+            )
+            .map_err(io)?;
+        let actions = ActionServer::new(announcer.clone());
+        link.client
+            .method("connector.action", MethodOpts::default(), move |_ctx, p| {
+                actions.call(&p)
+            })
+            .map_err(io)?;
+        let telemetry = Telemetry::install(
+            &link.client,
+            hints.clone(),
+            mapping_opener(cfg.shm_name.clone()),
+        )
+        .map_err(io)?;
         Ok(Self {
+            live,
+            hints,
+            telemetry,
+            stats: None,
             link,
             control,
             publisher,
@@ -242,6 +301,35 @@ impl Recorder {
         self.source = Some(source);
         self.map_generation += 1;
         self.last_change = (self.now)();
+        self.hints
+            .generation
+            .store(self.map_generation, Ordering::Relaxed);
+        self.hints.game_running.store(true, Ordering::Relaxed);
+    }
+
+    /// The mapping is closed: nothing to show, nothing to sample.
+    fn drop_source(&mut self) {
+        self.source = None;
+        self.live.clear();
+        self.hints.game_running.store(false, Ordering::Relaxed);
+    }
+
+    /// Per-tick timings (`tools/measure`): record the next `capacity` ticks.
+    pub fn enable_stats(&mut self, capacity: usize) {
+        self.stats = Some(LoopStats {
+            periods: Vec::with_capacity(capacity),
+            ticks: Vec::with_capacity(capacity),
+        });
+    }
+
+    /// The timings recorded so far.
+    pub fn loop_stats(&self) -> Option<&LoopStats> {
+        self.stats.as_ref()
+    }
+
+    /// The telemetry stream (counters).
+    pub fn telemetry(&self) -> &Telemetry {
+        &self.telemetry
     }
 
     fn open_source(&self) -> Result<Box<dyn FrameSource + Send>, ams2_shm::ShmError> {
@@ -272,7 +360,7 @@ impl Recorder {
     fn game_gone(&mut self) {
         tracing::info!("Automobilista 2 is not running any more: session ended, mapping closed");
         self.tracker.end_session(&mut self.sink);
-        self.source = None;
+        self.drop_source();
         self.game_running = false;
         self.have_frame = false;
         self.announced_seq = None;
@@ -313,17 +401,19 @@ impl Recorder {
         let Some(src) = self.source.as_mut() else {
             return;
         };
+        let mut new_frame = false;
         match src.snapshot(&mut self.frame) {
             Ok(SnapshotOutcome::Frame(seq)) => {
                 self.have_frame = true;
                 if self.last_seq != Some(seq) {
                     self.last_seq = Some(seq);
                     self.last_change = now;
+                    new_frame = true;
                 }
             }
             Ok(SnapshotOutcome::Torn) | Err(_) => return,
             Ok(SnapshotOutcome::Ended) => {
-                self.source = None;
+                self.drop_source();
                 return;
             }
         }
@@ -333,7 +423,8 @@ impl Recorder {
                 "Unsupported shared memory version {version} (expected {SHARED_MEMORY_VERSION}); not recording"
             );
             self.tracker.end_session(&mut self.sink);
-            self.source = None;
+            self.drop_source();
+            self.live.unsupported(version);
             self.error = Some(ERROR_UNSUPPORTED);
             self.pause_until = Some(now + VERSION_MISMATCH_WAIT);
             self.sync_key();
@@ -341,6 +432,22 @@ impl Recorder {
             return;
         }
         self.tracker.process(&self.frame, &mut self.sink);
+        self.hints
+            .in_garage
+            .store(self.tracker.in_garage(), Ordering::Relaxed);
+        self.hints
+            .flying
+            .store(self.tracker.lap_not_out(), Ordering::Relaxed);
+        if new_frame {
+            self.live.publish(
+                &self.frame,
+                Meta {
+                    in_garage: self.tracker.in_garage(),
+                    lap: self.tracker.live_lap(),
+                    last_change: self.last_change,
+                },
+            );
+        }
         self.sync_key();
         if self.announced_seq != Some(seq) {
             // the detector sees each game frame once
@@ -381,6 +488,7 @@ impl Recorder {
         if let Some(t) = &timer {
             let _ = t.start_periodic(period);
         }
+        let mut last_start: Option<Instant> = None;
         while !stop() {
             if self.source.is_none() {
                 self.connect();
@@ -393,7 +501,20 @@ impl Recorder {
                 }
                 continue;
             }
-            self.tick();
+            if self.stats.is_some() {
+                let t0 = Instant::now();
+                self.tick();
+                let dt = t0.elapsed().as_secs_f64();
+                if let Some(s) = self.stats.as_mut() {
+                    if let Some(prev) = last_start {
+                        s.periods.push(t0.duration_since(prev).as_secs_f64());
+                    }
+                    s.ticks.push(dt);
+                }
+                last_start = Some(t0);
+            } else {
+                self.tick();
+            }
             match &timer {
                 Some(t) => {
                     t.wait_timeout(period * 4);
@@ -407,8 +528,9 @@ impl Recorder {
 
     /// Ends the session, stores what is queued, delivers what it can, closes the links.
     pub fn shutdown(&mut self) {
+        self.telemetry.close();
         self.tracker.end_session(&mut self.sink);
-        self.source = None;
+        self.drop_source();
         self.sink.close(CLOSE_DRAIN);
         let left = self.sink.outbox_summary();
         if left.pending > 0 {
@@ -503,7 +625,7 @@ impl Recorder {
                 .map(|v| vocab::session_type_of_name(&v.session_type)),
             "laps_queued": stats.laps_queued, "laps_sent": stats.laps_sent,
             "laps_rejected": stats.laps_rejected,
-            "telemetry": false,
+            "telemetry": self.telemetry.active(),
             "uptime_s": (self.now)().duration_since(self.started).as_secs_f64().round(),
         })
     }

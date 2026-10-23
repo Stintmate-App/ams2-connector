@@ -17,6 +17,9 @@ parity, the Python connector (2.0.0, in the Stintmate repository) is the one in 
 | `bins/ams2-recorder/` | the recorder process (50 Hz, no window, below-normal priority) |
 | `bins/ams2-connector-ui/` | the control app (tray, window, supervision of the recorder) |
 
+Documentation: [`docs/`](docs/README.md): [usage](docs/usage.md), [architecture](docs/ARCHITECTURE.md),
+[what we learned about AMS2](docs/FINDINGS.md) and [writing a connector](docs/writing-a-connector.md).
+
 ## Building
 
 Requirements on Windows: Rust (the version in `rust-toolchain.toml`, installed by rustup) with

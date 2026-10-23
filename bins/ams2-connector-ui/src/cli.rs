@@ -5,15 +5,16 @@ use crate::api::UiEvent;
 use crate::app::{ControlApp, Environment};
 use crate::autostart::{Autostart, WinRunKey};
 use crate::endpoint::ServeConfig;
+use crate::instance::CallFailure;
 use crate::services::WinHost;
 use crate::texts::Texts;
 use ams2_platform::location::{self, WORKSPACE_ERROR_EXIT, WorkspaceArgs};
 use ams2_platform::logging::{self, LogConfig};
-use ams2_platform::single::{Names, SingleInstance};
+use ams2_platform::single::{self, Names, SingleInstance};
 use ams2_platform::workspace::SystemProbes;
 use std::path::PathBuf;
 use std::sync::mpsc::Receiver;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 use stintmate_ipc::keyfile::{KeyFile, KeySource, default_key_path};
 
 /// What the command line asked for.
@@ -27,6 +28,12 @@ pub struct Args {
     pub parent_pid: Option<u32>,
     /// `--register`: write the descriptor and exit.
     pub register: bool,
+    /// `--unregister`: remove the descriptor and exit.
+    pub unregister: bool,
+    /// `--quit`: ask the running instance to exit.
+    pub quit: bool,
+    /// `--version`: print the version and exit.
+    pub version: bool,
     /// `--workspace`.
     pub workspace: Option<String>,
     /// `--allow-synced`.
@@ -47,6 +54,9 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
             "--tray" => a.tray = true,
             "--managed" => a.managed = true,
             "--register" => a.register = true,
+            "--unregister" => a.unregister = true,
+            "--quit" => a.quit = true,
+            "--version" => a.version = true,
             "--parent-pid" => {
                 let v = it.next().ok_or("--parent-pid needs a value")?;
                 a.parent_pid = Some(v.parse().map_err(|_| "--parent-pid needs a number")?);
@@ -60,14 +70,138 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
     if a.parent_pid.is_some() && !a.managed {
         return Err("--parent-pid needs --managed".into());
     }
-    if a.register && a.managed {
-        return Err("--register starts nothing: not with --managed".into());
+    let commands = [
+        ("--register", a.register),
+        ("--unregister", a.unregister),
+        ("--quit", a.quit),
+        ("--version", a.version),
+    ];
+    let asked: Vec<&str> = commands
+        .iter()
+        .filter(|(_, on)| *on)
+        .map(|(n, _)| *n)
+        .collect();
+    if asked.len() > 1 {
+        return Err(format!("{} cannot be combined", asked.join(" and ")));
+    }
+    if let Some(which) = asked.first()
+        && (a.managed || a.tray)
+    {
+        return Err(format!(
+            "{which} starts nothing: not with --managed or --tray"
+        ));
     }
     Ok(a)
 }
 
+/// The usage message: every option.
+pub const USAGE: &str = "usage: ams2-connector-ui [--tray] [--managed --parent-pid <pid>] [--workspace <dir>] [--allow-synced]
+       ams2-connector-ui --register   [--workspace <dir>] [--allow-synced]
+       ams2-connector-ui --unregister [--workspace <dir>] [--allow-synced]
+       ams2-connector-ui --quit
+       ams2-connector-ui --version
+  --tray            start hidden in the tray
+  --managed         run for a managing app (no tray icon); needs --parent-pid <pid>
+  --register        write <workspace>\\connectors\\ams2\\connector.json and exit
+  --unregister      remove that descriptor (keeps logs, outbox and settings) and exit
+  --quit            ask the running app to exit (exit 4 if a managing app owns it)
+  --version         print the version and exit
+  --workspace <dir> the Stintmate workspace; --allow-synced accepts one inside OneDrive
+exit status: 0 done, 1 failed, 2 bad arguments, 3 workspace error, 4 managed (--quit)";
+
+/// Exit status of `--quit` when the running app is managed: it must be stopped by its manager.
+pub const QUIT_MANAGED_EXIT: i32 = 4;
+/// How long `--quit` waits for the connector to stop.
+pub const QUIT_WAIT: Duration = Duration::from_secs(10);
+
 fn say(line: &str) {
     println!("{line}");
+}
+
+/// `--version`: the line printed (`<exe name> <version>`).
+pub fn version_line() -> String {
+    format!("{} {}", crate::APP_ID, crate::VERSION)
+}
+
+/// `--unregister`: removes this connector's descriptor and nothing else. 0: removed or nothing
+/// to remove, 3: a workspace error, 1: the file is not this connector's or cannot be removed.
+pub fn unregister(args: &Args) -> i32 {
+    let loc = match location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes) {
+        Ok(l) => l,
+        Err(e) => {
+            say(&e.line());
+            return WORKSPACE_ERROR_EXIT;
+        }
+    };
+    match crate::descriptor::remove(&loc.data_dir) {
+        Ok(Some(p)) => {
+            say(&format!("unregistered: {}", p.display()));
+            0
+        }
+        Ok(None) => {
+            say("nothing to remove: the connector is not registered in this workspace");
+            0
+        }
+        Err(e) => {
+            say(&format!("cannot remove the connector descriptor: {e}"));
+            1
+        }
+    }
+}
+
+/// `--quit`: asks the running control app (found by the mutex `names.ui`) to exit through its
+/// endpoint's `control.quit`, and a recorder left running alone through its stop event, then
+/// waits up to `wait` for both to be gone. 0: nothing runs anymore (or nothing ran), 1: still
+/// running or unreachable, 4: the app is managed (it refuses; its managing app must stop it).
+pub fn quit(names: &Names, pipe: &str, key: impl Fn() -> KeySource, wait: Duration) -> i32 {
+    let ui = || single::is_running(&names.ui);
+    let recorder = || single::is_running(&names.recorder);
+    if !ui() && !recorder() {
+        say("The AMS2 connector is not running.");
+        return 0;
+    }
+    if ui() {
+        let reply = crate::instance::call_checked(
+            pipe,
+            key,
+            "control.quit",
+            &serde_json::json!({}),
+            wait.min(Duration::from_secs(3)),
+        );
+        match reply {
+            Ok(_) => {}
+            Err(CallFailure::Remote { code, message }) if code == "managed" => {
+                say(&format!("not quit: {message}"));
+                return QUIT_MANAGED_EXIT;
+            }
+            Err(CallFailure::Remote { message, .. }) => {
+                say(&format!("the running app refused to quit: {message}"));
+                return 1;
+            }
+            Err(CallFailure::Unreachable) => {
+                say("the running app does not answer on its endpoint");
+                return 1;
+            }
+        }
+    }
+    let deadline = Instant::now() + wait;
+    let mut recorder_asked = false;
+    loop {
+        if !ui() && recorder() && !recorder_asked {
+            // The app is gone but a recorder started on its own is not: its stop event.
+            single::signal_stop(&names.recorder_stop);
+            recorder_asked = true;
+        }
+        if !ui() && !recorder() {
+            say("The AMS2 connector has stopped.");
+            return 0;
+        }
+        if Instant::now() >= deadline {
+            say("The AMS2 connector is still running.");
+            return 1;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
 }
 
 /// `--register`: writes the descriptor and returns the exit status: 0 written (or already up
@@ -97,12 +231,26 @@ pub fn main(argv: Vec<String>) -> i32 {
     let args = match parse(argv) {
         Ok(a) => a,
         Err(m) => {
-            eprintln!("ams2-connector-ui: {m}");
+            attach_console();
+            eprintln!("ams2-connector-ui: {m}\n{USAGE}");
             return 2;
         }
     };
     let names = Names::default();
     let ui_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("ams2-connector-ui.exe"));
+    if args.version || args.register || args.unregister || args.quit {
+        attach_console();
+    }
+    if args.version {
+        say(&version_line());
+        return 0;
+    }
+    if args.unregister {
+        return unregister(&args);
+    }
+    if args.quit {
+        return run_quit(&args, &names);
+    }
     if args.register {
         return register(&args, &ui_exe, &names.ui);
     }
@@ -201,6 +349,28 @@ pub fn main(argv: Vec<String>) -> i32 {
     0
 }
 
+/// Makes the output of the command-line options reach the console that started this
+/// GUI-subsystem exe (when its output is not redirected).
+fn attach_console() {
+    #[cfg(windows)]
+    ams2_platform::console::attach_parent_output();
+}
+
+/// `--quit` against the real names, the endpoint and the workspace's key.
+fn run_quit(args: &Args, names: &Names) -> i32 {
+    let workspace = location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes)
+        .ok()
+        .map(|l| l.workspace);
+    let key_path = default_key_path(workspace.as_deref());
+    let pipe = stintmate_ipc::naming::pipe_path(crate::ENDPOINT_ID, None).unwrap_or_default();
+    quit(
+        names,
+        &pipe,
+        || KeySource::File(KeyFile::open(key_path.clone().unwrap_or_default())),
+        QUIT_WAIT,
+    )
+}
+
 #[cfg(windows)]
 fn tray_available() -> bool {
     crate::tray::tray_available()
@@ -283,5 +453,20 @@ mod tests {
         assert!(p(&["--register"]).unwrap().register);
         assert!(p(&["--tray"]).unwrap().tray);
         assert!(p(&["--bogus"]).is_err());
+    }
+
+    #[test]
+    fn the_command_options_are_alternatives_and_start_nothing() {
+        assert!(p(&["--unregister"]).unwrap().unregister);
+        assert!(p(&["--quit"]).unwrap().quit);
+        assert!(p(&["--version"]).unwrap().version);
+        assert!(p(&["--unregister", "--workspace", "C:/w"]).is_ok());
+        assert!(p(&["--register", "--quit"]).is_err());
+        assert!(p(&["--unregister", "--managed", "--parent-pid", "5"]).is_err());
+        assert!(p(&["--quit", "--tray"]).is_err());
+        assert_eq!(
+            version_line(),
+            format!("ams2-connector-ui {}", env!("CARGO_PKG_VERSION"))
+        );
     }
 }

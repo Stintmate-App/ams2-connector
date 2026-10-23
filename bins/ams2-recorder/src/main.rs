@@ -8,6 +8,10 @@ use ams2_recorder::cli;
 use ams2_recorder::recorder::{Config, Overrides, Recorder};
 
 fn main() {
+    if std::env::args().nth(1).as_deref() == Some("--version") {
+        println!("ams2-recorder {}", env!("CARGO_PKG_VERSION"));
+        return;
+    }
     let args = WorkspaceArgs::parse(std::env::args().skip(1));
     if let Some(sub) = args
         .rest

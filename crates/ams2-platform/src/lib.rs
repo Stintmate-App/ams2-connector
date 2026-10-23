@@ -15,6 +15,8 @@ pub mod logging;
 pub mod workspace;
 
 #[cfg(windows)]
+pub mod console;
+#[cfg(windows)]
 pub mod game;
 #[cfg(windows)]
 pub mod proc;

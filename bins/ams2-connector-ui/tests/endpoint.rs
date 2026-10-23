@@ -514,3 +514,97 @@ impl Rig {
         self.app.endpoint_for_tests()
     }
 }
+
+// --- `--quit` (cli::quit) against unique names and a random pipe ---
+
+fn hold(names: &ams2_platform::single::Names) -> ams2_platform::single::SingleInstance {
+    let i = ams2_platform::single::SingleInstance::acquire(&names.ui).unwrap();
+    assert!(!i.already_running());
+    i
+}
+
+#[test]
+fn quit_with_nothing_running_is_0() {
+    let names = ams2_platform::single::Names::unique("quit-none");
+    let code = ams2_connector_ui::cli::quit(
+        &names,
+        "unused",
+        || KeySource::Bytes(KEY),
+        Duration::from_secs(1),
+    );
+    assert_eq!(code, 0);
+}
+
+#[test]
+fn quit_asks_an_unmanaged_instance_to_exit_and_waits_for_it() {
+    let names = ams2_platform::single::Names::unique("quit-ok");
+    let r = rig(real_watch());
+    let instance = hold(&names);
+    let pipe = r.pipe.clone();
+    let n = names.clone();
+    let t = std::thread::spawn(move || {
+        ams2_connector_ui::cli::quit(&n, &pipe, || KeySource::Bytes(KEY), Duration::from_secs(10))
+    });
+    // The app answers, then exits: on its Quit event the "process" (the mutex) goes away.
+    let end = Instant::now() + Duration::from_secs(10);
+    loop {
+        match r.events.recv_timeout(Duration::from_millis(200)) {
+            Ok(UiEvent::Quit) => break,
+            _ => assert!(Instant::now() < end, "no Quit event"),
+        }
+    }
+    drop(instance);
+    assert_eq!(t.join().unwrap(), 0);
+}
+
+#[test]
+fn quit_refuses_a_managed_instance_with_4_and_leaves_it_running() {
+    let names = ams2_platform::single::Names::unique("quit-managed");
+    let r = rig(Box::new(|pid| {
+        ParentWatch::with(
+            pid,
+            Box::new(|_| Some(SystemTime::UNIX_EPOCH)),
+            Box::new(|_, _| true),
+        )
+    }));
+    let _instance = hold(&names);
+    let h = hub(&r.pipe);
+    call(&h, "control.managed", json!({"parent_pid": 1})).unwrap();
+    let code = ams2_connector_ui::cli::quit(
+        &names,
+        &r.pipe,
+        || KeySource::Bytes(KEY),
+        Duration::from_secs(2),
+    );
+    assert_eq!(code, 4);
+    std::thread::sleep(Duration::from_millis(800)); // QUIT_DELAY would have passed
+    assert!(
+        !drain(&r.events).contains(&UiEvent::Quit),
+        "the managed app was quit"
+    );
+    assert!(ams2_platform::single::is_running(&names.ui));
+    r.app.unserve();
+}
+
+#[test]
+fn quit_is_1_when_the_instance_does_not_answer_or_does_not_go() {
+    let names = ams2_platform::single::Names::unique("quit-stuck");
+    let _instance = hold(&names);
+    // Nobody serves this pipe.
+    let code = ams2_connector_ui::cli::quit(
+        &names,
+        &naming::pipe_path_for("connector-ams2", None, "nobodyhome").unwrap(),
+        || KeySource::Bytes(KEY),
+        Duration::from_secs(1),
+    );
+    assert_eq!(code, 1);
+    // It answers but its process stays (the mutex is never released): still running after the wait.
+    let r = rig(real_watch());
+    let code = ams2_connector_ui::cli::quit(
+        &names,
+        &r.pipe,
+        || KeySource::Bytes(KEY),
+        Duration::from_secs(1),
+    );
+    assert_eq!(code, 1);
+}

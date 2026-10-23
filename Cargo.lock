@@ -130,6 +130,7 @@ dependencies = [
  "ams2-core",
  "ams2-platform",
  "ams2-shm",
+ "embed-resource",
  "rmp-serde",
  "serde",
  "serde_json",

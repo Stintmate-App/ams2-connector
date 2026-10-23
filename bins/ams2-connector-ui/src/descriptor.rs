@@ -3,7 +3,8 @@
 //! How a managing app finds the connectors installed for a workspace without knowing any
 //! simulator (workspace.md section 5.5). Written by this connector only, into its own folder:
 //! by the control app at every start (only when something but `written_at` changed, atomically)
-//! and by `ams2-connector-ui --register`, which writes it and exits.
+//! and by `ams2-connector-ui --register`, which writes it and exits; `--unregister` removes it
+//! ([`remove`]).
 
 use crate::config::write_json_atomic;
 use crate::texts::Texts;

@@ -112,3 +112,24 @@ Tick stages (QPC probes, median of the ticks that saw a frame): snapshot 2.2 us,
   held 9000 samples (two laps). The encoding is byte-equal to Python's (`lap_bytes` test).
 * Start to first snapshot is measured inside the process (build, links, mapping, first tick);
   process creation is not included.
+
+## Release build (2026-10-23, PRY-057 P1)
+
+`cargo build --release --locked` (`lto = "thin"`, `codegen-units = 1`, `strip = "symbols"`,
+unwinding kept), the PC busy as above.
+
+| Executable | Size | `--version` start (median of 10, `Start-Process -Wait`, includes the launch) |
+|---|---|---|
+| `ams2-recorder.exe` | 3.2 MB (3,354,624 bytes) | 11.5 ms |
+| `ams2-connector-ui.exe` | 3.6 MB (3,743,232 bytes) | 12.0 ms |
+| `ams2-connector-window.exe` | 8.2 MB (8,586,240 bytes; egui + glow) | 77.7 ms |
+
+* Recorder idle memory: `ams2-measure --seconds 10 --rounds 1` (the recorder loop in its own
+  process, the same library code as the exe): private working set **5.1 MB**, working set
+  9.7 MB (B2: 7.3 MB private; target <= 15 MB). The shipped `ams2-recorder.exe` itself was not
+  started: it has no override for its single-instance names and the driver's connector runs on
+  this PC with the production ones.
+* `capture-raw` is absent: the feature is off by default and no crate of the workspace enables
+  it (`cargo tree -e features --workspace` has no `capture-raw`), and the string of its code
+  (`capture-raw needs a FILE`) is not in `ams2-recorder.exe`, while the stub's
+  (`is not available in this build`) is.

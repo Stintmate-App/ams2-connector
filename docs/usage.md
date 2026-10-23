@@ -22,7 +22,7 @@ target\release\ams2-connector-ui.exe --register
 `--register` writes the connector descriptor `<workspace>\connectors\ams2\connector.json`, which
 tells a managing app (the Stintmate hub) where the connector is and how to start and control
 it. The descriptor stores the absolute path of the exe, so register again after moving it. The
-control app also refreshes the descriptor at every start. The three executables must stay in
+control app also refreshes the descriptor at every start, and `--unregister` removes it (see [Command lines](#command-lines)). The three executables must stay in
 the same folder: `ams2-connector-ui.exe` (the tray and control app), `ams2-recorder.exe` and
 `ams2-connector-window.exe`.
 
@@ -100,11 +100,46 @@ application contract's control interface (see [ARCHITECTURE.md](ARCHITECTURE.md#
 
 ## Command lines
 
-`ams2-connector-ui.exe [--tray] [--managed --parent-pid N] [--register]`
-`ams2-recorder.exe [--hz 50]` (one instance; Ctrl+C stops it)
+```
+ams2-connector-ui.exe [--tray] [--managed --parent-pid N] [--workspace DIR] [--allow-synced]
+ams2-connector-ui.exe --register   [--workspace DIR]
+ams2-connector-ui.exe --unregister [--workspace DIR]
+ams2-connector-ui.exe --quit
+ams2-connector-ui.exe --version
+ams2-recorder.exe [--hz 50]            (one instance; Ctrl+C stops it)
+ams2-recorder.exe --version
+ams2-connector-window.exe --version
+```
 
-Both take `--workspace <dir>` and `--allow-synced` (accept a workspace inside OneDrive, refused
-by default). The control app passes its resolved workspace to every process it starts.
+`--register`, `--unregister`, `--quit` and `--version` start nothing and cannot be combined with
+each other or with `--managed` / `--tray`. A bad command line prints the usage (every option)
+and exits 2.
+
+| Option | What it does | Exit status |
+|---|---|---|
+| `--register` | writes `<workspace>\connectors\ams2\connector.json` (this exe's path, the endpoint, the mutex) and exits; left alone when it is already up to date | 0 done, 1 cannot write, 3 workspace error |
+| `--unregister` | removes that file if it is this connector's (`"id": "ams2"`); logs, outbox and `ui_config.json` stay | 0 removed or nothing to remove, 1 cannot remove (or not this connector's file), 3 workspace error |
+| `--quit` | asks the running control app to exit and waits up to 10 s until nothing of the connector runs | 0 stopped (or nothing ran), 1 still running or the app does not answer, 4 the app is managed |
+| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.0.0`) | 0 |
+
+`--quit` finds the instance by the single-instance mutex `Local\Ams2Connector.UI` and sends
+`control.quit` to its endpoint `connector-ams2` with the workspace's key (the same call the
+managing app uses; the app stops its recorder first, which can take a few seconds). A recorder
+left running without the app is asked to stop through its stop event. A managed app refuses
+(error `managed`) because its managing app must stop it: `--quit` then does nothing and exits 4.
+
+The control app writes the descriptor at every start (when it finds a workspace), so a moved or
+updated exe fixes it by itself; `--register` is for installers and scripts.
+
+Output of `ams2-connector-ui.exe` and `ams2-connector-window.exe` (no console of their own):
+when started from a console, they attach to it and print there; redirected output (a file, a
+pipe, a script capturing it) is left as it is. A shell does not wait for these programs: use
+`Start-Process -Wait` or `start /wait`, or pipe the output (`... | Out-String`), to get the
+text and the exit status in order. `ams2-recorder.exe` is a console program.
+
+All of them take `--workspace <dir>` and `--allow-synced` (accept a workspace inside OneDrive,
+refused by default) where a workspace matters. The control app passes its resolved workspace to
+every process it starts.
 
 Subcommands of `ams2-recorder.exe`:
 

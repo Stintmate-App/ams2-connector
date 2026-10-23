@@ -17,7 +17,10 @@ pub mod autostart;
 pub mod cli;
 pub mod config;
 pub mod descriptor;
+#[cfg(windows)]
+pub mod dialog;
 pub mod endpoint;
+pub mod icons;
 pub mod instance;
 pub mod logtail;
 pub mod managed;
@@ -25,6 +28,10 @@ pub mod services;
 pub mod status;
 pub mod texts;
 pub mod timefmt;
+#[cfg(windows)]
+pub mod tray;
+pub mod tray_model;
+pub mod window_host;
 
 /// The control app's id in `control.state.app` and the descriptor's `written_by`.
 pub const APP_ID: &str = "ams2-connector-ui";

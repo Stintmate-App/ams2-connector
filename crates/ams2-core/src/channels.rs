@@ -143,7 +143,12 @@ pub fn lap_channels(rows: &[Row]) -> LapColumns {
             .map(|r| {
                 let v = r[i];
                 if is_terrain {
-                    f32::from(vocab::surface(v))
+                    // a non-integer material is road, as the Python channel mapping (the detector truncates)
+                    if v.fract() == 0.0 {
+                        f32::from(vocab::surface(v))
+                    } else {
+                        f32::from(vocab::SURFACE_ROAD)
+                    }
                 } else if i == PIT {
                     f32::from(vocab::pit_mode(v))
                 } else {

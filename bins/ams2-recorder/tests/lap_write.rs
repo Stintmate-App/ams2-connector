@@ -2,7 +2,9 @@
 //! is ignored by default; run it from a release build:
 //! `cargo test --release -p ams2-recorder --test lap_write -- --ignored --nocapture`.
 //! A test mapping and a temporary workspace; Pitwall's pipe is a random one nobody serves, so
-//! the lap stays in the outbox.
+//! the lap stays in the outbox. Its synthetic frames do not close laps like the game, so the
+//! stored file holds more than 4500 samples: the size and the encode time of a real 90 s lap
+//! are in `lap_bytes.rs`.
 
 mod common;
 use ams2_core::testing::Sim;

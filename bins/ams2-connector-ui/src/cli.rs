@@ -28,6 +28,8 @@ pub struct Args {
     pub parent_pid: Option<u32>,
     /// `--register`: write the descriptor and exit.
     pub register: bool,
+    /// `--check` (with `--register`): only check that the descriptor can be written.
+    pub check: bool,
     /// `--unregister`: remove the descriptor and exit.
     pub unregister: bool,
     /// `--quit`: ask the running instance to exit.
@@ -54,6 +56,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
             "--tray" => a.tray = true,
             "--managed" => a.managed = true,
             "--register" => a.register = true,
+            "--check" => a.check = true,
             "--unregister" => a.unregister = true,
             "--quit" => a.quit = true,
             "--version" => a.version = true,
@@ -69,6 +72,9 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
     }
     if a.parent_pid.is_some() && !a.managed {
         return Err("--parent-pid needs --managed".into());
+    }
+    if a.check && !a.register {
+        return Err("--check needs --register".into());
     }
     let commands = [
         ("--register", a.register),
@@ -96,13 +102,14 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
 
 /// The usage message: every option.
 pub const USAGE: &str = "usage: ams2-connector-ui [--tray] [--managed --parent-pid <pid>] [--workspace <dir>] [--allow-synced]
-       ams2-connector-ui --register   [--workspace <dir>] [--allow-synced]
+       ams2-connector-ui --register   [--check] [--workspace <dir>] [--allow-synced]
        ams2-connector-ui --unregister [--workspace <dir>] [--allow-synced]
        ams2-connector-ui --quit
        ams2-connector-ui --version
   --tray            start hidden in the tray
   --managed         run for a managing app (no tray icon); needs --parent-pid <pid>
   --register        write <workspace>\\connectors\\ams2\\connector.json and exit
+  --check           with --register: only check that the descriptor can be written
   --unregister      remove that descriptor (keeps logs, outbox and settings) and exit
   --quit            ask the running app to exit (exit 4 if a managing app owns it)
   --version         print the version and exit
@@ -204,6 +211,36 @@ pub fn quit(names: &Names, pipe: &str, key: impl Fn() -> KeySource, wait: Durati
     }
 }
 
+/// `--register --check`: resolves the workspace and checks the descriptor can be written (the
+/// folder `connectors\ams2` is a folder or can be created, and a test file can be created and
+/// removed there); writes nothing else. 0 ok, 3 a workspace error, 1 cannot write.
+pub fn check_register(args: &Args) -> i32 {
+    let loc = match location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes) {
+        Ok(l) => l,
+        Err(e) => {
+            say(&e.line());
+            return WORKSPACE_ERROR_EXIT;
+        }
+    };
+    let probe = loc
+        .data_dir
+        .join(format!(".check-{}.tmp", std::process::id()));
+    let result = std::fs::create_dir_all(&loc.data_dir)
+        .and_then(|()| std::fs::write(&probe, b"check"))
+        .and_then(|()| std::fs::remove_file(&probe));
+    match result {
+        Ok(()) => {
+            say(&format!("ok: {}", loc.data_dir.display()));
+            0
+        }
+        Err(e) => {
+            let _ = std::fs::remove_file(&probe);
+            say(&format!("cannot write in {}: {e}", loc.data_dir.display()));
+            1
+        }
+    }
+}
+
 /// `--register`: writes the descriptor and returns the exit status: 0 written (or already up
 /// to date), 3 a workspace error (none chosen included), 1 the file cannot be written.
 pub fn register(args: &Args, ui_exe: &std::path::Path, mutex: &str) -> i32 {
@@ -250,6 +287,9 @@ pub fn main(argv: Vec<String>) -> i32 {
     }
     if args.quit {
         return run_quit(&args, &names);
+    }
+    if args.register && args.check {
+        return check_register(&args);
     }
     if args.register {
         return register(&args, &ui_exe, &names.ui);
@@ -451,6 +491,8 @@ mod tests {
         );
         assert!(p(&["--register", "--managed", "--parent-pid", "5"]).is_err());
         assert!(p(&["--register"]).unwrap().register);
+        assert!(p(&["--register", "--check"]).unwrap().check);
+        assert!(p(&["--check"]).is_err());
         assert!(p(&["--tray"]).unwrap().tray);
         assert!(p(&["--bogus"]).is_err());
     }

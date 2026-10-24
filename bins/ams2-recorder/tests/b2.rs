@@ -18,7 +18,7 @@ use ams2_shm::testing::{TestMapping, unique_name};
 use common::*;
 use serde_json::{Value as Json, json};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, RwLock, RwLockReadGuard, RwLockWriteGuard};
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
 use stintmate_ipc::blocking::Peer;
@@ -27,6 +27,18 @@ use stintmate_ipc::node::{Delivery, SubscribeOptions};
 use stintmate_ipc::{Error, codec};
 
 type Got = Arc<Mutex<Vec<(i64, Sample)>>>;
+
+/// The real-time test runs alone (a 4-vCPU CI machine shared with this file's other tests drops
+/// a frame now and then); the others run in parallel with each other.
+static REALTIME: RwLock<()> = RwLock::new(());
+
+fn shared() -> RwLockReadGuard<'static, ()> {
+    REALTIME.read().unwrap_or_else(|e| e.into_inner())
+}
+
+fn alone() -> RwLockWriteGuard<'static, ()> {
+    REALTIME.write().unwrap_or_else(|e| e.into_inner())
+}
 
 fn wait_for(secs: u64, f: impl Fn() -> bool) -> bool {
     let end = Instant::now() + Duration::from_secs(secs);
@@ -156,6 +168,7 @@ fn median_ms(ts: &[i64]) -> f64 {
 
 #[test]
 fn one_sample_per_game_frame_phase_locked() {
+    let _rt = alone();
     // Real-time: one sample per 90 Hz frame. Shared GitHub-hosted runners skip frames under
     // load (the workflow sets STINTMATE_SHARED_RUNNER there); runs on a PC or our own runner.
     if std::env::var_os("STINTMATE_SHARED_RUNNER").is_some_and(|v| !v.is_empty()) {
@@ -210,6 +223,7 @@ fn one_sample_per_game_frame_phase_locked() {
 
 #[test]
 fn the_rate_option_lowers_the_cap_and_bad_values_are_refused() {
+    let _rt = shared();
     let r = rig();
     let mut game = Game::start(&r.shm, 90.0);
     r.running();
@@ -237,6 +251,7 @@ fn the_rate_option_lowers_the_cap_and_bad_values_are_refused() {
 
 #[test]
 fn keep_alive_repeats_with_fresh_zero_when_no_frame_comes() {
+    let _rt = shared();
     let r = rig();
     let mut game = Game::start(&r.shm, 60.0);
     r.running();
@@ -262,6 +277,7 @@ fn keep_alive_repeats_with_fresh_zero_when_no_frame_comes() {
 
 #[test]
 fn without_the_game_idle_samples_say_not_running() {
+    let _rt = shared();
     let r = rig(); // hints: game not running
     let (sub, got) = r.subscribe(None).unwrap();
     std::thread::sleep(Duration::from_millis(1100));
@@ -367,6 +383,7 @@ fn remote_code(r: Result<Json, Error>) -> String {
 
 #[test]
 fn live_frame_answers_from_the_last_snapshot() {
+    let _rt = shared();
     let mut r = run();
     // nothing published yet
     assert_eq!(
@@ -385,6 +402,7 @@ fn live_frame_answers_from_the_last_snapshot() {
 
 #[test]
 fn live_frame_errors_frozen_game_and_unsupported_version() {
+    let _rt = shared();
     let mut r = run();
     r.play(10.0);
     r.play(10.1);
@@ -429,6 +447,7 @@ fn ready(r: &Run) {
 
 #[test]
 fn actions_ping_announce_and_errors() {
+    let _rt = shared();
     let r = run();
     ready(&r);
     let ping = r
@@ -484,6 +503,7 @@ fn actions_ping_announce_and_errors() {
 
 #[test]
 fn actions_wait_through_the_announcers_rate_window() {
+    let _rt = shared();
     let r = run();
     ready(&r);
     let started = Instant::now();
@@ -521,6 +541,7 @@ fn collect(f: impl FnOnce(&mut dyn FnMut(String)) -> i32) -> (i32, Vec<String>) 
 
 #[test]
 fn announce_sends_through_a_message_cli_connection() {
+    let _rt = shared();
     let dir = tempfile::tempdir().unwrap();
     let ws = workspace(dir.path(), &KEY);
     let pipe = pitwall_pipe(&unique_user());
@@ -568,6 +589,7 @@ fn announce_sends_through_a_message_cli_connection() {
 
 #[test]
 fn announce_checks_its_arguments_before_connecting() {
+    let _rt = shared();
     let parse =
         |a: &[&str]| cli::parse_announce(&a.iter().map(|s| s.to_string()).collect::<Vec<_>>());
     assert!(parse(&[]).is_err());
@@ -608,6 +630,7 @@ fn announce_checks_its_arguments_before_connecting() {
 
 #[test]
 fn diagnose_reads_one_snapshot_of_a_test_mapping() {
+    let _rt = shared();
     let name = unique_name("b2diag");
     let mut map = TestMapping::create(&name).unwrap();
     let mut sim = Sim::new();

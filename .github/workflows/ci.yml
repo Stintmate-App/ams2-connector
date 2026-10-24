@@ -27,24 +27,21 @@ jobs:
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
-      # stintmate-ipc is a private repository: a read-only deploy key (secret
-      # STINTMATE_IPC_DEPLOY_KEY) and git over SSH for that one URL; cargo uses the git CLI. No
-      # ssh-agent (its files are not where our runner's ssh looks): the key in the job's temp
-      # folder (gone with the job) and GitHub's published host key pinned.
-      - name: Fetch stintmate-ipc over SSH
-        env:
-          DEPLOY_KEY: ${{ secrets.STINTMATE_IPC_DEPLOY_KEY }}
+      - name: Runner tools
+        shell: bash
         run: |
-          $dir = Join-Path $env:RUNNER_TEMP "ssh"
-          New-Item -ItemType Directory -Force $dir | Out-Null
-          $key = Join-Path $dir "deploy_key"
-          [IO.File]::WriteAllText($key, ($env:DEPLOY_KEY -replace "`r`n", "`n").Trim() + "`n")
-          icacls $key /inheritance:r /grant:r "${env:USERNAME}:R" | Out-Null
-          $known = Join-Path $dir "known_hosts"
-          [IO.File]::WriteAllText($known, "github.com ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOMqqnkVzrm0SdG6UOoqKLsabgH5C9okWi0dh2l9GKJl`n")
-          $k = $key.Replace('\', '/'); $h = $known.Replace('\', '/')
-          Add-Content -Path $env:GITHUB_ENV -Value "GIT_SSH_COMMAND=ssh -i '$k' -o IdentitiesOnly=yes -o UserKnownHostsFile='$h' -o StrictHostKeyChecking=yes"
-          Add-Content -Path $env:GITHUB_ENV -Value "CARGO_NET_GIT_FETCH_WITH_CLI=true"
+          for t in bash gzip zstd tar ssh ssh-agent git; do printf '%-10s %s\n' "$t" "$(command -v $t)"; done
+          echo "HOME=$HOME"
+          ls "/c/Program Files (x86)/Inno Setup 6/ISCC.exe"
+      # stintmate-ipc is a private repository: a read-only deploy key (secret
+      # STINTMATE_IPC_DEPLOY_KEY) in ssh-agent, git over SSH for that one URL; cargo uses the git CLI.
+      - uses: webfactory/ssh-agent@v0.9.1
+        with:
+          ssh-private-key: ${{ secrets.STINTMATE_IPC_DEPLOY_KEY }}
+      - name: Fetch stintmate-ipc over SSH
+        shell: bash
+        run: |
+          echo "CARGO_NET_GIT_FETCH_WITH_CLI=true" >> "$GITHUB_ENV"
           git config --global url."git@github.com:Stintmate-App/stintmate-ipc".insteadOf "https://github.com/Stintmate-App/stintmate-ipc"
       - name: Toolchain (from rust-toolchain.toml)
         run: |
@@ -65,3 +62,13 @@ jobs:
         with:
           tool: cargo-deny
       - run: cargo deny check licenses advisories bans sources
+      # The installer (dev flavour; cargo deny ran above): release build, notices, Inno Setup 6.
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about@0.9.2
+      - run: ./scripts/build-installer.ps1 -Dev -SkipDeny
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ams2-connector-dev-setup
+          path: dist/AMS2-Connector-*-dev-setup.exe*
+          retention-days: 7

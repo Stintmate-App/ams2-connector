@@ -2,7 +2,10 @@
 ;   ISCC /DVersion=<x.y.z> /DVersionInfo=<a.b.c.d> /DStage=<dir> /DOutDir=<dir> [/DOutName=<file>]
 ;        [/DDev] [/DSetupIcon=<file.ico>]
 ; Per user (no administrator rights), fixed folder, English only, unsigned. Only code lives in
-; {app}; the workspace and its data (<workspace>\connectors\ams2\) are never touched.
+; {app}; the workspace and its data (<workspace>\connectors\ams2\) are never touched, and the
+; setup needs no workspace: it registers the connector in the per-user machine file
+; %LOCALAPPDATA%\Stintmate\connectors\ams2.json (PRY-088). One flavour (release or dev) is
+; installed at a time: a setup removes the other one through the "uninstall" of that file.
 ; The unattended mode is a contract for Stintmate: docs/installer.md.
 
 #ifndef Version
@@ -77,7 +80,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Source: "{#Stage}\ams2-connector-ui.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\ams2-connector-window.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\ams2-recorder.exe"; DestDir: "{app}"; Flags: ignoreversion
-; Extracted to {tmp} by PrepareToInstall, to check the workspace before anything is copied.
+; Extracted to {tmp} by PrepareToInstall, to read the installed registration (--read-registration)
+; before anything is copied.
 Source: "{#Stage}\ams2-connector-ui.exe"; DestDir: "{tmp}"; Flags: dontcopy
 Source: "{#Stage}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
@@ -95,8 +99,8 @@ const
   WindowName = 'ams2-connector-window.exe';
   RecorderName = 'ams2-recorder.exe';
   { exit statuses of ams2-connector-ui.exe }
-  ExitWorkspaceError = 3;
-  ExitManaged = 4;
+  ExitNoRegistration = 2;   { --read-registration: no valid registration of this connector }
+  ExitManaged = 4;          { --quit: a managing app owns the connector }
 
 var
   ProgressFile: String;   { /PROGRESS=<file>, '' when not asked }
@@ -279,17 +283,17 @@ begin
   end;
 end;
 
-{ How many of the connector's three programs run from the install folder (by image path, so the Python
-  connector and any other copy are never counted). If WMI is unavailable, the connector's
-  single-instance mutexes answer instead. }
-function CountRunning: Integer;
+{ How many of the connector's three programs run from the folder InstallDir (by image path, so
+  any other copy is never counted). If WMI is unavailable, the connector's single-instance
+  mutexes answer instead (they cannot tell which copy holds them). }
+function CountRunning(const InstallDir: String): Integer;
 var
   Locator, Service, Items, Item: Variant;
   I: Integer;
   Dir, Path: String;
 begin
   Result := 0;
-  Dir := Lowercase(AddBackslash(ExpandConstant('{app}')));
+  Dir := Lowercase(AddBackslash(InstallDir));
   try
     Locator := CreateOleObject('WbemScripting.SWbemLocator');
     Service := Locator.ConnectServer('.', 'root\cimv2');
@@ -311,48 +315,35 @@ begin
   end;
 end;
 
-function WaitStopped(const Seconds: Integer): Boolean;
+function WaitStopped(const InstallDir: String; const Seconds: Integer): Boolean;
 var
   I: Integer;
 begin
-  Result := CountRunning = 0;
+  Result := CountRunning(InstallDir) = 0;
   I := 0;
   while (not Result) and (I < Seconds * 4) do
   begin
     Sleep(250);
     I := I + 1;
-    Result := CountRunning = 0;
+    Result := CountRunning(InstallDir) = 0;
   end;
 end;
 
-function WorkspaceArgs(const Workspace: String): String;
-var
-  W: String;
-begin
-  Result := '';
-  W := Workspace;
-  while (Length(W) > 3) and (W[Length(W)] = '\') do
-    Delete(W, Length(W), 1);
-  { a root such as C:\ would escape the closing quote: double its backslash }
-  if (W <> '') and (W[Length(W)] = '\') then
-    W := W + '\';
-  if W <> '' then
-    Result := ' --workspace "' + W + '"';
-end;
-
-{ Leaves none of the connector's programs running, or returns the reason it could not.
+{ Leaves none of the connector's programs of the folder InstallDir running (this install's, or
+  the other flavour's), or returns the reason it could not.
   /MANAGED: Stintmate stopped the connector, so one still running is a failure and nothing is
-  closed. Otherwise: ask the control app to exit (--quit). A connector Stintmate manages (exit
-  4) is Stintmate's to stop: a silent run fails (it never closes Stintmate), an interactive one
-  asks to close Stintmate and waits for it to stop the connector. }
-function EnsureConnectorStopped(const Workspace: String): String;
+  closed. Otherwise: ask the control app of that folder to exit (--quit, which finds the
+  workspace's key itself). A connector Stintmate manages (exit 4) is Stintmate's to stop: a
+  silent run fails (it never closes Stintmate), an interactive one asks to close Stintmate and
+  waits for it to stop the connector. }
+function EnsureConnectorStopped(const InstallDir: String): String;
 var
   Code: Integer;
   Managed: Boolean;
   What: String;
 begin
   Result := '';
-  if CountRunning = 0 then
+  if CountRunning(InstallDir) = 0 then
     Exit;
   if CmdFlag('MANAGED') then
   begin
@@ -360,10 +351,10 @@ begin
     Exit;
   end;
   Managed := False;
-  if FileExists(ExpandConstant('{app}\' + UiName)) then
-    if Exec(ExpandConstant('{app}\' + UiName), '--quit' + WorkspaceArgs(Workspace), '', SW_HIDE, ewWaitUntilTerminated, Code) then
+  if FileExists(AddBackslash(InstallDir) + UiName) then
+    if Exec(AddBackslash(InstallDir) + UiName, '--quit', '', SW_HIDE, ewWaitUntilTerminated, Code) then
       Managed := Code = ExitManaged;
-  if (not Managed) and WaitStopped(3) then
+  if (not Managed) and WaitStopped(InstallDir, 3) then
     Exit;
   if IsSilent then
   begin
@@ -378,50 +369,13 @@ begin
     Result := 'connector_running';
     Exit;
   end;
-  if not WaitStopped(15) then
+  if not WaitStopped(InstallDir, 15) then
     Result := 'connector_running';
 end;
 
 function ConnectorRunningText: String;
 begin
   Result := 'The AMS2 connector is running. Close it (and Stintmate, which manages it) and run the setup again.';
-end;
-
-{ ---- the workspace the connector is registered in, remembered for the uninstaller ---- }
-
-const
-  InstallsKey = 'Software\Stintmate AMS2 Connector\Installs';   { value name: the install folder }
-
-function RememberedWorkspace: String;
-begin
-  if not RegQueryStringValue(HKCU, InstallsKey, ExpandConstant('{app}'), Result) then
-    Result := '';
-end;
-
-procedure RememberWorkspace(const Workspace: String);
-begin
-  RegWriteStringValue(HKCU, InstallsKey, ExpandConstant('{app}'), Workspace);
-end;
-
-procedure ForgetWorkspace;
-begin
-  RegDeleteValue(HKCU, InstallsKey, ExpandConstant('{app}'));
-  RegDeleteKeyIfEmpty(HKCU, InstallsKey);
-  RegDeleteKeyIfEmpty(HKCU, 'Software\Stintmate AMS2 Connector');
-end;
-
-{ Unattended runs need a workspace before anything is copied: /WORKSPACE, STINTMATE_WORKSPACE
-  or the pointer file the Stintmate onboarding writes. Whether it is a usable workspace is
-  decided by --register afterwards. }
-function WorkspaceKnown: Boolean;
-var
-  W: String;
-begin
-  W := CmdValue('WORKSPACE');
-  if W <> '' then
-    Result := DirExists(W)
-  else
-    Result := (GetEnv('STINTMATE_WORKSPACE') <> '') or FileExists(ExpandConstant('{userappdata}\Stintmate\settings.json'));
 end;
 
 { ---- install ---- }
@@ -437,45 +391,97 @@ begin
   EmitDone;
 end;
 
-{ Checks the workspace before anything is copied: the new control app, extracted to the temp folder, runs
-  --register --check (resolves the workspace, creates and removes a test file where the
-  descriptor goes, writes nothing else). Returns its exit status, or 1 when it cannot run. }
-function CheckWorkspace(const Workspace: String): Integer;
+{ The value of Key in the "key=value" lines --read-registration wrote ('' when absent). }
+function RegistrationValue(const Lines: TArrayOfString; const Key: String): String;
 var
-  Code: Integer;
+  I, P: Integer;
 begin
-  ExtractTemporaryFile(UiName);
-  if not Exec(ExpandConstant('{tmp}\' + UiName), '--register --check' + WorkspaceArgs(Workspace), '', SW_HIDE, ewWaitUntilTerminated, Code) then
-    Code := 1;
-  Result := Code;
+  Result := '';
+  for I := 0 to GetArrayLength(Lines) - 1 do
+  begin
+    P := Pos('=', Lines[I]);
+    if (P > 0) and (CompareText(Copy(Lines[I], 1, P - 1), Key) = 0) then
+    begin
+      Result := Copy(Lines[I], P + 1, MaxInt);
+      Exit;
+    end;
+  end;
 end;
 
+{ One flavour at a time. Before anything is copied: the new control app, extracted to the temp
+  folder, reads the registration file (--read-registration; no workspace is involved). When it
+  names another folder than the install folder, that install (the other flavour, or another copy) is stopped
+  and removed through the "uninstall" command of the file, and the setup waits until its launcher
+  is gone. A registration with no "uninstall" (a development checkout) is left alone and simply
+  overwritten by --register. Finally this install's own programs are stopped. }
 function PrepareToInstall(var NeedsRestart: Boolean): String;
 var
-  Check: Integer;
+  Code, I: Integer;
+  Lines: TArrayOfString;
+  ListFile, OtherDir, OtherLauncher, OtherUninstall, OtherArgs: String;
+  Ran: Boolean;
 begin
   Result := '';
   Emit('{"stage":"prepare"}');
-  if WizardSilent and not WorkspaceKnown then
+  OtherDir := '';
+  OtherLauncher := '';
+  OtherUninstall := '';
+  OtherArgs := '';
+  ExtractTemporaryFile(UiName);
+  ListFile := ExpandConstant('{tmp}\registration.txt');
+  DeleteFile(ListFile);
+  if not Exec(ExpandConstant('{tmp}\' + UiName), '--read-registration "' + ListFile + '"', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+    Code := 1;
+  if Code = 0 then
   begin
-    FailReason := 'no_workspace';
-    Result := 'No Stintmate workspace was found (/WORKSPACE, or the one Stintmate saved).';
-    Exit;
+    { LoadStringsFromFile reads the UTF-8 BOM the file starts with: non-ASCII paths stay intact }
+    if not LoadStringsFromFile(ListFile, Lines) then
+      Code := 1
+    else
+    begin
+      OtherLauncher := RegistrationValue(Lines, 'launcher');
+      OtherDir := RegistrationValue(Lines, 'dir');
+      OtherUninstall := RegistrationValue(Lines, 'uninstall');
+      OtherArgs := RegistrationValue(Lines, 'uninstall_args');
+    end;
   end;
-  Check := CheckWorkspace(CmdValue('WORKSPACE'));
-  if (Check = ExitWorkspaceError) and WizardSilent then
-  begin
-    FailReason := 'no_workspace';
-    Result := 'The Stintmate workspace is not usable (/WORKSPACE, or the one Stintmate saved).';
-    Exit;
-  end;
-  if (Check <> 0) and (Check <> ExitWorkspaceError) then
+  if (Code <> 0) and (Code <> ExitNoRegistration) then
   begin
     FailReason := 'register_failed';
-    Result := 'The connector''s folder in the Stintmate workspace (connectors\ams2) cannot be written. Nothing was installed.';
+    Result := 'The connector''s registration cannot be read. Nothing was installed.';
     Exit;
   end;
-  FailReason := EnsureConnectorStopped(CmdValue('WORKSPACE'));
+
+  if (OtherDir <> '') and (CompareText(RemoveBackslash(OtherDir), RemoveBackslash(ExpandConstant('{app}'))) <> 0) then
+  begin
+    FailReason := EnsureConnectorStopped(OtherDir);
+    if FailReason <> '' then
+    begin
+      Result := ConnectorRunningText;
+      Exit;
+    end;
+    if (OtherUninstall <> '') and FileExists(OtherUninstall) then
+    begin
+      Emit('{"stage":"replace"}');
+      Ran := Exec(OtherUninstall, OtherArgs, '', SW_HIDE, ewWaitUntilTerminated, Code);
+      { Inno's uninstaller hands over to a copy of itself and returns at once: wait (30 s) until
+        the other install's launcher is gone }
+      I := 0;
+      while Ran and FileExists(OtherLauncher) and (I < 120) do
+      begin
+        Sleep(250);
+        I := I + 1;
+      end;
+      if (not Ran) or FileExists(OtherLauncher) then
+      begin
+        FailReason := 'replace_failed';
+        Result := 'The other installation of the AMS2 connector (' + OtherDir + ') could not be removed. Uninstall it from Windows'' Installed apps, then run this setup again.';
+        Exit;
+      end;
+    end;
+  end;
+
+  FailReason := EnsureConnectorStopped(ExpandConstant('{app}'));
   if FailReason <> '' then
     Result := ConnectorRunningText;
 end;
@@ -496,40 +502,28 @@ begin
   end;
 end;
 
-{ Registers the connector with Stintmate: ams2-connector-ui.exe --register [--workspace]. }
+{ Registers the connector in the machine file: ams2-connector-ui.exe --register --uninstall
+  "<this uninstaller>" [--flavour dev]. No workspace is needed. }
 procedure RegisterConnector;
 var
   Code: Integer;
-  Workspace: String;
+  Params: String;
 begin
   Emit('{"stage":"register"}');
-  Workspace := CmdValue('WORKSPACE');
-  if not Exec(ExpandConstant('{app}\' + UiName), '--register' + WorkspaceArgs(Workspace), '', SW_HIDE, ewWaitUntilTerminated, Code) then
+  Params := '--register --uninstall "' + ExpandConstant('{uninstallexe}') + '"';
+#ifdef Dev
+  Params := Params + ' --flavour dev';
+#endif
+  if not Exec(ExpandConstant('{app}\' + UiName), Params, '', SW_HIDE, ewWaitUntilTerminated, Code) then
     Code := 1;
   if Code = 0 then
-  begin
-    if Workspace <> '' then
-      RememberWorkspace(Workspace)
-    else
-      ForgetWorkspace;   { registered through the pointer: the uninstaller resolves it itself }
     Exit;
-  end;
-  if (Code = ExitWorkspaceError) and not WizardSilent then
-  begin
-    { interactive, no workspace yet: the files stay and the control app registers itself }
-    MsgBox('The AMS2 connector is installed.' + #13#10#13#10 +
-      'No Stintmate workspace was found yet. Open Stintmate and finish its first run; the connector registers itself when it starts.', mbInformation, MB_OK);
-    Exit;
-  end;
-  { rare, the workspace was checked before the copy: the files stay (Abort cannot undo them) and
-    the run ends with exit status 9 and "installed":true }
+  { rare: the files stay (Abort cannot undo them) and the run ends with exit status 9 and
+    "installed":true }
   Installed := True;
-  if Code = ExitWorkspaceError then
-    FailReason := 'no_workspace'
-  else
-    FailReason := 'register_failed';
+  FailReason := 'register_failed';
   if not WizardSilent then
-    MsgBox('The AMS2 connector is installed, but it could not be registered with Stintmate (code ' + IntToStr(Code) + '). Run the setup again, or start the connector once: it registers itself. See the log in the workspace folder connectors\ams2.', mbCriticalError, MB_OK);
+    MsgBox('The AMS2 connector is installed, but it could not be registered (code ' + IntToStr(Code) + '). Run the setup again.', mbCriticalError, MB_OK);
 end;
 
 function GetCustomSetupExitCode: Integer;
@@ -563,7 +557,7 @@ function InitializeUninstall: Boolean;
 begin
   InitProgress;
   Emit('{"stage":"prepare"}');
-  FailReason := EnsureConnectorStopped(RememberedWorkspace);
+  FailReason := EnsureConnectorStopped(ExpandConstant('{app}'));
   Result := FailReason = '';
   if not Result and not UninstallSilent then
     MsgBox('The AMS2 connector is still running. Close it (and Stintmate, which manages it); nothing was uninstalled.', mbInformation, MB_OK);
@@ -577,17 +571,16 @@ begin
   begin
     Started := True;
     Emit('{"stage":"unregister"}');
-    { removes <workspace>\connectors\ams2\connector.json only; exit 3 (no workspace any more)
-      has nothing to remove }
-    if not Exec(ExpandConstant('{app}\' + UiName), '--unregister' + WorkspaceArgs(RememberedWorkspace), '', SW_HIDE, ewWaitUntilTerminated, Code) then
+    { removes %LOCALAPPDATA%\Stintmate\connectors\ams2.json only when it names this install (a
+      file of another install, or none, is left as it is: exit 0) }
+    if not Exec(ExpandConstant('{app}\' + UiName), '--unregister', '', SW_HIDE, ewWaitUntilTerminated, Code) then
       Code := 1;
-    if (Code <> 0) and (Code <> ExitWorkspaceError) then
+    if Code <> 0 then
       Warning := 'unregister_failed';
     EmitFiles(0);
   end
   else if CurUninstallStep = usPostUninstall then
   begin
-    ForgetWorkspace;
     EmitFiles(100);
   end
   else if CurUninstallStep = usDone then

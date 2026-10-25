@@ -357,11 +357,17 @@ window is the separate process described above.
   app" setting is on, and saves a hand switch. Exit and logoff do not change the setting.
 - **Single instance**: a named mutex; a second launch calls `control.show` (or
   `control.managed`) on the running one and exits.
-- **Connector descriptor** `<workspace>\connectors\ams2\connector.json` (schema 1): id, name,
-  sim, sim name, version, the absolute path of the control app as `launcher`, `args`,
-  `control_protocol: "stintmate-ipc/2"`, `endpoint: "connector-ams2"`, the mutex, the services
-  and logs. Refreshed at every start (only when changed) and written by `--register`, so a
-  managing app finds the connector without knowing the simulator.
+- **Connector descriptor**, the per-user machine file
+  `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (schema 1; PRY-088): id, name, sim, sim name,
+  version, the absolute path of the control app as `launcher`, `args`,
+  `control_protocol: "stintmate-ipc/2"`, `endpoint: "connector-ams2"`, the mutex, the services,
+  the `logs` (in `<workspace>\connectors\ams2\`) and two optional keys: `flavour` (`dev` for
+  the development build) and `uninstall` (the argv that removes this install). Written
+  atomically by the setup, through `--register`, and never by the control app at start; removed
+  by `--unregister` only when `launcher` names this install; read for the next setup by
+  `--read-registration`. It needs no workspace, so a managing app finds the connector without
+  knowing the simulator and before any workspace exists. `STINTMATE_CONNECTORS_DIR` replaces
+  the folder in tests.
 - **Texts**: every UI text is a key of the built-in English catalog `ams2-connector`; the
   language and packs follow the Stintmate text catalogs contract (a chain such as `es-CL`,
   `es`, `en`, built in; entries validated one by one; plurals from the pack's number rules).

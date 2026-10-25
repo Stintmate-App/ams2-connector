@@ -1,22 +1,31 @@
 //! The command line of `ams2-connector-ui.exe` run as a process: `--version`, `--register`,
-//! `--unregister`, the usage message and the exit statuses. Only temporary workspaces; the
-//! options that start or stop the app (`--quit`) are tested through `cli::quit` with unique
-//! names in `endpoint.rs`, never against the driver's real instance.
+//! `--unregister`, `--read-registration`, the usage message and the exit statuses. The
+//! descriptor always goes to a temporary connectors folder (`STINTMATE_CONNECTORS_DIR`), never
+//! to the real one; the options that start or stop the app (`--quit`) are tested through
+//! `cli::quit` with unique names in `endpoint.rs`, never against the driver's real instance.
 
 use serde_json::Value;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-fn run(args: &[&str]) -> Output {
+/// Runs the exe with the connectors folder at `conn` and no workspace anywhere.
+fn run_in(conn: &Path, args: &[&str]) -> Output {
     Command::new(env!("CARGO_BIN_EXE_ams2-connector-ui"))
         .args(args)
         .env_remove("STINTMATE_WORKSPACE")
+        .env("STINTMATE_CONNECTORS_DIR", conn)
         .env(
             "STINTMATE_SETTINGS_FILE",
             std::env::temp_dir().join("ams2-cli-test-no-settings.json"),
         )
         .output()
         .expect("run ams2-connector-ui")
+}
+
+/// Runs the exe for options that never touch the connectors folder.
+fn run(args: &[&str]) -> Output {
+    let conn = tempfile::tempdir().unwrap();
+    run_in(conn.path(), args)
 }
 
 fn text(o: &Output) -> String {
@@ -27,8 +36,12 @@ fn text(o: &Output) -> String {
     )
 }
 
-fn descriptor(ws: &Path) -> std::path::PathBuf {
-    ws.join("connectors").join("ams2").join("connector.json")
+fn descriptor(conn: &Path) -> PathBuf {
+    conn.join("ams2.json")
+}
+
+fn exe() -> String {
+    env!("CARGO_BIN_EXE_ams2-connector-ui").to_string()
 }
 
 #[test]
@@ -42,95 +55,253 @@ fn version_prints_the_name_and_the_version() {
 }
 
 #[test]
-fn register_writes_and_unregister_removes_only_the_descriptor() {
-    let dir = workspace();
-    let ws = dir.path().to_str().unwrap();
-    let o = run(&["--register", "--workspace", ws]);
-    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
-    let d: Value = serde_json::from_slice(&std::fs::read(descriptor(dir.path())).unwrap()).unwrap();
-    assert_eq!(d["id"], "ams2");
-    assert!(
-        d["launcher"]
-            .as_str()
-            .unwrap()
-            .ends_with("ams2-connector-ui.exe")
+fn register_needs_no_workspace_and_writes_every_field() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path().join("connectors");
+    let o = run_in(
+        &conn,
+        &[
+            "--register",
+            "--flavour",
+            "dev",
+            "--uninstall",
+            r"C:\x\unins000.exe",
+        ],
     );
-    // Data the connector keeps next to the descriptor stays.
-    let data = dir.path().join("connectors").join("ams2");
-    for f in ["ui.log", "ui_config.json"] {
-        std::fs::write(data.join(f), "x").unwrap();
-    }
-    std::fs::create_dir_all(data.join("outbox")).unwrap();
-
-    let o = run(&["--unregister", "--workspace", ws]);
     assert_eq!(o.status.code(), Some(0), "{}", text(&o));
-    assert!(!descriptor(dir.path()).exists());
-    assert!(data.join("ui.log").exists() && data.join("ui_config.json").exists());
-    assert!(data.join("outbox").is_dir());
+    let d: Value = serde_json::from_slice(&std::fs::read(descriptor(&conn)).unwrap()).unwrap();
+    assert_eq!(d["schema"], 1);
+    assert_eq!(d["id"], "ams2");
+    assert_eq!(d["flavour"], "dev");
+    assert_eq!(
+        d["uninstall"],
+        serde_json::json!([
+            r"C:\x\unins000.exe",
+            "/VERYSILENT",
+            "/SUPPRESSMSGBOXES",
+            "/NORESTART"
+        ])
+    );
+    assert_eq!(d["launcher"].as_str().unwrap(), exe());
+    for k in [
+        "name",
+        "sim",
+        "sim_name",
+        "version",
+        "args",
+        "control_protocol",
+        "endpoint",
+        "mutex",
+        "services",
+        "logs",
+        "written_at",
+        "written_by",
+    ] {
+        assert!(d.get(k).is_some(), "{k}");
+    }
+    assert!(
+        !std::fs::read(descriptor(&conn))
+            .unwrap()
+            .starts_with(&[0xEF, 0xBB, 0xBF]),
+        "the descriptor has no BOM"
+    );
+    // Without the optional keys they are not written.
+    let plain = dir.path().join("plain");
+    assert_eq!(run_in(&plain, &["--register"]).status.code(), Some(0));
+    let d: Value = serde_json::from_slice(&std::fs::read(descriptor(&plain)).unwrap()).unwrap();
+    assert!(d.get("flavour").is_none() && d.get("uninstall").is_none());
+}
 
-    // Nothing left to remove: still 0.
-    let o = run(&["--unregister", "--workspace", ws]);
+#[test]
+fn an_unchanged_second_register_keeps_the_file() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path();
+    assert_eq!(run_in(conn, &["--register"]).status.code(), Some(0));
+    let first = std::fs::read(descriptor(conn)).unwrap();
+    let mtime = std::fs::metadata(descriptor(conn))
+        .unwrap()
+        .modified()
+        .unwrap();
+    std::thread::sleep(std::time::Duration::from_millis(1100));
+    let o = run_in(conn, &["--register"]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    assert_eq!(std::fs::read(descriptor(conn)).unwrap(), first);
+    assert_eq!(
+        std::fs::metadata(descriptor(conn))
+            .unwrap()
+            .modified()
+            .unwrap(),
+        mtime
+    );
+    // Another flavour is a change.
+    run_in(conn, &["--register", "--flavour", "dev"]);
+    let d: Value = serde_json::from_slice(&std::fs::read(descriptor(conn)).unwrap()).unwrap();
+    assert_eq!(d["flavour"], "dev");
+}
+
+#[test]
+fn register_that_cannot_write_exits_1() {
+    let dir = tempfile::tempdir().unwrap();
+    let blocked = dir.path().join("a-file");
+    std::fs::write(&blocked, "x").unwrap();
+    let o = run_in(&blocked, &["--register"]);
+    assert_eq!(o.status.code(), Some(1), "{}", text(&o));
+}
+
+#[test]
+fn unregister_removes_only_a_file_that_names_this_install() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path();
+    // Ours.
+    run_in(conn, &["--register"]);
+    let o = run_in(conn, &["--unregister"]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    assert!(text(&o).contains("unregistered"));
+    assert!(!descriptor(conn).exists());
+    // Nothing there.
+    let o = run_in(conn, &["--unregister"]);
     assert_eq!(o.status.code(), Some(0), "{}", text(&o));
     assert!(text(&o).contains("nothing to remove"));
-}
-
-#[test]
-fn unregister_leaves_a_descriptor_that_is_not_ours() {
-    let dir = workspace();
-    let path = descriptor(dir.path());
-    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-    std::fs::write(&path, r#"{"id":"other"}"#).unwrap();
-    let o = run(&["--unregister", "--workspace", dir.path().to_str().unwrap()]);
-    assert_eq!(o.status.code(), Some(1), "{}", text(&o));
-    assert!(path.exists());
-}
-
-#[test]
-fn a_workspace_error_is_exit_3_for_register_and_unregister() {
-    let missing = tempfile::tempdir().unwrap().path().join("not-there");
-    let ws = missing.to_str().unwrap();
-    for opt in ["--register", "--unregister"] {
-        let o = run(&[opt, "--workspace", ws]);
-        assert_eq!(o.status.code(), Some(3), "{opt}: {}", text(&o));
+    // Another install's launcher, another id, not JSON: left as it is, exit 0.
+    let other_id = serde_json::json!({"schema": 1, "id": "acc", "launcher": exe()}).to_string();
+    let bodies = [
+        r#"{"schema":1,"id":"ams2","launcher":"D:\\other\\ams2-connector-ui.exe"}"#,
+        other_id.as_str(),
+        "not json",
+    ];
+    for body in bodies {
+        std::fs::write(descriptor(conn), body).unwrap();
+        let o = run_in(conn, &["--unregister"]);
+        assert_eq!(o.status.code(), Some(0), "{body}: {}", text(&o));
+        assert!(text(&o).contains("left as it is"), "{}", text(&o));
+        assert_eq!(std::fs::read_to_string(descriptor(conn)).unwrap(), body);
     }
-    assert!(!missing.exists(), "nothing is created");
 }
 
 #[test]
-fn register_check_writes_nothing_and_reports_the_three_outcomes() {
-    let dir = workspace();
-    let ws = dir.path().to_str().unwrap();
-    let o = run(&["--register", "--check", "--workspace", ws]);
+fn unregister_takes_the_launcher_written_with_slashes_and_other_case() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path();
+    let launcher = exe().replace('\\', "/").to_uppercase();
+    let doc = serde_json::json!({"schema": 1, "id": "ams2", "launcher": launcher});
+    std::fs::write(descriptor(conn), doc.to_string()).unwrap();
+    let o = run_in(conn, &["--unregister"]);
     assert_eq!(o.status.code(), Some(0), "{}", text(&o));
-    assert!(!descriptor(dir.path()).exists(), "no descriptor written");
-    let data = descriptor(dir.path()).parent().unwrap().to_path_buf();
+    assert!(!descriptor(conn).exists(), "{}", text(&o));
+}
+
+#[test]
+fn read_registration_has_three_outcomes() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path().join("c");
+    let out = dir.path().join("registration.txt");
+
+    // No file: exit 2, nothing written.
+    let o = run_in(&conn, &["--read-registration", out.to_str().unwrap()]);
+    assert_eq!(o.status.code(), Some(2), "{}", text(&o));
+    assert!(!out.exists());
+
+    // A file that is not valid or not ours: exit 2 as well.
+    std::fs::create_dir_all(&conn).unwrap();
+    for body in ["not json", r#"{"schema":1,"id":"acc","launcher":"x"}"#] {
+        std::fs::write(descriptor(&conn), body).unwrap();
+        let o = run_in(&conn, &["--read-registration", out.to_str().unwrap()]);
+        assert_eq!(o.status.code(), Some(2), "{body}: {}", text(&o));
+        assert!(!out.exists());
+    }
+
+    // Ours: the exact lines, BOM and CRLF included.
+    let uninstall = r"C:\Program Files\Stint mate\unins000.exe";
     assert_eq!(
-        std::fs::read_dir(&data).unwrap().count(),
-        0,
-        "no test file left"
+        run_in(
+            &conn,
+            &["--register", "--flavour", "dev", "--uninstall", uninstall]
+        )
+        .status
+        .code(),
+        Some(0)
+    );
+    let o = run_in(&conn, &["--read-registration", out.to_str().unwrap()]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    let exe = exe();
+    let dir_of = Path::new(&exe).parent().unwrap().display().to_string();
+    let expected = format!(
+        "\u{feff}launcher={exe}\r\ndir={dir_of}\r\nuninstall={uninstall}\r\nuninstall_args=/VERYSILENT /SUPPRESSMSGBOXES /NORESTART\r\nflavour=dev\r\n"
+    );
+    assert_eq!(std::fs::read(&out).unwrap(), expected.as_bytes());
+
+    // Without uninstall and flavour: empty values.
+    run_in(&conn, &["--unregister"]);
+    run_in(&conn, &["--register"]);
+    let o = run_in(&conn, &["--read-registration", out.to_str().unwrap()]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    let t = std::fs::read_to_string(&out).unwrap();
+    assert!(
+        t.ends_with("uninstall=\r\nuninstall_args=\r\nflavour=\r\n"),
+        "{t:?}"
     );
 
-    let missing = tempfile::tempdir().unwrap();
-    let missing_ws = missing.path().join("not-there");
-    let o = run(&[
-        "--register",
-        "--check",
-        "--workspace",
-        missing_ws.to_str().unwrap(),
-    ]);
-    assert_eq!(o.status.code(), Some(3), "{}", text(&o));
-
-    let blocked = workspace();
-    let conn = blocked.path().join("connectors");
-    std::fs::create_dir_all(&conn).unwrap();
-    std::fs::write(conn.join("ams2"), "a file").unwrap();
-    let o = run(&[
-        "--register",
-        "--check",
-        "--workspace",
-        blocked.path().to_str().unwrap(),
-    ]);
+    // The out file cannot be written: exit 1.
+    let bad = dir.path().join("no-such-folder").join("o.txt");
+    let o = run_in(&conn, &["--read-registration", bad.to_str().unwrap()]);
     assert_eq!(o.status.code(), Some(1), "{}", text(&o));
+}
+
+/// Risk 4 of the spec: the registration file must survive a non-ASCII folder. The BOM is what
+/// makes Inno's `LoadStringsFromFile` read it as UTF-8; here the bytes are checked.
+#[test]
+fn read_registration_keeps_non_ascii_paths_as_utf8_with_a_bom() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path().join("conectores-\u{c1}\u{f1}o-\u{30b3}");
+    let out = dir.path().join("sal\u{ed}da-\u{30b3}.txt");
+    let uninstall = "C:\\Usuarios\\Jos\u{e9} Pe\u{f1}a\\unins000.exe";
+    let o = run_in(
+        &conn,
+        &["--register", "--flavour", "dev", "--uninstall", uninstall],
+    );
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    let o = run_in(&conn, &["--read-registration", out.to_str().unwrap()]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    let bytes = std::fs::read(&out).unwrap();
+    assert!(bytes.starts_with(&[0xEF, 0xBB, 0xBF]));
+    let t = String::from_utf8(bytes[3..].to_vec()).expect("valid UTF-8");
+    assert!(t.contains(&format!("uninstall={uninstall}\r\n")), "{t}");
+    // A launcher in a non-ASCII folder (written by hand: the test exe lives in an ASCII one).
+    let doc = serde_json::json!({
+        "schema": 1,
+        "id": "ams2",
+        "launcher": "C:\\Usuarios\\Jos\u{e9} Pe\u{f1}a\\\u{30b3}\\ams2-connector-ui.exe",
+    });
+    std::fs::write(descriptor(&conn), doc.to_string()).unwrap();
+    let o = run_in(&conn, &["--read-registration", out.to_str().unwrap()]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    let bytes = std::fs::read(&out).unwrap();
+    assert!(bytes.starts_with(&[0xEF, 0xBB, 0xBF]));
+    let t = String::from_utf8(bytes[3..].to_vec()).expect("valid UTF-8");
+    assert!(
+        t.contains("dir=C:\\Usuarios\\Jos\u{e9} Pe\u{f1}a\\\u{30b3}\r\n"),
+        "{t}"
+    );
+}
+
+#[test]
+fn check_is_a_bad_argument_now() {
+    let o = run(&["--register", "--check"]);
+    assert_eq!(o.status.code(), Some(2), "{}", text(&o));
+    assert!(text(&o).contains("unknown argument --check"));
+}
+
+#[test]
+fn register_and_unregister_take_no_workspace() {
+    let dir = tempfile::tempdir().unwrap();
+    for opt in ["--register", "--unregister"] {
+        let o = run_in(
+            dir.path(),
+            &[opt, "--workspace", dir.path().to_str().unwrap()],
+        );
+        assert_eq!(o.status.code(), Some(2), "{opt}: {}", text(&o));
+    }
+    assert!(!descriptor(dir.path()).exists());
 }
 
 #[test]
@@ -143,27 +314,26 @@ fn bad_arguments_print_the_usage_with_every_option() {
         "--managed",
         "--parent-pid",
         "--register",
+        "--flavour",
+        "--uninstall",
         "--unregister",
+        "--read-registration",
         "--quit",
         "--version",
         "--workspace",
         "--allow-synced",
+        "STINTMATE_CONNECTORS_DIR",
     ] {
         assert!(t.contains(opt), "usage lacks {opt}: {t}");
     }
+    assert!(!t.contains("--check"), "{t}");
     for combo in [
         &["--unregister", "--managed", "--parent-pid", "5"][..],
         &["--quit", "--managed", "--parent-pid", "5"][..],
         &["--register", "--unregister"][..],
         &["--version", "--quit"][..],
+        &["--read-registration", "o.txt", "--register"][..],
     ] {
         assert_eq!(run(combo).status.code(), Some(2), "{combo:?}");
     }
-}
-
-/// A temporary folder that is a workspace (`stintmate.json`).
-fn workspace() -> tempfile::TempDir {
-    let dir = tempfile::tempdir().unwrap();
-    std::fs::write(dir.path().join("stintmate.json"), r#"{"schema": 1}"#).unwrap();
-    dir
 }

@@ -19,10 +19,12 @@ Build the connector (see the root [README](../README.md)) and run, once:
 target\release\ams2-connector-ui.exe --register
 ```
 
-`--register` writes the connector descriptor `<workspace>\connectors\ams2\connector.json`, which
-tells a managing app (the Stintmate hub) where the connector is and how to start and control
-it. The descriptor stores the absolute path of the exe, so register again after moving it. The
-control app also refreshes the descriptor at every start, and `--unregister` removes it (see [Command lines](#command-lines)). The three executables must stay in
+`--register` writes the connector descriptor, the per-user machine file
+`%LOCALAPPDATA%\Stintmate\connectors\ams2.json`, which tells a managing app (the Stintmate hub)
+where the connector is and how to start and control it. It needs no workspace. The descriptor
+stores the absolute path of the exe, so register again after moving it: the control app does
+**not** rewrite it at start. `--unregister` removes it, only when it names this exe (see
+[Command lines](#command-lines)). The three executables must stay in
 the same folder: `ams2-connector-ui.exe` (the tray and control app), `ams2-recorder.exe` and
 `ams2-connector-window.exe`.
 
@@ -108,23 +110,28 @@ application contract's control interface (see [ARCHITECTURE.md](ARCHITECTURE.md#
 
 ```
 ams2-connector-ui.exe [--tray] [--managed --parent-pid N] [--workspace DIR] [--allow-synced]
-ams2-connector-ui.exe --register   [--workspace DIR]
-ams2-connector-ui.exe --unregister [--workspace DIR]
-ams2-connector-ui.exe --quit
+ams2-connector-ui.exe --register [--flavour NAME] [--uninstall EXE]
+ams2-connector-ui.exe --unregister
+ams2-connector-ui.exe --read-registration OUT-FILE
+ams2-connector-ui.exe --quit [--workspace DIR] [--allow-synced]
 ams2-connector-ui.exe --version
 ams2-recorder.exe [--hz 50]            (one instance; Ctrl+C stops it)
 ams2-recorder.exe --version
 ams2-connector-window.exe --version
 ```
 
-`--register`, `--unregister`, `--quit` and `--version` start nothing and cannot be combined with
-each other or with `--managed` / `--tray`. A bad command line prints the usage (every option)
-and exits 2.
+`--register`, `--unregister`, `--read-registration`, `--quit` and `--version` start nothing and
+cannot be combined with each other or with `--managed` / `--tray`. `--register`, `--unregister`
+and `--read-registration` take no `--workspace`. A bad command line prints the usage (every
+option) and exits 2. `STINTMATE_CONNECTORS_DIR` replaces the connectors folder (tests and
+development: set it before running `--register` from a checkout, or you take over the real
+registration).
 
 | Option | What it does | Exit status |
 |---|---|---|
-| `--register` | writes `<workspace>\connectors\ams2\connector.json` (this exe's path, the endpoint, the mutex) and exits; left alone when it is already up to date | 0 done, 1 cannot write, 3 workspace error |
-| `--unregister` | removes that file if it is this connector's (`"id": "ams2"`); logs, outbox and `ui_config.json` stay | 0 removed or nothing to remove, 1 cannot remove (or not this connector's file), 3 workspace error |
+| `--register` | writes `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (this exe's path, the endpoint, the mutex; no workspace needed) atomically and exits; left alone when it is already up to date. `--flavour NAME` adds `"flavour"` (for example `dev`); `--uninstall EXE` adds `"uninstall"`, the command line that removes this install (`EXE /VERYSILENT /SUPPRESSMSGBOXES /NORESTART`) | 0 done, 1 cannot write |
+| `--unregister` | removes that file only when it is this connector's (`"id": "ams2"`) and its `launcher` names this exe (absolute, case-insensitive, `/` read as `\`); logs, outbox and `ui_config.json` stay. A file of another install or id is left as it is | 0 removed, nothing to remove, or left as it is (one line says which); 1 cannot remove |
+| `--read-registration OUT-FILE` | for a setup: writes the registration to OUT-FILE as UTF-8 **with a BOM**, `\r\n` line ends, `key=value` lines `launcher`, `dir` (the launcher's folder), `uninstall` (the command), `uninstall_args` (the rest, quoted when they have a space) and `flavour` | 0 written, 2 no valid registration of this connector (nothing written), 1 cannot write OUT-FILE |
 | `--quit` | asks the running control app to exit and waits up to 10 s until nothing of the connector runs | 0 stopped (or nothing ran), 1 still running or the app does not answer, 4 the app is managed |
 | `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.0.0`) | 0 |
 
@@ -134,8 +141,9 @@ managing app uses; the app stops its recorder first, which can take a few second
 left running without the app is asked to stop through its stop event. A managed app refuses
 (error `managed`) because its managing app must stop it: `--quit` then does nothing and exits 4.
 
-The control app writes the descriptor at every start (when it finds a workspace), so a moved or
-updated exe fixes it by itself; `--register` is for installers and scripts.
+The control app does not write the descriptor: only the setup and `--register` do (so a stale
+build started by hand cannot take the registration back). Register again after moving or
+updating the exe by hand.
 
 Output of `ams2-connector-ui.exe` and `ams2-connector-window.exe` (no console of their own):
 when started from a console, they attach to it and print there; redirected output (a file, a
@@ -175,7 +183,7 @@ error in a dialog and starts no service.
 | `outbox\rejected\` | recorder | writes Pitwall refused (`bad_request`, a closed or unknown session): kept for a developer to look at; the control app counts them |
 | `ui_config.json` | control app | the options above |
 
-Beside it in the workspace: `connector.json` (the descriptor), `ipc\key` (the IPC key shared by
+Beside it in the workspace: `ipc\key` (the IPC key shared by
 every Stintmate program; the connector only reads it) and `ipc\endpoints\connector-ams2.json`
 (the endpoint registry entry, for diagnostics). Pitwall's files are Pitwall's; the connector
 never touches them.

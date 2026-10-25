@@ -4,9 +4,9 @@ Stintmate AMS2 Connector
 The Automobilista 2 connector of Stintmate (https://stintmate.app): it reads the game's shared
 memory and records your sessions and laps through Pitwall.
 
-Stintmate starts and stops the connector for you; there is nothing to launch from here. If
-Stintmate was not set up yet when this was installed, open Stintmate and finish its first run:
-the connector registers itself when it starts.
+Stintmate starts and stops the connector for you; there is nothing to launch from here. The
+connector registers itself for Stintmate when it is installed (the file
+%LOCALAPPDATA%\Stintmate\connectors\ams2.json), whether or not Stintmate is set up yet.
 
 Programs in this folder:
   ams2-connector-ui.exe       the control app (tray icon, settings window launcher)

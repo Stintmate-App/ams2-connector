@@ -359,6 +359,8 @@ impl Recorder {
             && let Ok(src) = self.open_source()
         {
             tracing::info!("Automobilista 2 is running: shared memory mapped");
+            self.sink
+                .set_game_token(ams2_platform::game::game_pid().map(u64::from));
             self.set_source(src);
         }
         self.housekeeping(true);
@@ -550,6 +552,9 @@ impl Recorder {
     /// Ends the session, stores what is queued, delivers what it can, closes the links.
     pub fn shutdown(&mut self) {
         self.telemetry.close();
+        if self.game_running && self.source.is_some() {
+            self.sink.keep_session_open(); // BUG-128: the game session goes on
+        }
         self.tracker.end_session(&mut self.sink);
         self.drop_source();
         self.sink.close(CLOSE_DRAIN);

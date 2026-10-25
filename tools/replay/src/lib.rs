@@ -30,7 +30,16 @@ pub fn capture(path: &Path) -> Result<Vec<Timed>, ShmError> {
         let mut f = new_frame();
         match reader.next_frame(&mut f)? {
             Some(us) => out.push((Some(us), f)),
-            None => return Ok(out),
+            None => {
+                if reader.truncated() {
+                    eprintln!(
+                        "warning: {}: the last record is cut short; kept {} whole frames",
+                        path.display(),
+                        out.len()
+                    );
+                }
+                return Ok(out);
+            }
         }
     }
 }

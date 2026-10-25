@@ -66,3 +66,26 @@ pub fn attach_parent_output() -> bool {
     }
     true
 }
+
+static INTERRUPTED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+unsafe extern "system" fn on_ctrl(kind: u32) -> i32 {
+    use windows_sys::Win32::System::Console::{CTRL_BREAK_EVENT, CTRL_C_EVENT};
+    if kind == CTRL_C_EVENT || kind == CTRL_BREAK_EVENT {
+        INTERRUPTED.store(true, std::sync::atomic::Ordering::Relaxed);
+        1
+    } else {
+        0
+    }
+}
+
+/// Installs a Ctrl+C / Ctrl+Break handler that sets the returned flag instead of ending the
+/// process, so a long-running command can finish cleanly. Installing twice returns the same flag.
+pub fn interrupt_flag() -> &'static std::sync::atomic::AtomicBool {
+    static INSTALLED: std::sync::Once = std::sync::Once::new();
+    INSTALLED.call_once(|| {
+        // SAFETY: `on_ctrl` is a valid handler for the life of the process.
+        unsafe { windows_sys::Win32::System::Console::SetConsoleCtrlHandler(Some(on_ctrl), 1) };
+    });
+    &INTERRUPTED
+}

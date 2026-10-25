@@ -1,4 +1,4 @@
-//! `ams2-replay --scripted | --capture FILE [--name NAME] [--hz 50] [--speed 1] [--hold SECS]`:
+//! `ams2-replay --scripted | --capture FILE [--name NAME] [--hz 50] [--speed 1] [--seconds S] [--hold SECS]`:
 //! plays into a test mapping (never the game's) and keeps it for `--hold` seconds afterwards.
 
 use ams2_replay::{capture, play, scripted};
@@ -28,7 +28,7 @@ fn main() {
         }
     } else {
         eprintln!(
-            "usage: ams2-replay --scripted | --capture FILE [--name NAME] [--hz 50] [--speed 1] [--hold SECS]"
+            "usage: ams2-replay --scripted | --capture FILE [--name NAME] [--hz 50] [--speed 1] [--seconds S] [--hold SECS]"
         );
         std::process::exit(2);
     };
@@ -47,13 +47,30 @@ fn main() {
         }
     };
     println!("mapping {name}: {} frames", frames.len());
-    let n = play(
-        &mut map,
-        &frames,
-        number("--hz", 50.0),
-        number("--speed", 1.0),
-        &AtomicBool::new(false),
-    );
+    let stop = std::sync::Arc::new(AtomicBool::new(false));
+    // `--seconds S`: repeat the frames until S seconds have passed (a steady load for
+    // measurements); without it they are played once.
+    let repeat = value("--seconds").and_then(|v| v.parse::<f64>().ok());
+    if let Some(s) = repeat {
+        let stop = stop.clone();
+        std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_secs_f64(s));
+            stop.store(true, std::sync::atomic::Ordering::Relaxed);
+        });
+    }
+    let mut n = 0;
+    loop {
+        n += play(
+            &mut map,
+            &frames,
+            number("--hz", 50.0),
+            number("--speed", 1.0),
+            &stop,
+        );
+        if repeat.is_none() || stop.load(std::sync::atomic::Ordering::Relaxed) {
+            break;
+        }
+    }
     println!("played {n} frames");
     std::thread::sleep(Duration::from_secs_f64(number("--hold", 0.0)));
 }

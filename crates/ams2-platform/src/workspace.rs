@@ -284,13 +284,32 @@ fn real_attributes(_path: &str) -> Option<u32> {
 /// The RoamingAppData known folder (`%APPDATA%` gives the same path).
 #[cfg(windows)]
 fn roaming_appdata() -> Option<String> {
+    use windows_sys::Win32::UI::Shell::FOLDERID_RoamingAppData;
+    known_folder(&FOLDERID_RoamingAppData)
+}
+
+/// The LocalAppData known folder, falling back to `%LOCALAPPDATA%` (the machine-level
+/// `Stintmate\connectors` folder lives under it).
+pub fn local_appdata() -> Option<String> {
+    #[cfg(windows)]
+    {
+        use windows_sys::Win32::UI::Shell::FOLDERID_LocalAppData;
+        if let Some(p) = known_folder(&FOLDERID_LocalAppData) {
+            return Some(p);
+        }
+    }
+    std::env::var_os("LOCALAPPDATA")
+        .map(|v| v.to_string_lossy().into_owned())
+        .filter(|v| !v.is_empty())
+}
+
+#[cfg(windows)]
+fn known_folder(id: &windows_sys::core::GUID) -> Option<String> {
     use windows_sys::Win32::System::Com::CoTaskMemFree;
-    use windows_sys::Win32::UI::Shell::{FOLDERID_RoamingAppData, SHGetKnownFolderPath};
+    use windows_sys::Win32::UI::Shell::SHGetKnownFolderPath;
     let mut out: *mut u16 = std::ptr::null_mut();
     // SAFETY: `out` receives a CoTaskMem-allocated string that we free below.
-    let hr = unsafe {
-        SHGetKnownFolderPath(&FOLDERID_RoamingAppData, 0, std::ptr::null_mut(), &mut out)
-    };
+    let hr = unsafe { SHGetKnownFolderPath(id, 0, std::ptr::null_mut(), &mut out) };
     let result = if hr == 0 && !out.is_null() {
         // SAFETY: on success `out` is a NUL-terminated UTF-16 string.
         let len = (0..).take_while(|&i| unsafe { *out.add(i) } != 0).count();

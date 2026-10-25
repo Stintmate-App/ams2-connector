@@ -1,4 +1,5 @@
-//! The command line and the process's life: `--register`, workspace errors, single instance,
+//! The command line and the process's life: `--register`, `--unregister`, `--read-registration`
+//! (the machine descriptor, no workspace), workspace errors, single instance,
 //! the second launch's call, and the headless run until a UI (U1) is attached.
 
 use crate::api::UiEvent;
@@ -26,12 +27,16 @@ pub struct Args {
     pub managed: bool,
     /// `--parent-pid <pid>`.
     pub parent_pid: Option<u32>,
-    /// `--register`: write the descriptor and exit.
+    /// `--register`: write the machine descriptor and exit.
     pub register: bool,
-    /// `--check` (with `--register`): only check that the descriptor can be written.
-    pub check: bool,
-    /// `--unregister`: remove the descriptor and exit.
+    /// `--flavour <name>` (with `--register`): which build this is.
+    pub flavour: Option<String>,
+    /// `--uninstall <exe>` (with `--register`): the uninstaller that removes this install.
+    pub uninstall: Option<String>,
+    /// `--unregister`: remove the descriptor (when it names this install) and exit.
     pub unregister: bool,
+    /// `--read-registration <out-file>`: write the installed registration for a setup and exit.
+    pub read_registration: Option<String>,
     /// `--quit`: ask the running instance to exit.
     pub quit: bool,
     /// `--version`: print the version and exit.
@@ -56,7 +61,18 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
             "--tray" => a.tray = true,
             "--managed" => a.managed = true,
             "--register" => a.register = true,
-            "--check" => a.check = true,
+            "--flavour" => {
+                let v = it.next().ok_or("--flavour needs a value")?;
+                a.flavour = Some(v);
+            }
+            "--uninstall" => {
+                let v = it.next().ok_or("--uninstall needs a value")?;
+                a.uninstall = Some(v);
+            }
+            "--read-registration" => {
+                let v = it.next().ok_or("--read-registration needs an out file")?;
+                a.read_registration = Some(v);
+            }
             "--unregister" => a.unregister = true,
             "--quit" => a.quit = true,
             "--version" => a.version = true,
@@ -73,12 +89,13 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
     if a.parent_pid.is_some() && !a.managed {
         return Err("--parent-pid needs --managed".into());
     }
-    if a.check && !a.register {
-        return Err("--check needs --register".into());
+    if (a.flavour.is_some() || a.uninstall.is_some()) && !a.register {
+        return Err("--flavour and --uninstall need --register".into());
     }
     let commands = [
         ("--register", a.register),
         ("--unregister", a.unregister),
+        ("--read-registration", a.read_registration.is_some()),
         ("--quit", a.quit),
         ("--version", a.version),
     ];
@@ -97,24 +114,38 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
             "{which} starts nothing: not with --managed or --tray"
         ));
     }
+    if (a.register || a.unregister || a.read_registration.is_some())
+        && (a.workspace.is_some() || a.allow_synced)
+    {
+        return Err(
+            "--register, --unregister and --read-registration use no workspace: the descriptor is in the machine's connectors folder"
+                .into(),
+        );
+    }
     Ok(a)
 }
 
 /// The usage message: every option.
 pub const USAGE: &str = "usage: ams2-connector-ui [--tray] [--managed --parent-pid <pid>] [--workspace <dir>] [--allow-synced]
-       ams2-connector-ui --register   [--check] [--workspace <dir>] [--allow-synced]
-       ams2-connector-ui --unregister [--workspace <dir>] [--allow-synced]
-       ams2-connector-ui --quit
+       ams2-connector-ui --register [--flavour <name>] [--uninstall <exe>]
+       ams2-connector-ui --unregister
+       ams2-connector-ui --read-registration <out-file>
+       ams2-connector-ui --quit [--workspace <dir>] [--allow-synced]
        ams2-connector-ui --version
   --tray            start hidden in the tray
   --managed         run for a managing app (no tray icon); needs --parent-pid <pid>
-  --register        write <workspace>\\connectors\\ams2\\connector.json and exit
-  --check           with --register: only check that the descriptor can be written
-  --unregister      remove that descriptor (keeps logs, outbox and settings) and exit
+  --register        write %LOCALAPPDATA%\\Stintmate\\connectors\\ams2.json (needs no workspace) and exit
+  --flavour <name>  with --register: which build this is, for example dev
+  --uninstall <exe> with --register: the uninstaller that removes this install
+  --unregister      remove that file when it names this install (logs, outbox and settings stay) and exit
+  --read-registration <out-file>
+                    write the installed registration (launcher, dir, uninstall, uninstall_args,
+                    flavour) as key=value lines for a setup; exit 2 when there is none
   --quit            ask the running app to exit (exit 4 if a managing app owns it)
   --version         print the version and exit
   --workspace <dir> the Stintmate workspace; --allow-synced accepts one inside OneDrive
-exit status: 0 done, 1 failed, 2 bad arguments, 3 workspace error, 4 managed (--quit)";
+  STINTMATE_CONNECTORS_DIR replaces the connectors folder (tests)
+exit status: 0 done, 1 failed, 2 bad arguments (--read-registration: no registration), 3 workspace error, 4 managed (--quit)";
 
 /// Exit status of `--quit` when the running app is managed: it must be stopped by its manager.
 pub const QUIT_MANAGED_EXIT: i32 = 4;
@@ -130,27 +161,49 @@ pub fn version_line() -> String {
     format!("{} {}", crate::APP_ID, crate::VERSION)
 }
 
-/// `--unregister`: removes this connector's descriptor and nothing else. 0: removed or nothing
-/// to remove, 3: a workspace error, 1: the file is not this connector's or cannot be removed.
-pub fn unregister(args: &Args) -> i32 {
-    let loc = match location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes) {
-        Ok(l) => l,
-        Err(e) => {
-            say(&e.line());
-            return WORKSPACE_ERROR_EXIT;
-        }
-    };
-    match crate::descriptor::remove(&loc.data_dir) {
-        Ok(Some(p)) => {
+/// `--unregister`: removes this connector's descriptor, only when its `launcher` names this
+/// install (`this_exe`), and nothing else. 0: removed, not there, or another install's (left
+/// as it is; one line each), 1: cannot be removed.
+pub fn unregister(this_exe: &std::path::Path) -> i32 {
+    use crate::descriptor::Removed;
+    match crate::descriptor::remove(this_exe) {
+        Ok(Removed::Removed(p)) => {
             say(&format!("unregistered: {}", p.display()));
             0
         }
-        Ok(None) => {
-            say("nothing to remove: the connector is not registered in this workspace");
+        Ok(Removed::NotThere) => {
+            say("nothing to remove: the connector is not registered");
+            0
+        }
+        Ok(Removed::OtherInstall(p)) => {
+            say(&format!(
+                "left as it is: {} names another install or is not this connector's",
+                p.display()
+            ));
             0
         }
         Err(e) => {
             say(&format!("cannot remove the connector descriptor: {e}"));
+            1
+        }
+    }
+}
+
+/// `--read-registration`: writes the installed registration to `out` for a setup (UTF-8 with a
+/// BOM, `key=value` lines). 0 written, 2 no registration of this connector (nothing written),
+/// 1 the out file cannot be written.
+pub fn read_registration(out: &std::path::Path) -> i32 {
+    let Some(reg) = crate::descriptor::read_ours() else {
+        say("not registered: no valid ams2.json of this connector");
+        return 2;
+    };
+    match std::fs::write(out, reg.to_file_text()) {
+        Ok(()) => {
+            say(&format!("registration written: {}", out.display()));
+            0
+        }
+        Err(e) => {
+            say(&format!("cannot write {}: {e}", out.display()));
             1
         }
     }
@@ -211,47 +264,11 @@ pub fn quit(names: &Names, pipe: &str, key: impl Fn() -> KeySource, wait: Durati
     }
 }
 
-/// `--register --check`: resolves the workspace and checks the descriptor can be written (the
-/// folder `connectors\ams2` is a folder or can be created, and a test file can be created and
-/// removed there); writes nothing else. 0 ok, 3 a workspace error, 1 cannot write.
-pub fn check_register(args: &Args) -> i32 {
-    let loc = match location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes) {
-        Ok(l) => l,
-        Err(e) => {
-            say(&e.line());
-            return WORKSPACE_ERROR_EXIT;
-        }
-    };
-    let probe = loc
-        .data_dir
-        .join(format!(".check-{}.tmp", std::process::id()));
-    let result = std::fs::create_dir_all(&loc.data_dir)
-        .and_then(|()| std::fs::write(&probe, b"check"))
-        .and_then(|()| std::fs::remove_file(&probe));
-    match result {
-        Ok(()) => {
-            say(&format!("ok: {}", loc.data_dir.display()));
-            0
-        }
-        Err(e) => {
-            let _ = std::fs::remove_file(&probe);
-            say(&format!("cannot write in {}: {e}", loc.data_dir.display()));
-            1
-        }
-    }
-}
-
-/// `--register`: writes the descriptor and returns the exit status: 0 written (or already up
-/// to date), 3 a workspace error (none chosen included), 1 the file cannot be written.
+/// `--register`: writes the machine descriptor (needs no workspace) and returns the exit
+/// status: 0 written (or already up to date), 1 the file cannot be written.
 pub fn register(args: &Args, ui_exe: &std::path::Path, mutex: &str) -> i32 {
-    let loc = match location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes) {
-        Ok(l) => l,
-        Err(e) => {
-            say(&e.line());
-            return WORKSPACE_ERROR_EXIT;
-        }
-    };
-    match crate::descriptor::write(&loc.data_dir, ui_exe, mutex) {
+    let uninstall = args.uninstall.as_deref().map(std::path::Path::new);
+    match crate::descriptor::write(ui_exe, mutex, args.flavour.as_deref(), uninstall) {
         Ok(p) => {
             say(&format!("registered: {}", p.display()));
             0
@@ -275,7 +292,12 @@ pub fn main(argv: Vec<String>) -> i32 {
     };
     let names = Names::default();
     let ui_exe = std::env::current_exe().unwrap_or_else(|_| PathBuf::from("ams2-connector-ui.exe"));
-    if args.version || args.register || args.unregister || args.quit {
+    if args.version
+        || args.register
+        || args.unregister
+        || args.quit
+        || args.read_registration.is_some()
+    {
         attach_console();
     }
     if args.version {
@@ -283,13 +305,13 @@ pub fn main(argv: Vec<String>) -> i32 {
         return 0;
     }
     if args.unregister {
-        return unregister(&args);
+        return unregister(&ui_exe);
+    }
+    if let Some(out) = &args.read_registration {
+        return read_registration(std::path::Path::new(out));
     }
     if args.quit {
         return run_quit(&args, &names);
-    }
-    if args.register && args.check {
-        return check_register(&args);
     }
     if args.register {
         return register(&args, &ui_exe, &names.ui);
@@ -336,7 +358,6 @@ pub fn main(argv: Vec<String>) -> i32 {
         tracing::info!("The AMS2 connector app is already running; {method} (reply {reply:?})");
         return 0;
     }
-    crate::descriptor::refresh(&loc.data_dir, &ui_exe, &names.ui);
 
     let recorder_exe = ui_exe.with_file_name("ams2-recorder.exe");
     let app = ControlApp::new(Environment {
@@ -491,8 +512,24 @@ mod tests {
         );
         assert!(p(&["--register", "--managed", "--parent-pid", "5"]).is_err());
         assert!(p(&["--register"]).unwrap().register);
-        assert!(p(&["--register", "--check"]).unwrap().check);
+        assert!(p(&["--register", "--check"]).is_err(), "--check is gone");
         assert!(p(&["--check"]).is_err());
+        let r = p(&["--register", "--flavour", "dev", "--uninstall", "C:\\u.exe"]).unwrap();
+        assert_eq!(
+            (r.flavour.as_deref(), r.uninstall.as_deref()),
+            (Some("dev"), Some("C:\\u.exe"))
+        );
+        assert!(p(&["--flavour", "dev"]).is_err());
+        assert!(p(&["--unregister", "--uninstall", "x"]).is_err());
+        assert!(p(&["--register", "--flavour"]).is_err());
+        assert_eq!(
+            p(&["--read-registration", "o.txt"])
+                .unwrap()
+                .read_registration
+                .as_deref(),
+            Some("o.txt")
+        );
+        assert!(p(&["--read-registration"]).is_err());
         assert!(p(&["--tray"]).unwrap().tray);
         assert!(p(&["--bogus"]).is_err());
     }
@@ -502,7 +539,9 @@ mod tests {
         assert!(p(&["--unregister"]).unwrap().unregister);
         assert!(p(&["--quit"]).unwrap().quit);
         assert!(p(&["--version"]).unwrap().version);
-        assert!(p(&["--unregister", "--workspace", "C:/w"]).is_ok());
+        assert!(p(&["--unregister", "--workspace", "C:/w"]).is_err());
+        assert!(p(&["--register", "--allow-synced"]).is_err());
+        assert!(p(&["--quit", "--workspace", "C:/w"]).is_ok());
         assert!(p(&["--register", "--quit"]).is_err());
         assert!(p(&["--unregister", "--managed", "--parent-pid", "5"]).is_err());
         assert!(p(&["--quit", "--tray"]).is_err());

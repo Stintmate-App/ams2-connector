@@ -15,4 +15,5 @@ pub mod outbox;
 pub mod recorder;
 pub mod serve;
 pub mod sink;
+pub mod status;
 pub mod telemetry;

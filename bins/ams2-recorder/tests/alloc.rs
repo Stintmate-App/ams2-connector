@@ -1,5 +1,5 @@
-//! Allocations on the loop per tick in steady state (plan 3: 0, counted with a test
-//! allocator; see the assertion for what still allocates). The global allocator of this test binary counts the allocations made on the
+//! Allocations on the loop per tick in steady state (plan 3: 0, status ticks included, counted with a test
+//! allocator). The global allocator of this test binary counts the allocations made on the
 //! thread that asked for it (the loop's, here the test's own thread); the links' and the
 //! writer's threads are not counted. A test mapping only; Pitwall's pipe is a random one that
 //! nobody serves.
@@ -123,23 +123,18 @@ fn the_loop_does_not_allocate_per_tick_in_steady_state() {
     let per_tick: Vec<usize> = (20..1400)
         .map(|i| frame(2, f64::from(i) * 2.6, &mut rec))
         .collect();
-    let ticks_allocating = per_tick.iter().filter(|n| **n > 0).count();
-    eprintln!(
-        "allocating ticks at: {:?}",
-        per_tick
-            .iter()
-            .enumerate()
-            .filter(|(_, n)| **n > 0)
-            .take(12)
-            .collect::<Vec<_>>()
-    );
-    let total: usize = per_tick.iter().sum();
-    // Plan 3 says 0. Today the ticks that allocate are only the 0.5 s status (its JSON is built
-    // to compare with the last one sent) and the rivals' 2 Hz batch: at most 2 in 25 ticks.
-    assert!(
-        ticks_allocating * 25 <= per_tick.len() * 2,
+    // Plan 3: 0. The status (every 0.5 s, 47 times in this window; its uptime changes every
+    // second, so it is also handed to the publisher thread) is a fixed struct filled in place,
+    // so it allocates nothing. The one tick that does is a session opening a few ticks after
+    // the lap hand-over (`start_session`, an event, not steady state): it is left out.
+    let steady = &per_tick[200..];
+    let ticks_allocating = steady.iter().filter(|n| **n > 0).count();
+    let total: usize = steady.iter().sum();
+    assert_eq!(
+        ticks_allocating,
+        0,
         "{ticks_allocating} of {} steady-state ticks allocated ({total} allocations)",
-        per_tick.len()
+        steady.len()
     );
     rec.shutdown();
 }

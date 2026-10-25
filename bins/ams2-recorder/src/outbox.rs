@@ -247,6 +247,16 @@ impl Outbox {
         }
     }
 
+    /// [`summary`](Self::summary) lent to `f` as `(pending, oldest_at, rejected)`: no allocation.
+    pub fn with_summary<R>(&self, f: impl FnOnce(usize, Option<&str>, u64) -> R) -> R {
+        let st = lock(&self.0.state);
+        f(
+            st.items.len(),
+            st.items.front().map(|i| i.at.as_str()),
+            st.rejected,
+        )
+    }
+
     /// Waits until every stored write was delivered or rejected.
     pub fn flush(&self, timeout: Duration) -> bool {
         let st = lock(&self.0.state);

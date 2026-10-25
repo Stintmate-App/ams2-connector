@@ -277,6 +277,12 @@ impl PitwallLink {
         lock(&self.shared.state).clone()
     }
 
+    /// [`state`](Self::state) lent to `f`: no allocation.
+    pub fn with_state<R>(&self, f: impl FnOnce(LinkState, Option<&str>) -> R) -> R {
+        let g = lock(&self.shared.state);
+        f(g.0, g.1.as_deref())
+    }
+
     /// +1 on every new connection.
     pub fn generation(&self) -> u64 {
         self.shared.generation.load(Ordering::Relaxed)

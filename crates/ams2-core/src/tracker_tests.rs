@@ -1200,3 +1200,59 @@ mod robustness {
         }
     }
 }
+
+/// Standing start (BUG-129): the game holds `mLapInvalidated` on the grid, with the lap clock
+/// running, the distance at 0 and the sector at the last one, and clears it at the line.
+fn standing_start(h: &mut Harness) {
+    h.sim.d.session_state = ss::RACE;
+    for _ in 0..10 {
+        h.feed_kmh(1, 0.0, -1.0, 0.0);
+        h.tick(1.0);
+    }
+    for i in 0..5 {
+        // lights out, the car rolls behind the line: clock running, distance stuck at 0
+        h.sim
+            .frame_kmh(1, 0.0, f64::from(i) + 0.02, 20.0 * f64::from(i));
+        h.sim.d.participant_info[0].current_sector = 2;
+        h.sim.d.lap_invalidated = 1;
+        h.sim.d.laps_invalidated[0] = 1;
+        h.feed_current();
+        h.tick(1.0);
+    }
+    // The line: the game clears the flag and the distance starts counting.
+    h.sim.d.lap_invalidated = 0;
+    h.sim.d.laps_invalidated[0] = 0;
+    h.feed(1, 1.0, 9.6);
+    h.tick(0.02);
+}
+
+#[test]
+fn test_standing_start_grid_flag_does_not_invalidate_lap_1() {
+    let mut h = Harness::new();
+    standing_start(&mut h);
+    h.drive(1, 10.0, 125.0, 2.0);
+    h.sim.d.last_lap_time = f(125.38);
+    h.feed(2, 1.0, 0.02);
+    h.drive(2, 1.0, 20.0, 40.0);
+    h.end();
+    let stored = laps(&h);
+    let lap1 = stored.iter().find(|l| l.kind == "flying").unwrap();
+    assert!(near(lap1.record.lap_time_s, 125.38));
+    assert!(lap1.record.valid);
+}
+
+#[test]
+fn test_standing_start_lap_1_still_invalid_after_the_line() {
+    let mut h = Harness::new();
+    standing_start(&mut h);
+    h.drive(1, 10.0, 60.0, 2.0);
+    h.sim.d.lap_invalidated = 1; // a cut after the line
+    h.drive(1, 60.0, 125.0, 1800.0);
+    h.sim.d.last_lap_time = f(125.38);
+    h.feed(2, 1.0, 0.02);
+    h.drive(2, 1.0, 20.0, 40.0);
+    h.end();
+    let stored = laps(&h);
+    let lap1 = stored.iter().find(|l| l.kind == "flying").unwrap();
+    assert!(!lap1.record.valid);
+}

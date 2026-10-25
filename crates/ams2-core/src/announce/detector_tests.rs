@@ -697,6 +697,7 @@ fn replay_of_a_seeded_random_run_equals_the_python_detectors_announcements() {
         steps.insert(s[0].as_u64().unwrap(), s[1].as_array().unwrap());
     }
     let mut r = Run::new(make_race(8, session_state::RACE, 6));
+    r.det = EventDetector::new(r.clock.clone(), 2.0).without_deferred_yellow();
     let mut got = Vec::new();
     for tick in 0..ticks {
         for m in steps.get(&tick).into_iter().flat_map(|v| v.iter()) {
@@ -722,4 +723,26 @@ fn replay_of_a_seeded_random_run_equals_the_python_detectors_announcements() {
     for (g, w) in got.iter().zip(want) {
         assert_eq!(g, w);
     }
+}
+
+#[test]
+fn yellow_raised_while_stopped_is_said_when_the_car_moves() {
+    // BUG-130: a contact stops the car and the game raises the yellow a moment later; the
+    // yellow still holds when the car rolls on, so it is said then (once).
+    let mut r = started();
+    r.d.speed = 0.1;
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    assert!(r.codes(2.0).is_empty());
+    r.d.speed = 4.0;
+    assert_eq!(r.codes(0.2), ["flag_yellow"]);
+    assert!(r.codes(5.0).is_empty());
+    // A yellow that ended before the car moved is never said.
+    let mut r = started();
+    r.d.speed = 0.1;
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    assert!(r.codes(2.0).is_empty());
+    r.d.highest_flag_colour = flag::GREEN as u32;
+    assert!(r.codes(1.0).is_empty());
+    r.d.speed = 30.0;
+    assert!(r.codes(6.0).is_empty());
 }

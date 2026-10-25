@@ -147,6 +147,23 @@ pub const BLUE_MAX_PER_CAR: u32 = 3;
 pub const STANDSTILL_MS: f32 = 1.0;
 /// The lapping car is looked for this far behind on track.
 pub const BLUE_RANGE_M: f64 = 500.0;
+/// The player counts as slow (m/s, on track) below this: his own yellow is about him (PRY-090).
+pub const SELF_SLOW_MS: f32 = 5.0;
+/// A yellow edge within this many seconds of the player being slow is the player's own.
+pub const SELF_WINDOW_S: f64 = 5.0;
+/// Another car is a candidate cause of a yellow below this speed (m/s); AI cars slow to 12-15
+/// m/s through a yellow zone and none went under 6.
+pub const CAUSE_SLOW_MS: f32 = 6.0;
+/// The cause is looked for this far ahead of the player on track.
+pub const CAUSE_AHEAD_M: f64 = 1500.0;
+/// The cause is looked for this far behind the player on track (the zone reaches past it).
+pub const CAUSE_BEHIND_M: f64 = 350.0;
+/// A black and white within this long of the lap being invalidated is the track-limits call.
+pub const TRACK_LIMITS_WINDOW_S: f64 = 1.5;
+/// A slow car is named when it is this close ahead on track.
+pub const SLOW_CAR_RANGE_M: f64 = 500.0;
+/// A slow car goes below this share of the player's speed.
+pub const SLOW_CAR_RATIO: f32 = 0.6;
 
 /// The debounce hold times.
 #[derive(Debug, Clone, Copy)]
@@ -164,10 +181,21 @@ pub struct Hold {
 /// Minimum seconds between two announcements of the same code (0: edge only).
 pub fn cooldown(code: &str) -> f64 {
     match code {
-        "flag_yellow" | "flag_double_yellow" | "flag_yellow_cause" | "flag_red"
+        "flag_yellow"
+        | "flag_double_yellow"
+        | "flag_yellow_ahead"
+        | "flag_double_yellow_ahead"
+        | "flag_yellow_driver"
+        | "flag_yellow_self"
+        | "flag_yellow_cause"
+        | "flag_red"
         | "flag_black_orange" => 30.0,
-        "flag_clear" | "flag_blue" | "flag_blue_unknown" | "flag_slow_car" => 20.0,
-        "flag_black_white" => 15.0,
+        "flag_clear"
+        | "flag_blue"
+        | "flag_blue_unknown"
+        | "flag_slow_car"
+        | "flag_slow_car_driver" => 20.0,
+        "flag_black_white" | "flag_track_limits" => 15.0,
         _ => 0.0,
     }
 }
@@ -197,12 +225,13 @@ fn flag_code(f: i64) -> Option<&'static str> {
     Some(match f {
         flag::YELLOW => "flag_yellow",
         flag::DOUBLE_YELLOW => "flag_double_yellow",
-        flag::WHITE_SLOW_CAR => "flag_slow_car",
         flag::RED => "flag_red",
-        flag::BLACK_AND_WHITE => "flag_black_white",
         flag::BLACK_ORANGE_CIRCLE => "flag_black_orange",
         _ => return None,
     })
+}
+fn is_finished_for_good(r: i64) -> bool {
+    r == race::FINISHED || r == race::DISQUALIFIED || is_out(r)
 }
 fn cause(r: u32) -> Option<&'static str> {
     Some(match r {
@@ -292,6 +321,19 @@ fn is_safety_car(name: &str, car_class: &str) -> bool {
 
 type Ident = (String, String);
 
+/// Whose a yellow flag is (PRY-090).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Attribution {
+    /// The player ran off and is slow or off the surface.
+    SelfOffTrack,
+    /// The player is stopped (or crawling) on the surface.
+    SelfStopped,
+    /// Another participant (index in the arrays) is the likely cause.
+    Car(usize),
+    /// Nobody could be named.
+    Unknown,
+}
+
 /// See the module docs. The clock is monotonic seconds; `rival_hz` is how often the
 /// per-participant arrays are read.
 pub struct EventDetector {
@@ -310,9 +352,20 @@ pub struct EventDetector {
     yellow_said: bool,
     /// A yellow (old, new) edge skipped because the car was at a standstill: said once the car
     /// moves, if the yellow still holds.
-    yellow_deferred: Option<(i64, i64)>,
+    /// The attribution is made at the edge and carried with it (always the player's own).
+    yellow_deferred: Option<(i64, i64, Attribution)>,
     /// Off in the parity replay against the Python detector, which never defers (BUG-130).
     defer_yellow: bool,
+    /// Off in the parity replay: the Python detector knew nothing of whose a flag is (PRY-090).
+    attribute_flags: bool,
+    /// The last time the player was on track below [`SELF_SLOW_MS`].
+    player_slow_at: f64,
+    /// `mLapInvalidated` at the previous tick.
+    inval_prev: bool,
+    /// The last time `mLapInvalidated` went from 0 to 1.
+    inval_rose_at: f64,
+    /// The yellow being held was the player's own and closed silently.
+    self_yellow: bool,
     clear_since: Option<f64>,
     clear_pending: Option<f64>,
     penalty: Option<i64>,
@@ -338,6 +391,7 @@ impl EventDetector {
     #[cfg(test)]
     pub(crate) fn without_deferred_yellow(mut self) -> Self {
         self.defer_yellow = false;
+        self.attribute_flags = false;
         self
     }
 
@@ -359,6 +413,11 @@ impl EventDetector {
             yellow_said: false,
             yellow_deferred: None,
             defer_yellow: true,
+            attribute_flags: true,
+            player_slow_at: f64::NEG_INFINITY,
+            inval_prev: false,
+            inval_rose_at: f64::NEG_INFINITY,
+            self_yellow: false,
             clear_since: None,
             clear_pending: None,
             penalty: None,
@@ -438,6 +497,7 @@ impl EventDetector {
                 self.flag.set(i64::from(d.highest_flag_colour));
                 self.race_state.set(i64::from(d.race_state));
                 self.schedule.set(i64::from(d.pit_schedule));
+                self.inval_prev = d.lap_invalidated != 0;
             } else {
                 self.player_fields(d, now, quiet, race, &mut out);
             }
@@ -462,6 +522,10 @@ impl EventDetector {
         self.yellow_armed = true;
         self.yellow_said = false;
         self.yellow_deferred = None;
+        self.player_slow_at = f64::NEG_INFINITY;
+        self.inval_prev = false;
+        self.inval_rose_at = f64::NEG_INFINITY;
+        self.self_yellow = false;
         self.clear_since = None;
         self.clear_pending = None;
         self.penalty = None;
@@ -553,6 +617,15 @@ impl EventDetector {
             }
         }
 
+        if !in_lane && d.speed < SELF_SLOW_MS && !quiet {
+            self.player_slow_at = now;
+        }
+        let invalid = d.lap_invalidated != 0;
+        if invalid && !self.inval_prev {
+            self.inval_rose_at = now;
+        }
+        self.inval_prev = invalid;
+
         let old = self
             .flag
             .feed(i64::from(d.highest_flag_colour), now, HOLD_S.flag);
@@ -569,12 +642,12 @@ impl EventDetector {
         if let (Some(Some(old)), Some(new), false) = (old, stable, quiet) {
             self.flag_edge(d, old, new, now, in_lane, race, out);
         }
-        if let Some((old, new)) = self.yellow_deferred {
+        if let Some((old, new, att)) = self.yellow_deferred {
             if stable != Some(new) {
                 self.yellow_deferred = None;
             } else if !quiet && !in_lane && d.speed >= STANDSTILL_MS {
                 self.yellow_deferred = None;
-                self.flag_edge(d, old, new, now, in_lane, race, out);
+                self.yellow_edge(d, old, new, att, now, out);
             }
         }
         if let Some(pending) = self.clear_pending
@@ -629,6 +702,7 @@ impl EventDetector {
                 self.clear_pending = Some(now);
             }
             self.yellow_said = false;
+            self.self_yellow = false;
             return;
         }
         let pit_lane_filtered = is_yellow(new) || new == flag::BLUE || new == flag::WHITE_SLOW_CAR;
@@ -640,35 +714,15 @@ impl EventDetector {
             // A contact stops the car right as the game raises the yellow: say it once the car
             // moves, if the yellow still holds (BUG-130).
             if is_yellow(new) && self.defer_yellow {
-                self.yellow_deferred = Some((old, new));
+                let att = self.attribute(d, now);
+                self.yellow_deferred = Some((old, new, att));
             }
             return;
         }
         self.yellow_deferred = None;
-        let (lap, sector) = (self.player_lap(d), self.sector);
-        let data = move || {
-            let mut m = Map::new();
-            m.insert("lap".into(), json!(lap));
-            m.insert("sector".into(), json!(sector));
-            m
-        };
         if is_yellow(new) {
-            let escalation = old == flag::YELLOW && new == flag::DOUBLE_YELLOW;
-            if !(self.yellow_armed || escalation) {
-                return;
-            }
-            let code = flag_code(new).expect("a yellow has a code");
-            let mut params = Map::new();
-            params.insert("sector".into(), json!(self.sector));
-            if self.emit(out, now, code, Some(params), Some(data())) {
-                self.yellow_armed = false;
-                self.yellow_said = true;
-                if let Some(c) = cause(d.highest_flag_reason) {
-                    let mut params = Map::new();
-                    params.insert("cause".into(), json!(c));
-                    self.emit(out, now, "flag_yellow_cause", Some(params), Some(data()));
-                }
-            }
+            let att = self.attribute(d, now);
+            self.yellow_edge(d, old, new, att, now, out);
         } else if new == flag::BLUE {
             if race {
                 self.blue(d, now, out);
@@ -681,9 +735,268 @@ impl EventDetector {
             }
         } else if new == flag::CHEQUERED {
             self.chequered(d, now, out);
-        } else if let Some(code) = flag_code(new) {
-            let data = data();
+        } else if new == flag::BLACK_AND_WHITE {
+            let track_limits =
+                self.attribute_flags && now - self.inval_rose_at <= TRACK_LIMITS_WINDOW_S;
+            let code = if track_limits {
+                "flag_track_limits"
+            } else {
+                "flag_black_white"
+            };
+            let data = self.flag_data(d);
             self.emit(out, now, code, None, Some(data));
+        } else if new == flag::WHITE_SLOW_CAR {
+            self.slow_car(d, now, out);
+        } else if let Some(code) = flag_code(new) {
+            let data = self.flag_data(d);
+            self.emit(out, now, code, None, Some(data));
+        }
+    }
+
+    /// The facts every flag call carries: the lap and the player's sector.
+    fn flag_data(&self, d: &SharedMemory) -> Map<String, Value> {
+        let mut m = Map::new();
+        m.insert("lap".into(), json!(self.player_lap(d)));
+        m.insert("sector".into(), json!(self.sector));
+        m
+    }
+
+    /// Says a yellow (or the escalation to a double yellow) once, by whose it is.
+    fn yellow_edge(
+        &mut self,
+        d: &SharedMemory,
+        old: i64,
+        new: i64,
+        att: Attribution,
+        now: f64,
+        out: &mut Vec<Announcement>,
+    ) {
+        let double = new == flag::DOUBLE_YELLOW;
+        let escalation = old == flag::YELLOW && double;
+        if !(self.yellow_armed || escalation) {
+            return;
+        }
+        let mut data = self.flag_data(d);
+        let reason = cause(d.highest_flag_reason);
+        if !self.attribute_flags {
+            let code = flag_code(new).expect("a yellow has a code");
+            let mut params = Map::new();
+            params.insert("sector".into(), json!(self.sector));
+            if self.emit(out, now, code, Some(params), Some(data.clone())) {
+                self.yellow_armed = false;
+                self.yellow_said = true;
+                if let Some(c) = reason {
+                    let mut params = Map::new();
+                    params.insert("cause".into(), json!(c));
+                    self.emit(out, now, "flag_yellow_cause", Some(params), Some(data));
+                }
+            }
+            return;
+        }
+        match att {
+            Attribution::SelfOffTrack | Attribution::SelfStopped => {
+                if escalation && self.self_yellow {
+                    return; // the same incident, already closed silently
+                }
+                let situation = if att == Attribution::SelfOffTrack {
+                    "off_track"
+                } else {
+                    "stopped"
+                };
+                data.insert("attribution".into(), json!("self"));
+                let mut params = Map::new();
+                params.insert("situation".into(), json!(situation));
+                if self.emit(out, now, "flag_yellow_self", Some(params), Some(data)) {
+                    self.yellow_armed = false;
+                    self.self_yellow = true;
+                }
+            }
+            Attribution::Car(i) => {
+                let Some(name) = self.rival_ok(d, i) else {
+                    return;
+                };
+                let name = name.into_owned();
+                let incident = (d.participant_info[i].current_sector + 1).clamp(1, 3);
+                data.insert("attribution".into(), json!("car"));
+                data.insert("incident_sector".into(), json!(incident));
+                data.insert("driver".into(), json!(name));
+                let code = if double {
+                    "flag_double_yellow"
+                } else {
+                    "flag_yellow"
+                };
+                let mut params = Map::new();
+                params.insert("sector".into(), json!(incident));
+                if self.emit(out, now, code, Some(params), Some(data.clone())) {
+                    self.yellow_armed = false;
+                    self.yellow_said = true;
+                    self.self_yellow = false;
+                    let mut params = Map::new();
+                    params.insert("driver".into(), json!(name));
+                    params.insert("cause".into(), json!(reason.unwrap_or("unknown")));
+                    self.emit(out, now, "flag_yellow_driver", Some(params), Some(data));
+                }
+            }
+            Attribution::Unknown => {
+                data.insert("attribution".into(), json!("unknown"));
+                let code = if double {
+                    "flag_double_yellow_ahead"
+                } else {
+                    "flag_yellow_ahead"
+                };
+                if self.emit(out, now, code, None, Some(data.clone())) {
+                    self.yellow_armed = false;
+                    self.yellow_said = true;
+                    self.self_yellow = false;
+                    if let Some(c) = reason {
+                        let mut params = Map::new();
+                        params.insert("cause".into(), json!(c));
+                        self.emit(out, now, "flag_yellow_cause", Some(params), Some(data));
+                    }
+                }
+            }
+        }
+    }
+
+    /// Whose a yellow is: the player's own recent speed first, then the other cars.
+    fn attribute(&self, d: &SharedMemory, now: f64) -> Attribution {
+        if !self.attribute_flags {
+            return Attribution::Unknown;
+        }
+        let off_track = d.crash_state != 0;
+        if self.player_is_slow(now) {
+            return if off_track {
+                Attribution::SelfOffTrack
+            } else {
+                Attribution::SelfStopped
+            };
+        }
+        let me = usize::try_from(self.view_index.unwrap_or(0)).unwrap_or(usize::MAX);
+        if let Some(i) = self.cause_car(d, me) {
+            Attribution::Car(i)
+        } else if off_track {
+            Attribution::SelfOffTrack
+        } else {
+            Attribution::Unknown
+        }
+    }
+
+    fn player_is_slow(&self, now: f64) -> bool {
+        now - self.player_slow_at <= SELF_WINDOW_S
+    }
+
+    /// The name of participant `i` when it is a rival worth naming: active, with a name, not
+    /// the player, not the Safety Car.
+    fn rival_ok<'a>(&self, d: &'a SharedMemory, i: usize) -> Option<Cow<'a, str>> {
+        let q = d.participant_info.get(i)?;
+        if q.is_active == 0 {
+            return None;
+        }
+        let name = name_of(&q.name);
+        if name.is_empty() || self.player_name.as_deref() == Some(&*name) {
+            return None;
+        }
+        let car_class = name_of(&d.car_class_names[i]);
+        if is_safety_car(&name, &car_class) {
+            return None;
+        }
+        Some(name)
+    }
+
+    /// The gap in metres from the player (`me`) to participant `i` along the track, wrapped to
+    /// (-length/2, length/2]; positive: ahead.
+    fn gap_to(d: &SharedMemory, me: usize, i: usize, length: f64) -> f64 {
+        let delta = f64::from(d.participant_info[i].current_lap_distance)
+            - f64::from(d.participant_info[me].current_lap_distance);
+        let mut g = delta.rem_euclid(length);
+        if g > length / 2.0 {
+            g -= length;
+        }
+        g
+    }
+
+    /// The most likely cause of a yellow among the other cars: slow on track near the player,
+    /// preferring the one that carries a yellow itself, then the nearest (ahead first).
+    fn cause_car(&self, d: &SharedMemory, me: usize) -> Option<usize> {
+        let length = f64::from(d.track_length);
+        let n = usize::try_from(d.num_participants)
+            .unwrap_or(0)
+            .min(d.participant_info.len());
+        if length <= 0.0 || me >= n {
+            return None;
+        }
+        let mut best: Option<(usize, bool, f64)> = None;
+        for i in 0..n {
+            if i == me
+                || d.pit_modes[i] != pit_mode::NONE
+                || d.speeds[i] >= CAUSE_SLOW_MS
+                || is_finished_for_good(i64::from(d.race_states[i]))
+            {
+                continue;
+            }
+            let g = Self::gap_to(d, me, i, length);
+            if !(-CAUSE_BEHIND_M..=CAUSE_AHEAD_M).contains(&g) {
+                continue;
+            }
+            if self.rival_ok(d, i).is_none() {
+                continue;
+            }
+            let own = is_yellow(i64::from(d.highest_flag_colours[i]));
+            let cost = if g >= 0.0 { g } else { -2.0 * g };
+            let better = match best {
+                None => true,
+                Some((_, b_own, b_cost)) => (own && !b_own) || (own == b_own && cost < b_cost),
+            };
+            if better {
+                best = Some((i, own, cost));
+            }
+        }
+        best.map(|(i, _, _)| i)
+    }
+
+    /// The white flag: a slow car ahead. Silent when the player is the slow one.
+    fn slow_car(&mut self, d: &SharedMemory, now: f64, out: &mut Vec<Announcement>) {
+        let data = self.flag_data(d);
+        if !self.attribute_flags {
+            self.emit(out, now, "flag_slow_car", None, Some(data));
+            return;
+        }
+        if self.player_is_slow(now) {
+            return;
+        }
+        let length = f64::from(d.track_length);
+        let n = usize::try_from(d.num_participants)
+            .unwrap_or(0)
+            .min(d.participant_info.len());
+        let me = usize::try_from(self.view_index.unwrap_or(0)).unwrap_or(usize::MAX);
+        let mut who: Option<(String, f64)> = None;
+        if length > 0.0 && me < n {
+            for i in 0..n {
+                if i == me
+                    || d.pit_modes[i] != pit_mode::NONE
+                    || d.speeds[i] >= SLOW_CAR_RATIO * d.speed
+                {
+                    continue;
+                }
+                let g = Self::gap_to(d, me, i, length);
+                if g > 0.0
+                    && g <= SLOW_CAR_RANGE_M
+                    && who.as_ref().is_none_or(|(_, best)| g < *best)
+                    && let Some(name) = self.rival_ok(d, i)
+                {
+                    who = Some((name.into_owned(), g));
+                }
+            }
+        }
+        match who {
+            Some((name, _)) => {
+                let mut params = Map::new();
+                params.insert("driver".into(), json!(name));
+                self.emit(out, now, "flag_slow_car_driver", Some(params), Some(data));
+            }
+            None => {
+                self.emit(out, now, "flag_slow_car", None, Some(data));
+            }
         }
     }
 
@@ -732,18 +1045,10 @@ impl EventDetector {
                     continue;
                 }
                 let q = &d.participant_info[i];
-                let name = if q.is_active != 0 {
-                    name_of(&q.name)
-                } else {
-                    Cow::Borrowed("")
+                let Some(name) = self.rival_ok(d, i) else {
+                    continue;
                 };
                 let car_class = name_of(&d.car_class_names[i]);
-                if name.is_empty()
-                    || self.player_name.as_deref() == Some(&*name)
-                    || is_safety_car(&name, &car_class)
-                {
-                    continue;
-                }
                 let gap = (f64::from(p.current_lap_distance) - f64::from(q.current_lap_distance))
                     .rem_euclid(length);
                 let theirs = f64::from(q.current_lap) * length + f64::from(q.current_lap_distance);

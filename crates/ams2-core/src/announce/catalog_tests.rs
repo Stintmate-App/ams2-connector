@@ -31,18 +31,24 @@ fn every_code_has_a_validation_status() {
 
 #[test]
 fn the_first_set_of_the_research_is_there() {
-    // Note: the catalog has 28 codes (the task brief said 39; the Python catalog has 28).
+    // Note: the catalog has 34 codes (28 of the Python catalog plus the six of PRY-090).
     let expected = [
         "flag_yellow",
         "flag_double_yellow",
         "flag_yellow_cause",
+        "flag_yellow_ahead",
+        "flag_double_yellow_ahead",
+        "flag_yellow_driver",
+        "flag_yellow_self",
         "flag_clear",
         "flag_blue",
         "flag_blue_unknown",
         "flag_slow_car",
+        "flag_slow_car_driver",
         "final_lap",
         "flag_red",
         "flag_black_white",
+        "flag_track_limits",
         "flag_black_orange",
         "disqualified",
         "retired",
@@ -117,6 +123,16 @@ fn params_that_fit() {
         ("flag_yellow", json!({"sector": 2})),
         ("flag_yellow_cause", json!({"cause": "vehicle_crash"})),
         ("flag_blue", json!({"driver": "Paris"})),
+        ("flag_yellow_ahead", json!({})),
+        ("flag_double_yellow_ahead", json!({})),
+        (
+            "flag_yellow_driver",
+            json!({"driver": "Max Murphy", "cause": "unknown"}),
+        ),
+        ("flag_yellow_self", json!({"situation": "off_track"})),
+        ("flag_yellow_self", json!({"situation": "stopped"})),
+        ("flag_slow_car_driver", json!({"driver": "Paris"})),
+        ("flag_track_limits", json!({})),
         ("chequered", json!({"position": 3})),
         ("radio_check", json!({})),
         ("engineer_test", json!({"text": "hello"})),

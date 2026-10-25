@@ -114,14 +114,16 @@ ams2-connector-ui.exe --register [--flavour NAME] [--uninstall EXE]
 ams2-connector-ui.exe --unregister
 ams2-connector-ui.exe --read-registration OUT-FILE
 ams2-connector-ui.exe --quit [--workspace DIR] [--allow-synced]
+ams2-connector-ui.exe --stintmate-hold [--purpose update|uninstall] [--wait SECONDS]
+ams2-connector-ui.exe --stintmate-release [--no-start]
 ams2-connector-ui.exe --version
 ams2-recorder.exe [--hz 50]            (one instance; Ctrl+C stops it)
 ams2-recorder.exe --version
 ams2-connector-window.exe --version
 ```
 
-`--register`, `--unregister`, `--read-registration`, `--quit` and `--version` start nothing and
-cannot be combined with each other or with `--managed` / `--tray`. `--register`, `--unregister`
+`--register`, `--unregister`, `--read-registration`, `--quit`, `--stintmate-hold`,
+`--stintmate-release` and `--version` start nothing and cannot be combined with each other or with `--managed` / `--tray`. `--register`, `--unregister`
 and `--read-registration` take no `--workspace`. A bad command line prints the usage (every
 option) and exits 2. `STINTMATE_CONNECTORS_DIR` replaces the connectors folder (tests and
 development: set it before running `--register` from a checkout, or you take over the real
@@ -133,6 +135,8 @@ registration).
 | `--unregister` | removes that file only when it is this connector's (`"id": "ams2"`) and its `launcher` names this exe (absolute, case-insensitive, `/` read as `\`); logs, outbox and `ui_config.json` stay. A file of another install or id is left as it is | 0 removed, nothing to remove, or left as it is (one line says which); 1 cannot remove |
 | `--read-registration OUT-FILE` | for a setup: writes the registration to OUT-FILE as UTF-8 **with a BOM**, `\r\n` line ends, `key=value` lines `launcher`, `dir` (the launcher's folder), `uninstall` (the command), `uninstall_args` (the rest, quoted when they have a space) and `flavour` | 0 written, 2 no valid registration of this connector (nothing written), 1 cannot write OUT-FILE |
 | `--quit` | asks the running control app to exit and waits up to 10 s until nothing of the connector runs | 0 stopped (or nothing ran), 1 still running or the app does not answer, 4 the app is managed |
+| `--stintmate-hold` | for a setup: asks Stintmate (hub method `hub.connector.hold`, id `ams2`, 5 minutes) to stop the connector and not start it until released; calls again every 0.5 s while it answers `stopping`, then waits until the connector's mutexes are free; `--wait` (default 25 s) bounds both; `--purpose` is `update` (default) or `uninstall`. Takes no `--workspace`: the user's pointer and key | 0 held and stopped, 1 held but something still runs, 2 bad arguments, 5 no Stintmate to ask (no pointer, workspace or key, no hub endpoint and no hub mutex, or the hub does not know the connector), 6 Stintmate runs but did not answer (3 s for the endpoint, 5 s per call, busy, an older hub), 7 a driving session is being recorded |
+| `--stintmate-release` | for a setup: `hub.connector.release`; Stintmate starts the connector again unless `--no-start` | 0 released (or nothing was held), 2 bad arguments, 5 no Stintmate, 6 not answering |
 | `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.0.0`) | 0 |
 
 `--quit` finds the instance by the single-instance mutex `Local\Ams2Connector.UI` and sends

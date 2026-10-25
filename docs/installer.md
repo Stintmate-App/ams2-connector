@@ -137,6 +137,30 @@ carries `"installed":true`: the caller may run `ams2-connector-ui.exe --register
 | unattended without `/MANAGED` | `ams2-connector-ui.exe --quit`; an unmanaged connector is closed. When Stintmate manages it (`--quit` exits 4) the setup fails with `connector_running`: **it never closes Stintmate** |
 | interactive | the same, but for a managed connector it **asks** to close the installed Stintmate (`stintmate.exe --running` / `--quit-all`) and, while a session is recorded, offers Retry or Cancel |
 
+### The hold: updating without closing Stintmate (PRY-089)
+
+Unless it runs with `/MANAGED`, the setup first asks Stintmate (the hub) to stop **only the
+connector** and keep it stopped, so the question above rarely comes up. During `prepare`, after
+the registration is read, the extracted `ams2-connector-ui.exe --stintmate-hold` (`--purpose
+uninstall` in the uninstaller, which runs the installed build) calls `hub.connector.hold` and
+waits up to 25 s until the connector's programs are gone. Its exit status decides:
+
+| Exit | The setup does |
+|---|---|
+| 0 held and stopped | goes on; Stintmate does not start the connector until it is released |
+| 1 held, something still runs; 2 bad arguments; 5 no Stintmate to ask (no pointer, key or hub); 6 Stintmate runs but did not answer (an older Stintmate, busy, timeout) | the older rules above (a managed connector: silent fails with `connector_running`, interactive asks to close Stintmate) |
+| 7 a driving session is being recorded | interactive: "Finish it, then choose Retry" (Retry holds again); unattended: fails with `connector_running` |
+
+The hold is released with `--stintmate-release` after `--register` (also when registering
+failed), and in `DeinitializeSetup` when the run ends any other way (a failure after the hold, a
+cancel, a copy error): Stintmate then starts the connector the registration names, the new build
+after an update, the old one otherwise. A release that fails is only logged in the setup's log.
+Stintmate ends a hold by itself after 5 minutes, so a setup that dies never leaves the
+connector off. The uninstaller holds with purpose `uninstall`; if it refuses to go on, or the
+person declines before any file is removed, it releases at once; once files are gone the
+removal of `ams2.json` ends the hold. The progress file has no new stage (`prepare` covers the
+hold).
+
 Only processes that run from the install folder count; another copy of the connector, or the
 older Python one, is never counted nor stopped, except the one the registration names when it
 is being replaced.

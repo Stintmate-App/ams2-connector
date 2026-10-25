@@ -65,6 +65,11 @@ stored twice if an answer is lost; and the real-time loop never waits for a pipe
 
 ## The control side
 
+A connector's setup that replaces a running connector should hold it through the hub instead of
+asking the person to close Stintmate: see "Updating your connector while Stintmate runs"
+(section 1.2) of Pitwall's `docs/connector-protocol.md` in the Stintmate repository, and
+`docs/installer.md` here for how this connector's setup does it.
+
 To be managed by the Stintmate hub (start, stop, show, quit), a connector also serves a small
 control endpoint and, when it is installed, writes a descriptor (`<id>.json`) in the per-user
 machine folder `%LOCALAPPDATA%\Stintmate\connectors\` (no workspace needed). The AMS2

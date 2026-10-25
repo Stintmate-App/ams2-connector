@@ -299,6 +299,22 @@ the written and spoken text in the user's language.
   `fcy_pits_open` 8 s later); once per session for final lap, chequered, disqualified, retired;
   rivals by identity (name and class, never the array index; inactive slots, duplicates of the
   player and the safety car ignored).
+- **Whose a flag is** (PRY-090, `detector.rs`: `attribute`, `cause_car`, `rival_ok`). The game
+  shows a yellow to every car in a zone around an incident, the car that caused it included, so
+  at the yellow edge (after the 0.5 s hold) the detector decides: the player was on track below
+  5 m/s within the last 5 s: his own (`flag_yellow_self`, `off_track` when `mCrashState` is not
+  NONE, else `stopped`; said once per incident, the incident is then closed silently: no
+  escalation call, no `flag_clear`); else the one other car that is slow (< 6 m/s), on track,
+  racing, named, not the Safety Car and within 350 m behind to 1500 m ahead on the track, the one
+  carrying a yellow itself first, then the nearest: `flag_yellow` / `flag_double_yellow` with
+  that car's sector, then `flag_yellow_driver`; else `mCrashState` not NONE: his own; else
+  `flag_yellow_ahead` / `flag_double_yellow_ahead` (no sector is made up) and the game's
+  reason. A yellow raised at a standstill is deferred with its attribution (always his own)
+  and said when the car moves. The black and white right after `mLapInvalidated` rose (1.5 s)
+  is `flag_track_limits`; the white slow-car flag names the nearest slower car ahead within
+  500 m (`flag_slow_car_driver`) and is silent when the player is the slow one. Cost: two
+  comparisons per tick on the player's fields; one pass over at most 64 participants without
+  allocation at a flag edge (bench: median unchanged within noise, 1.4-1.6 us).
 - **Sending**: params checked against the catalog, at most 10 per 60 s (the contract's limit,
   kept by the connector), without waiting (`call_async`: the loop never blocks); dropped and
   logged while Pitwall is not connected or before the catalog was declared, since an

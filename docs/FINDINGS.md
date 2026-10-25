@@ -241,6 +241,26 @@ produced a junk session: a single out lap at 0 km/h.
 - 14 of 14 flying laps called; pressing the radio button before a call made the call wait, no
   overlap.
 
+## Flags (2026-10-25, PRY-090)
+
+Measured on two real captures (practice 20261025-212520, race 20261025-215838); not committed.
+
+- **F1** The cause car's own `mHighestFlagColours[me]` carries the yellow (7 or 6): the game
+  shows the flag to the car that caused it (practice t=530.71, race t=648.54).
+- **F2** The yellow arrives 1.5-2 s after the cause stops (under 2 m/s).
+- **F3** Moving excursions (11-16 m/s, four wheels on grass) get no flag.
+- **F4** `mCrashState` is OFFTRACK in one stop and NONE in the other (a stop on the surface).
+- **F5** `mCrashState` is OFFTRACK in the pit box and pit lane too (terrain 46/48).
+- **F6** The zone reaches cars on both sides of the cause (300 m past it, 380-500 m before).
+- **F7** AI cars slow to 12-15 m/s through a yellow zone; none went under 6 m/s.
+- **F8** The yellow ends ~0.8 s after the cause is back on the surface and moving; green (1, 0)
+  is then shown for 3 s.
+- **F9** Black and white (8, reason 0) follows the rise of `mLapInvalidated` by one frame after a
+  cut (practice t=297.27/297.28); only the player sees it.
+- **F10** No blue and no white slow-car flag in either capture.
+- Not verified: another car as the cause, the reasons SOLO_CRASH and VEHICLE_CRASH, the double
+  yellow's rule (the stop off track was double, the stop on track single).
+
 ## Setup screen capture feasibility (2026-10-08)
 
 - With AMS2 in VR, the desktop window (the VR mirror; class `DefaultAppClassName`, title

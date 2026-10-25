@@ -167,8 +167,8 @@ Subcommands of `ams2-recorder.exe`:
 - `codes`: list the catalog.
 - `diagnose`: print one consistent snapshot's main fields and the mapping size (exit 1: no
   mapping; 2: unsupported version).
-- `capture-raw FILE`: record the game's frames for test fixtures. Only in builds made with
-  `--features capture-raw` (development builds); never started by the control app.
+- `capture-raw FILE [--seconds N] [--stop-file PATH]`: record every changed frame of the game for the offline comparison and test fixtures; waits for the game, ends on the stop file, Ctrl+C, the game exiting or `--seconds` (default 3 h), and writes `FILE.json`, a summary. Only in builds made with
+  `--features capture-raw` (development builds); never started by the control app. Use `scripts/capture/` (its README).
 
 ## The data folder
 

@@ -2,6 +2,12 @@
 
 ## 3.0.0 (unreleased)
 
+- **`capture-raw` is usable on a real session (dev builds only).** It waits for the game's
+  mapping, ends cleanly on a stop file, Ctrl+C / Ctrl+Break, the game exiting or `--seconds`
+  (default 3 h), writes a `FILE.json` summary (refreshed every 10 s), uses a 4 MB write buffer
+  at below-normal priority, and the reader keeps the whole records of a truncated file.
+  `scripts/capture/` has the start, stop and status scripts for the engineer.
+
 - **A recorder restart keeps the game session (BUG-128).** A recorder stopped while the game
   runs no longer sends `session_end`: it leaves `session-resume.json` (key, write sequences,
   game pid, session clock) in the data folder, and the next recorder continues the same session

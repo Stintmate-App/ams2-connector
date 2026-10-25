@@ -7,7 +7,13 @@
 //! [`Outbox`]. The 50 Hz loop never waits for any of it.
 //!
 //! Sessions are named by the connector's own **session key** (16 random hex digits chosen when
-//! the tracker opens the session). Each write has an idempotency key
+//! the tracker opens the session). A recorder stopped while the game runs (BUG-128) does not end
+//! its session: it keeps the key and the write sequences in `session-resume.json` (next to the
+//! outbox folder), and a recorder started later in the same game process, whose first session has
+//! the same car, track, layout and session type and whose game clock continued (`ams2_shm::clock`:
+//! remaining time not higher, laps completed not lower), continues it under the same key (Pitwall keeps
+//! the session open across restarts and replays the first answer to `session_start`, so nothing
+//! is announced twice). Anything else gets a new key. Each write has an idempotency key
 //! `ams2/<session_key>/start|lap/<seq>|setup/<seq>|pit_exit/<seq>|participants/<seq>|end`,
 //! `ams2/catalog/<sha256-12>` for a catalogue, assigned here and stored with the write.
 
@@ -22,6 +28,7 @@ use ams2_core::messages::{
 use ams2_core::names::{self, Names};
 use ams2_core::setup::{SetupSnapshot, setup_message};
 use ams2_core::tracker::Sink;
+use ams2_shm::SessionClock;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex, MutexGuard};
@@ -86,7 +93,8 @@ pub struct Stats {
 
 enum Job {
     Start(u64),
-    End(u64, String),
+    /// `(session, ended_at, clock)`: a clock stores the resume file, not a `session_end`.
+    End(u64, String, Option<SessionClock>),
     Lap(LapRecord, Vec<Row>),
     Setup(u64, String, String, SetupSnapshot),
     PitExit(u64, String, Option<f64>),
@@ -102,6 +110,59 @@ struct Core {
     stats: Mutex<Stats>,
     outbox: Mutex<Option<Outbox>>,
     queue: Mutex<Sender<Job>>,
+    /// Where an open session is kept for the next recorder of the same game process.
+    resume_path: std::path::PathBuf,
+    /// Identity of the running game process (its pid), when known.
+    game_token: Mutex<Option<u64>>,
+    /// The next `end_session` keeps the session open instead of closing it.
+    /// Set when the recorder stops while the game runs: the clock of its last frame.
+    stop_clock: Mutex<Option<SessionClock>>,
+    /// The clock of the frame that opens a session (set by the recorder while none is open).
+    start_clock: Mutex<Option<SessionClock>>,
+}
+
+/// What a stopped recorder leaves for the next one.
+fn resume_json(token: u64, s: &Session, clock: &SessionClock) -> Option<serde_json::Value> {
+    let i = s.info.as_ref()?;
+    Some(serde_json::json!({
+        "game": token, "clock": clock.to_json(), "key": s.key, "car": i.car, "track": i.track,
+        "variation": i.variation, "session_state": i.session_state,
+        "seq": [s.seq_lap, s.seq_setup, s.seq_pit_exit, s.seq_participants],
+    }))
+}
+
+/// The key and sequences stored by [`resume_json`] when they describe `info` in game process
+/// `token` and the stored session clock can continue as `now` (`SessionClock::continues_as`: a
+/// session that began again, with the clock back at the total or fewer laps, is another one).
+/// The file is always consumed.
+fn take_resume(
+    path: &std::path::Path,
+    token: Option<u64>,
+    info: &SessionInfo,
+    now: Option<&SessionClock>,
+) -> Option<(String, [u64; 4])> {
+    let text = std::fs::read_to_string(path).ok()?;
+    let _ = std::fs::remove_file(path);
+    let v: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let text_of = |k: &str| v.get(k).and_then(serde_json::Value::as_str);
+    let clock_ok = match (v.get("clock").and_then(SessionClock::from_json), now) {
+        (Some(stored), Some(now)) => stored.continues_as(now),
+        _ => false,
+    };
+    let same = token.is_some()
+        && clock_ok
+        && v.get("game").and_then(serde_json::Value::as_u64) == token
+        && text_of("car") == Some(info.car.as_str())
+        && text_of("track") == Some(info.track.as_str())
+        && text_of("variation") == Some(info.variation.as_str())
+        && text_of("session_state") == Some(info.session_state.as_str());
+    let key = text_of("key").filter(|k| same && !k.is_empty())?;
+    let seq = v.get("seq")?.as_array()?;
+    let mut n = [0u64; 4];
+    for (slot, x) in n.iter_mut().zip(seq) {
+        *slot = x.as_u64()?;
+    }
+    Some((key.to_owned(), n))
 }
 
 /// The tracker's sink in the recorder (see the module docs).
@@ -125,6 +186,10 @@ impl PitwallSink {
             stats: Mutex::default(),
             outbox: Mutex::new(None),
             queue: Mutex::new(tx),
+            resume_path: outbox_dir.with_file_name("session-resume.json"),
+            game_token: Mutex::new(None),
+            stop_clock: Mutex::new(None),
+            start_clock: Mutex::new(None),
         });
         let (c1, c2) = (core.clone(), core.clone());
         let on_result: crate::outbox::OnResult = Box::new(move |m, p, r| c1.delivered(m, p, r));
@@ -167,6 +232,24 @@ impl PitwallSink {
     /// Counters.
     pub fn stats(&self) -> Stats {
         *lock(&self.core.stats)
+    }
+
+    /// Names the running game process (its pid); a resumed session needs it to match.
+    pub fn set_game_token(&self, token: Option<u64>) {
+        *lock(&self.core.game_token) = token;
+    }
+
+    /// The next `end_session` (the recorder is stopping while the game runs) keeps the session
+    /// open for the next recorder instead of sending `session_end`; `clock` is the game's
+    /// session clock at the last frame.
+    pub fn keep_session_open(&self, clock: SessionClock) {
+        *lock(&self.core.stop_clock) = Some(clock);
+    }
+
+    /// The game's session clock at the frame being processed; the recorder calls it only while
+    /// no session is open, so a session opened by that frame knows where the clock stood.
+    pub fn note_clock(&self, clock: SessionClock) {
+        *lock(&self.core.start_clock) = Some(clock);
     }
 
     /// The session key of a tracker session.
@@ -226,13 +309,20 @@ impl Sink for PitwallSink {
             let mut sh = lock(&self.core.shared);
             sh.next_local += 1;
             let local = sh.next_local;
-            let key = new_session_key();
+            let token = *lock(&self.core.game_token);
+            let now = *lock(&self.core.start_clock);
+            let (key, seq) = take_resume(&self.core.resume_path, token, info, now.as_ref())
+                .unwrap_or_else(|| (new_session_key(), [0; 4]));
             sh.by_key.insert(key.clone(), local);
             sh.sessions.insert(
                 local,
                 Session {
                     info: Some(info.clone()),
                     key,
+                    seq_lap: seq[0],
+                    seq_setup: seq[1],
+                    seq_pit_exit: seq[2],
+                    seq_participants: seq[3],
                     ..Session::default()
                 },
             );
@@ -243,7 +333,9 @@ impl Sink for PitwallSink {
     }
 
     fn end_session(&mut self, session_id: u64, ended_at: &str) {
-        self.core.send(Job::End(session_id, ended_at.to_owned()));
+        let keep = *lock(&self.core.stop_clock);
+        self.core
+            .send(Job::End(session_id, ended_at.to_owned(), keep));
     }
 
     fn insert_lap(&mut self, record: LapRecord, rows: Vec<Row>) {
@@ -365,14 +457,29 @@ impl Core {
                 );
                 tracing::info!("Session {key} queued for Pitwall (recorder session {local})");
             }
-            Job::End(local, ended_at) => {
-                let Some(key) = lock(&self.shared)
-                    .sessions
-                    .get(&local)
-                    .map(|s| s.key.clone())
-                else {
-                    return;
+            Job::End(local, ended_at, keep_clock) => {
+                let (key, resume) = {
+                    let sh = lock(&self.shared);
+                    let Some(s) = sh.sessions.get(&local) else {
+                        return;
+                    };
+                    let token = *lock(&self.game_token);
+                    (
+                        s.key.clone(),
+                        token
+                            .zip(keep_clock)
+                            .and_then(|(t, c)| resume_json(t, s, &c)),
+                    )
                 };
+                if let Some(r) = resume {
+                    match std::fs::write(&self.resume_path, r.to_string()) {
+                        Ok(()) => {
+                            tracing::info!("Session {key} kept open for the next recorder");
+                            return;
+                        }
+                        Err(e) => tracing::warn!("Cannot keep session {key} open: {e}"),
+                    }
+                }
                 let params = with(
                     to_value(&SessionEnd { ended_at }),
                     vec![("session_key", Value::from(key.as_str()))],
@@ -527,5 +634,216 @@ impl Core {
             );
             self.send(Job::Split(key.to_owned(), laps));
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::link::CallError;
+
+    fn contains(hay: &[u8], needle: &[u8]) -> bool {
+        hay.windows(needle.len()).any(|w| w == needle)
+    }
+
+    /// A Pitwall that is never there: the writes stay in the outbox.
+    struct Down;
+
+    impl Transport for Down {
+        fn connected(&self) -> bool {
+            false
+        }
+        fn wait_connected(&self, _: Duration) -> bool {
+            false
+        }
+        fn call(
+            &self,
+            _: &str,
+            _: Value,
+            _: Option<&str>,
+            _: Duration,
+        ) -> Result<Value, CallError> {
+            Err(CallError::NotConnected)
+        }
+        fn call_async(
+            &self,
+            _: &str,
+            _: Value,
+            _: Duration,
+            _: Box<dyn FnOnce(Result<Value, CallError>) + Send>,
+        ) -> Result<(), CallError> {
+            Err(CallError::NotConnected)
+        }
+    }
+
+    fn info(state: &str) -> SessionInfo {
+        SessionInfo {
+            started_at: "2026-10-25T10:00:00.000+02:00".into(),
+            car: "Formula Ultimate Gen2".into(),
+            car_class: "F-Ultimate".into(),
+            track: "Oulton Park".into(),
+            variation: "Fosters".into(),
+            session_state: state.into(),
+            length_m: Some(4300.0),
+            fuel_capacity_l: Some(100.0),
+            ambient_c: None,
+            track_c: None,
+            rain: Some(0.5),
+            wind_speed: None,
+        }
+    }
+
+    /// A recorder of game process `token`; its first session is `state`.
+    fn recorder(dir: &std::path::Path, token: u64) -> PitwallSink {
+        let sink = PitwallSink::new(&dir.join("outbox"), Arc::new(Down), None).unwrap();
+        sink.set_game_token(Some(token));
+        sink
+    }
+
+    /// The game's clock in a 30 min practice: `left` s to go, `laps` completed.
+    fn clock(left: f32, laps: u32) -> SessionClock {
+        SessionClock {
+            game_state: 2,
+            session_state: 1,
+            identity: 7,
+            time_remaining_s: left,
+            laps_in_event: 0,
+            duration_min: 30.0,
+            laps_completed: laps,
+        }
+    }
+
+    fn open(sink: &mut PitwallSink, state: &str) -> String {
+        open_at(sink, state, clock(1500.0, 3))
+    }
+
+    fn open_at(sink: &mut PitwallSink, state: &str, at: SessionClock) -> String {
+        sink.note_clock(at);
+        let id = sink.start_session(&info(state));
+        sink.session_key(Some(id)).unwrap()
+    }
+
+    /// Stops a recorder; `game_runs`: the game goes on (the session is kept open).
+    fn stop(mut sink: PitwallSink, id: u64, game_runs: bool) -> usize {
+        if game_runs {
+            sink.keep_session_open(clock(1500.0, 3));
+        }
+        sink.end_session(id, "2026-10-25T10:05:00.000+02:00");
+        assert!(sink.queued(Duration::from_secs(5)));
+        let pending = sink.outbox_summary().pending;
+        sink.close(Duration::ZERO);
+        pending
+    }
+
+    #[test]
+    fn a_restarted_recorder_in_the_same_game_session_keeps_the_key_and_sends_no_end() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut a = recorder(dir.path(), 4242);
+        let key = open(&mut a, "PRACTICE");
+        a.insert_pit_exit(1, "t", None);
+        assert!(a.queued(Duration::from_secs(5)));
+        let before = a.outbox_summary().pending;
+        assert_eq!(
+            stop(a, 1, true),
+            before,
+            "no session_end while the game runs"
+        );
+
+        let mut b = recorder(dir.path(), 4242);
+        assert_eq!(open(&mut b, "PRACTICE"), key, "same key after the restart");
+        b.insert_pit_exit(1, "t", None);
+        assert!(b.queued(Duration::from_secs(5)));
+        // the pit exit continues the sequence (a repeat of seq 1 would be replayed by Pitwall)
+        let pending = b.outbox_summary().pending;
+        assert_eq!(pending, before + 3); // catalogue and start again (Pitwall replays them), the exit
+        let ik = std::fs::read_dir(dir.path().join("outbox"))
+            .unwrap()
+            .filter_map(|e| std::fs::read(e.ok()?.path()).ok())
+            .filter(|t| contains(t, format!("{key}/pit_exit/2").as_bytes()))
+            .count();
+        assert_eq!(ik, 1, "the second pit exit is seq 2");
+        b.close(Duration::ZERO);
+        assert!(!dir.path().join("session-resume.json").exists());
+    }
+
+    #[test]
+    fn a_new_game_session_gets_a_new_key() {
+        for (token, state) in [(7, "PRACTICE"), (4242, "QUALIFY"), (4242, "RACE")] {
+            let dir = tempfile::tempdir().unwrap();
+            let mut a = recorder(dir.path(), 4242);
+            let key = open(&mut a, "PRACTICE");
+            stop(a, 1, true);
+            let mut b = recorder(dir.path(), token);
+            let other = open(&mut b, state);
+            assert_ne!(other, key, "{token} {state}");
+            b.close(Duration::ZERO);
+        }
+    }
+
+    #[test]
+    fn a_session_ended_for_good_is_not_resumed() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut a = recorder(dir.path(), 4242);
+        let key = open(&mut a, "PRACTICE");
+        let before = a.outbox_summary().pending;
+        assert!(
+            stop(a, 1, false) > before,
+            "the game left: session_end is queued"
+        );
+        assert!(!dir.path().join("session-resume.json").exists());
+        let mut b = recorder(dir.path(), 4242);
+        assert_ne!(open(&mut b, "PRACTICE"), key);
+        b.close(Duration::ZERO);
+    }
+
+    #[test]
+    fn an_unknown_game_process_never_resumes() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut a = recorder(dir.path(), 4242);
+        let key = open(&mut a, "PRACTICE");
+        stop(a, 1, true);
+        let mut b = PitwallSink::new(&dir.path().join("outbox"), Arc::new(Down), None).unwrap();
+        assert_ne!(open(&mut b, "PRACTICE"), key);
+        b.close(Duration::ZERO);
+    }
+
+    #[test]
+    fn the_same_session_after_a_long_stop_keeps_the_key() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut a = recorder(dir.path(), 4242);
+        let key = open(&mut a, "PRACTICE");
+        stop(a, 1, true);
+        // however long the recorder was off, the game's clock went on
+        let mut b = recorder(dir.path(), 4242);
+        let again = open_at(&mut b, "PRACTICE", clock(700.0, 9));
+        assert_eq!(again, key, "the clock continued: the same session");
+        b.close(Duration::ZERO);
+    }
+
+    #[test]
+    fn a_new_session_of_the_same_kind_gets_a_new_key() {
+        // clock back at the total, laps back to 0, or the time unset: another session
+        for (left, laps) in [(1800.0, 0), (1500.0, 0), (1800.0, 3), (-1.0, 3)] {
+            let dir = tempfile::tempdir().unwrap();
+            let mut a = recorder(dir.path(), 4242);
+            let key = open(&mut a, "PRACTICE");
+            stop(a, 1, true);
+            let mut b = recorder(dir.path(), 4242);
+            let other = open_at(&mut b, "PRACTICE", clock(left, laps));
+            assert_ne!(other, key, "{left} s left, {laps} laps");
+            b.close(Duration::ZERO);
+        }
+    }
+
+    #[test]
+    fn a_session_opened_without_a_clock_is_never_a_resume() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut a = recorder(dir.path(), 4242);
+        let key = open(&mut a, "PRACTICE");
+        stop(a, 1, true);
+        let mut b = recorder(dir.path(), 4242);
+        let id = b.start_session(&info("PRACTICE"));
+        assert_ne!(b.session_key(Some(id)).unwrap(), key);
+        b.close(Duration::ZERO);
     }
 }

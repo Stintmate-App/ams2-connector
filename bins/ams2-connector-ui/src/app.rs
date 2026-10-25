@@ -327,7 +327,10 @@ impl ControlApp {
     /// [`ServiceManager::busy`]), [`PARENT_CHECK`] in managed mode, else [`IDLE_TICK`].
     pub fn period(&self) -> Duration {
         let g = lock(&self.inner);
-        if g.manager.busy() {
+        if g.manager.busy()
+            || g.manager
+                .watching(&self.data_dir.join(crate::resume_watch::FILE))
+        {
             TICK
         } else if g.parent.is_some() {
             PARENT_CHECK
@@ -794,6 +797,8 @@ impl ControlApp {
         let busy = {
             let mut g = lock(&self.inner);
             g.manager.poll();
+            g.manager
+                .watch_resume(&self.data_dir.join(crate::resume_watch::FILE));
             g.manager.busy()
         };
         if busy && self.idle.load(Ordering::SeqCst) {

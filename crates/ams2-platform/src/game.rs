@@ -86,6 +86,12 @@ pub fn game_running() -> bool {
     any_running(&GAME_EXES)
 }
 
+/// The pid of the running game, if any (names the game process, e.g. to tell one run from the
+/// next).
+pub fn game_pid() -> Option<u32> {
+    find_process(&GAME_EXES).ok().flatten()
+}
+
 /// The game's window exists (by its class or by its exact title): a cheap hint that the game
 /// may run, confirmed by a process snapshot.
 pub fn game_window_seen() -> bool {

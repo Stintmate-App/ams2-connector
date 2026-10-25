@@ -39,6 +39,16 @@ pub struct Args {
     pub read_registration: Option<String>,
     /// `--quit`: ask the running instance to exit.
     pub quit: bool,
+    /// `--stintmate-hold`: ask the Stintmate hub to stop and hold this connector (PRY-089).
+    pub stintmate_hold: bool,
+    /// `--purpose update|uninstall` (with `--stintmate-hold`).
+    pub purpose: Option<String>,
+    /// `--wait <seconds>` (with `--stintmate-hold`).
+    pub wait: Option<u64>,
+    /// `--stintmate-release`: ask the Stintmate hub to end the hold and start the connector.
+    pub stintmate_release: bool,
+    /// `--no-start` (with `--stintmate-release`): end the hold without starting the connector.
+    pub no_start: bool,
     /// `--version`: print the version and exit.
     pub version: bool,
     /// `--workspace`.
@@ -75,6 +85,20 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
             }
             "--unregister" => a.unregister = true,
             "--quit" => a.quit = true,
+            "--stintmate-hold" => a.stintmate_hold = true,
+            "--stintmate-release" => a.stintmate_release = true,
+            "--no-start" => a.no_start = true,
+            "--purpose" => {
+                let v = it.next().ok_or("--purpose needs a value")?;
+                if v != "update" && v != "uninstall" {
+                    return Err("--purpose must be update or uninstall".into());
+                }
+                a.purpose = Some(v);
+            }
+            "--wait" => {
+                let v = it.next().ok_or("--wait needs a number of seconds")?;
+                a.wait = Some(v.parse().map_err(|_| "--wait needs a number of seconds")?);
+            }
             "--version" => a.version = true,
             "--parent-pid" => {
                 let v = it.next().ok_or("--parent-pid needs a value")?;
@@ -97,6 +121,8 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
         ("--unregister", a.unregister),
         ("--read-registration", a.read_registration.is_some()),
         ("--quit", a.quit),
+        ("--stintmate-hold", a.stintmate_hold),
+        ("--stintmate-release", a.stintmate_release),
         ("--version", a.version),
     ];
     let asked: Vec<&str> = commands
@@ -122,6 +148,18 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
                 .into(),
         );
     }
+    if (a.stintmate_hold || a.stintmate_release) && (a.workspace.is_some() || a.allow_synced) {
+        return Err(
+            "--stintmate-hold and --stintmate-release take no workspace: they use the user's own"
+                .into(),
+        );
+    }
+    if (a.purpose.is_some() || a.wait.is_some()) && !a.stintmate_hold {
+        return Err("--purpose and --wait need --stintmate-hold".into());
+    }
+    if a.no_start && !a.stintmate_release {
+        return Err("--no-start needs --stintmate-release".into());
+    }
     Ok(a)
 }
 
@@ -131,6 +169,8 @@ pub const USAGE: &str = "usage: ams2-connector-ui [--tray] [--managed --parent-p
        ams2-connector-ui --unregister
        ams2-connector-ui --read-registration <out-file>
        ams2-connector-ui --quit [--workspace <dir>] [--allow-synced]
+       ams2-connector-ui --stintmate-hold [--purpose update|uninstall] [--wait <seconds>]
+       ams2-connector-ui --stintmate-release [--no-start]
        ams2-connector-ui --version
   --tray            start hidden in the tray
   --managed         run for a managing app (no tray icon); needs --parent-pid <pid>
@@ -142,10 +182,17 @@ pub const USAGE: &str = "usage: ams2-connector-ui [--tray] [--managed --parent-p
                     write the installed registration (launcher, dir, uninstall, uninstall_args,
                     flavour) as key=value lines for a setup; exit 2 when there is none
   --quit            ask the running app to exit (exit 4 if a managing app owns it)
+  --stintmate-hold  for a setup: ask Stintmate to stop this connector and keep it stopped
+                    (--purpose update, the default, or uninstall; --wait seconds, default 25)
+  --stintmate-release
+                    for a setup: ask Stintmate to end the hold and start the connector again
+                    (--no-start: only end the hold)
   --version         print the version and exit
   --workspace <dir> the Stintmate workspace; --allow-synced accepts one inside OneDrive
   STINTMATE_CONNECTORS_DIR replaces the connectors folder (tests)
-exit status: 0 done, 1 failed, 2 bad arguments (--read-registration: no registration), 3 workspace error, 4 managed (--quit)";
+exit status: 0 done, 1 failed, 2 bad arguments (--read-registration: no registration), 3 workspace error, 4 managed (--quit)
+  --stintmate-hold: 0 held and stopped, 1 held but something still runs, 5 no Stintmate to ask, 6 Stintmate did not answer, 7 a session is being recorded
+  --stintmate-release: 0 released (or nothing held), 5 no Stintmate to ask, 6 Stintmate did not answer";
 
 /// Exit status of `--quit` when the running app is managed: it must be stopped by its manager.
 pub const QUIT_MANAGED_EXIT: i32 = 4;
@@ -296,6 +343,8 @@ pub fn main(argv: Vec<String>) -> i32 {
         || args.register
         || args.unregister
         || args.quit
+        || args.stintmate_hold
+        || args.stintmate_release
         || args.read_registration.is_some()
     {
         attach_console();
@@ -312,6 +361,9 @@ pub fn main(argv: Vec<String>) -> i32 {
     }
     if args.quit {
         return run_quit(&args, &names);
+    }
+    if args.stintmate_hold || args.stintmate_release {
+        return run_stintmate(&args, &names);
     }
     if args.register {
         return register(&args, &ui_exe, &names.ui);
@@ -432,6 +484,40 @@ fn run_quit(args: &Args, names: &Names) -> i32 {
     )
 }
 
+/// `--stintmate-hold` / `--stintmate-release` against the user's own hub: the workspace is
+/// resolved like `--quit` (the pointer), the key is the workspace's. Exit 5 when there is no
+/// pointer, no workspace or no key: there is no Stintmate to ask.
+fn run_stintmate(args: &Args, names: &Names) -> i32 {
+    let workspace = match location::resolve(None, false, &SystemProbes) {
+        Ok(l) => l.workspace,
+        Err(e) => {
+            say(&format!("no Stintmate to ask: {}", e.line()));
+            return crate::hold::EXIT_NO_HUB;
+        }
+    };
+    let key_path = match default_key_path(Some(&workspace)) {
+        Ok(p) if p.is_file() => p,
+        _ => {
+            say("no Stintmate to ask: the workspace has no key");
+            return crate::hold::EXIT_NO_HUB;
+        }
+    };
+    let key = || KeySource::File(KeyFile::open(key_path.clone()));
+    let target = crate::hold::HubTarget::production();
+    if args.stintmate_hold {
+        let wait = Duration::from_secs(args.wait.unwrap_or(crate::hold::DEFAULT_WAIT_S));
+        crate::hold::hold(
+            names,
+            &target,
+            key,
+            args.purpose.as_deref().unwrap_or("update"),
+            wait,
+        )
+    } else {
+        crate::hold::release(&target, key, !args.no_start)
+    }
+}
+
 #[cfg(windows)]
 fn tray_available() -> bool {
     crate::tray::tray_available()
@@ -545,9 +631,32 @@ mod tests {
         assert!(p(&["--register", "--quit"]).is_err());
         assert!(p(&["--unregister", "--managed", "--parent-pid", "5"]).is_err());
         assert!(p(&["--quit", "--tray"]).is_err());
+        assert!(p(&["--stintmate-hold", "--quit"]).is_err());
+        assert!(p(&["--stintmate-hold", "--stintmate-release"]).is_err());
+        assert!(p(&["--stintmate-release", "--tray"]).is_err());
         assert_eq!(
             version_line(),
             format!("ams2-connector-ui {}", env!("CARGO_PKG_VERSION"))
         );
+    }
+
+    #[test]
+    fn the_hub_options_parse_and_check_their_companions() {
+        let h = p(&["--stintmate-hold"]).unwrap();
+        assert!(h.stintmate_hold && h.purpose.is_none() && h.wait.is_none());
+        let h = p(&["--stintmate-hold", "--purpose", "uninstall", "--wait", "7"]).unwrap();
+        assert_eq!((h.purpose.as_deref(), h.wait), (Some("uninstall"), Some(7)));
+        assert!(p(&["--stintmate-hold", "--purpose", "other"]).is_err());
+        assert!(p(&["--stintmate-hold", "--purpose"]).is_err());
+        assert!(p(&["--stintmate-hold", "--wait", "x"]).is_err());
+        assert!(p(&["--purpose", "update"]).is_err());
+        assert!(p(&["--wait", "5"]).is_err());
+        let r = p(&["--stintmate-release", "--no-start"]).unwrap();
+        assert!(r.stintmate_release && r.no_start);
+        assert!(p(&["--no-start"]).is_err());
+        assert!(p(&["--stintmate-hold", "--no-start"]).is_err());
+        assert!(p(&["--stintmate-release", "--wait", "5"]).is_err());
+        assert!(p(&["--stintmate-hold", "--workspace", "C:/w"]).is_err());
+        assert!(p(&["--stintmate-release", "--allow-synced"]).is_err());
     }
 }

@@ -2,6 +2,15 @@
 
 ## 3.0.0 (unreleased)
 
+- **Updating without closing Stintmate (PRY-089).** Two new subcommands of
+  `ams2-connector-ui`, `--stintmate-hold [--purpose update|uninstall] [--wait N]` and
+  `--stintmate-release [--no-start]`, call the Stintmate hub (`hub.connector.hold` and
+  `hub.connector.release`, id `ams2`) to stop only the connector while a setup replaces its
+  files and to start it again afterwards. Exit statuses 5 (no Stintmate to ask), 6 (it did not
+  answer) and 7 (a session is being recorded). The setup and the uninstaller use them (unless
+  `/MANAGED`): "close Stintmate" stays only as the fallback when the hub cannot be asked;
+  documented in `docs/installer.md` and `docs/usage.md`.
+
 - **Breaking (PRY-088, nothing released): the connector descriptor moves to the per-user machine
   folder** `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (`STINTMATE_CONNECTORS_DIR`
   replaces the folder in tests). `<workspace>\connectors\ams2\connector.json` is gone; the logs

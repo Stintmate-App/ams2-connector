@@ -101,6 +101,7 @@ const
   { exit statuses of ams2-connector-ui.exe }
   ExitNoRegistration = 2;   { --read-registration: no valid registration of this connector }
   ExitManaged = 4;          { --quit: a managing app owns the connector }
+  ExitRecording = 7;        { --stintmate-hold: a driving session is being recorded }
 
 var
   ProgressFile: String;   { /PROGRESS=<file>, '' when not asked }
@@ -110,6 +111,9 @@ var
   Finished: Boolean;      { the run completed }
   LastPercent: Integer;
   Warning: String;        { a note for the done line of a successful run }
+  Held: Boolean;          { Stintmate holds the connector for this run (--stintmate-hold exited 0) }
+  Released: Boolean;      { the hold was released (once per run) }
+  HoldExe: String;        { the ams2-connector-ui.exe that held it, and releases it }
 
 { ---- command line (ParamStr works in the setup and in the uninstaller) ---- }
 
@@ -356,6 +360,13 @@ begin
       Managed := Code = ExitManaged;
   if (not Managed) and WaitStopped(InstallDir, 3) then
     Exit;
+  { Stintmate held the connector and it is still there under a manager: not a reason to ask to
+    close Stintmate }
+  if Managed and Held then
+  begin
+    Result := 'connector_running';
+    Exit;
+  end;
   if IsSilent then
   begin
     Result := 'connector_running';
@@ -373,6 +384,59 @@ begin
     Result := 'connector_running';
 end;
 
+{ ---- the hold: Stintmate stops only this connector while the files are replaced (PRY-089) ----
+
+  The control app asks the hub (hub.connector.hold) and waits until the connector is stopped.
+  Exit statuses of --stintmate-hold: 0 held and stopped. 1 held but something still runs. 2 bad
+  arguments. 5 no Stintmate to ask. 6 Stintmate did not answer (an older Stintmate, busy,
+  timed out). 7 a driving session is being recorded. Only 0 is a hold; 7 is a refusal; every
+  other status leaves the older path: EnsureConnectorStopped, which asks to close Stintmate.
+  The hub ends a hold by itself after 5 minutes, so a setup that dies never leaves the
+  connector off for good. /MANAGED runs never hold: the caller stopped the connector. }
+
+{ Holds the connector with the control app Exe. 7 asks to finish the session and retry (a
+  silent run gives up). Sets Held and HoldExe when it exits 0. Returns the exit status. }
+function HoldConnector(const Exe, Purpose: String): Integer;
+var
+  Code: Integer;
+begin
+  Result := 5;
+  if CmdFlag('MANAGED') or (not FileExists(Exe)) then
+    Exit;
+  if not Exec(Exe, '--stintmate-hold --purpose ' + Purpose, '', SW_HIDE, ewWaitUntilTerminated, Code) then
+    Code := 6;
+  while Code = ExitRecording do
+  begin
+    if IsSilent or (MsgBox('A driving session is being recorded. Finish it, then choose Retry.', mbError, MB_RETRYCANCEL) <> IDRETRY) then
+    begin
+      Result := Code;
+      Exit;
+    end;
+    if not Exec(Exe, '--stintmate-hold --purpose ' + Purpose, '', SW_HIDE, ewWaitUntilTerminated, Code) then
+      Code := 6;
+  end;
+  Result := Code;
+  Held := Code = 0;
+  if Held then
+    HoldExe := Exe;
+end;
+
+{ Ends the hold (once): Stintmate starts the connector again, the one the registration names
+  now (the new build after an update, the old one after a failure or a cancel). A failure is
+  only logged: the hub's 5 minute limit does the same. }
+procedure ReleaseConnector;
+var
+  Code: Integer;
+begin
+  if (not Held) or Released then
+    Exit;
+  Released := True;
+  if not Exec(HoldExe, '--stintmate-release', '', SW_HIDE, ewWaitUntilTerminated, Code) then
+    Code := -1;
+  if Code <> 0 then
+    Log('--stintmate-release exited ' + IntToStr(Code));
+end;
+
 function ConnectorRunningText: String;
 begin
   Result := 'The AMS2 connector is running. Close it (and Stintmate, which manages it) and run the setup again.';
@@ -388,6 +452,8 @@ end;
 
 procedure DeinitializeSetup;
 begin
+  { a failure after the hold, a cancel, or a copy error rolled back: the old build comes back }
+  ReleaseConnector;
   EmitDone;
 end;
 
@@ -449,6 +515,15 @@ begin
   begin
     FailReason := 'register_failed';
     Result := 'The connector''s registration cannot be read. Nothing was installed.';
+    Exit;
+  end;
+
+  { Stintmate stops only this connector and keeps it stopped (the new build, extracted above,
+    asks it). Not held (no Stintmate, an older one, busy): the older path below applies. }
+  if HoldConnector(ExpandConstant('{tmp}\' + UiName), 'update') = ExitRecording then
+  begin
+    FailReason := 'connector_running';
+    Result := ConnectorRunningText;
     Exit;
   end;
 
@@ -546,6 +621,8 @@ begin
   begin
     EmitFiles(100);
     RegisterConnector;
+    { also when the registration failed: the old registration still names a launcher }
+    ReleaseConnector;
   end
   else if CurStep = ssDone then
     Finished := True;
@@ -557,10 +634,21 @@ function InitializeUninstall: Boolean;
 begin
   InitProgress;
   Emit('{"stage":"prepare"}');
+  if HoldConnector(ExpandConstant('{app}\' + UiName), 'uninstall') = ExitRecording then
+  begin
+    FailReason := 'connector_running';
+    Result := False;
+    Exit;
+  end;
   FailReason := EnsureConnectorStopped(ExpandConstant('{app}'));
   Result := FailReason = '';
-  if not Result and not UninstallSilent then
-    MsgBox('The AMS2 connector is still running. Close it (and Stintmate, which manages it); nothing was uninstalled.', mbInformation, MB_OK);
+  if not Result then
+  begin
+    { nothing is uninstalled: the connector comes back }
+    ReleaseConnector;
+    if not UninstallSilent then
+      MsgBox('The AMS2 connector is still running. Close it (and Stintmate, which manages it); nothing was uninstalled.', mbInformation, MB_OK);
+  end;
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
@@ -589,5 +677,9 @@ end;
 
 procedure DeinitializeUninstall;
 begin
+  { the uninstall was declined before any file was removed: the connector comes back. After
+    files went, the removal of ams2.json ends the hold (and its 5 minutes are the backstop) }
+  if not Started then
+    ReleaseConnector;
   EmitDone;
 end;

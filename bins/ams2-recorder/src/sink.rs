@@ -229,6 +229,12 @@ impl PitwallSink {
         self.outbox().summary()
     }
 
+    /// [`outbox_summary`](Self::outbox_summary) lent to `f` as `(pending, oldest_at, rejected)`:
+    /// no allocation.
+    pub fn with_outbox_summary<R>(&self, f: impl FnOnce(usize, Option<&str>, u64) -> R) -> R {
+        self.outbox().with_summary(f)
+    }
+
     /// Counters.
     pub fn stats(&self) -> Stats {
         *lock(&self.core.stats)
@@ -256,6 +262,14 @@ impl PitwallSink {
     pub fn session_key(&self, local: Option<u64>) -> Option<String> {
         let sh = lock(&self.core.shared);
         sh.sessions.get(&local?).map(|s| s.key.clone())
+    }
+
+    /// [`session_key`](Self::session_key) lent to `f`: no allocation.
+    pub fn with_session_key<R>(&self, local: Option<u64>, f: impl FnOnce(Option<&str>) -> R) -> R {
+        let sh = lock(&self.core.shared);
+        f(local
+            .and_then(|l| sh.sessions.get(&l))
+            .map(|s| s.key.as_str()))
     }
 
     /// Pitwall's session id of a tracker session, once Pitwall answered a write of it.

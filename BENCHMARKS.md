@@ -133,3 +133,32 @@ unwinding kept), the PC busy as above.
   it (`cargo tree -e features --workspace` has no `capture-raw`), and the string of its code
   (`capture-raw needs a FILE`) is not in `ams2-recorder.exe`, while the stub's
   (`is not available in this build`) is.
+
+## Status as a fixed struct (2026-10-25), median of 3 runs, same method
+
+Same scenario (`ams2-measure --seconds 15 --rounds 3`), the PC busy; the "before" runs are
+`main` at `98a9bfe`, the "after" runs this branch. The clock calibration read 3.79 GHz in
+both. Figures within about 0.03 % are noise.
+
+| Metric | Target | Before (3 runs) | After (3 runs) | Met |
+|---|---|---|---|---|
+| Recorder CPU at 50 Hz, no subscription | <= 0.2 % | 0.133 / 0.126 / 0.262 (0.133 %) | 0.130 / 0.119 / 0.123 (0.123 %) | yes |
+| Recorder CPU with the stream at 90 frames/s | <= 0.4 % | 0.475 / 0.475 / 0.965 (0.475 %) | 0.490 / 0.481 / 0.494 (0.490 %) | **no** |
+| The stream adds | <= 0.2 % | 0.342 / 0.349 / 0.703 (0.349 %) | 0.360 / 0.363 / 0.371 (0.363 %) | **no** |
+| Tick median (with the stage probes) | <= 5 us | 10.4 / 9.6 / 17.1 | 9.6 / 9.8 / 10.0 | **no** |
+| Allocations on the loop, steady state | 0 per tick | 0 on 23 of 25 ticks | 0 on every tick (status ticks included; `tests/alloc.rs`) | yes |
+
+The status: `StatusInput` (`status.rs`) is filled in place on the loop (borrowed views of the
+tracker, the sink, the outbox and the link instead of cloned values), compared with the last
+one handed over and, only if it differs, copied into a slot read by a publisher thread that
+builds the JSON and sets the channels. The JSON is unchanged. `ams2-golden export` + `compare`
+on `20261025-212520_practice.a2raw` against the committed golden: 0 differences (66 calls,
+4 announcements, 182 live frames).
+
+The stream, split once with a temporary switch that skipped only `StreamChannel::send` (not
+kept): CPU with the subscription 0.237 % against 0.494 % with the send, so the sampling thread
+adds about 0.09 % and the IPC send about 0.27 % (a `Bytes` copy, the subscriber lock and one
+`WriteFile` per sample, about 25 us each). The connector cannot lower that without changing
+the samples it sends or when; the remaining lever is `stintmate-ipc` writing the queued
+samples of a subscription in one call. Batching in the connector would only delay samples,
+which the brake cues cannot afford, and still make one write each.

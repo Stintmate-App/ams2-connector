@@ -15,6 +15,7 @@ use crate::link::{
 use crate::live::{Hints, LiveBuffer, LiveServer, Meta};
 use crate::serve::{ActionServer, capture_target};
 use crate::sink::{CLOSE_DRAIN, PitwallSink};
+use crate::status::{StatusInput, StatusWorker};
 use crate::telemetry::{Telemetry, mapping_opener};
 use ams2_core::announce::EventDetector;
 use ams2_core::garage;
@@ -25,7 +26,7 @@ use ams2_platform::logging::local_iso;
 use ams2_shm::{
     FrameSource, Mapping, SHARED_MEMORY_VERSION, SessionClock, SharedMemory, SnapshotOutcome,
 };
-use serde_json::{Value as Json, json};
+use serde_json::Value as Json;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
@@ -115,7 +116,8 @@ pub struct Recorder {
     cfg: Config,
     link: Arc<PitwallLink>,
     control: Option<Arc<ControlLink>>,
-    publisher: StatusPublisher,
+    status: StatusWorker,
+    status_now: Option<Box<StatusInput>>,
     sink: PitwallSink,
     announcer: Arc<Announcer>,
     tracker: SessionTracker,
@@ -249,7 +251,8 @@ impl Recorder {
             stats: None,
             link,
             control,
-            publisher,
+            status: StatusWorker::new(publisher),
+            status_now: Some(Box::default()),
             sink,
             announcer,
             tracker: SessionTracker::new(Box::new(FnClock(clock_fn.clone(), iso.clone()))),
@@ -497,8 +500,10 @@ impl Recorder {
         if force || due {
             self.last_check = Some(now);
             self.dirty.store(false, Ordering::Relaxed);
-            let (status, extra) = (self.protocol_status(), self.service_extra());
-            self.publisher.publish(&status, &extra);
+            let mut cur = self.status_now.take().unwrap_or_default();
+            self.fill_status(&mut cur);
+            self.status.submit(&cur, force);
+            self.status_now = Some(cur);
         }
     }
 
@@ -558,6 +563,7 @@ impl Recorder {
     /// Ends the session, stores what is queued, delivers what it can, closes the links.
     pub fn shutdown(&mut self) {
         self.telemetry.close();
+        self.status.close();
         if self.game_running && self.source.is_some() && self.have_frame {
             // BUG-128: the game session goes on (unless the game is in its menus); the next
             // recorder resumes it only if the game's clock continued
@@ -618,52 +624,83 @@ impl Recorder {
         }
     }
 
-    fn live(&self) -> Json {
-        let (Some(v), true) = (self.tracker.status_view(), self.source.is_some()) else {
-            return Json::Null;
-        };
-        if v.car.is_empty() || v.track.is_empty() || v.layout.is_empty() {
-            return Json::Null;
-        }
+    /// Fills `out` with the status in place: no allocation once its buffers are sized.
+    fn fill_status(&self, out: &mut StatusInput) {
+        let view = self.tracker.status_ref();
+        let sid = self.tracker.session_id();
+        let live = view
+            .filter(|v| {
+                self.source.is_some()
+                    && !v.car.is_empty()
+                    && !v.track.is_empty()
+                    && !v.layout.is_empty()
+            })
+            .map(|v| (live_session_type(v.session_type), v.car, v.track, v.layout));
         let len = f64::from(self.frame.track_length);
-        json!({"session_type": live_session_type(&v.session_type), "car_id": v.car,
-               "track_id": v.track, "layout_id": v.layout,
-               "track_length_m": if len > 0.0 { json!(len) } else { Json::Null }})
+        let stats = self.sink.stats();
+        let p = &mut out.plain;
+        p.game_running = self.game_running;
+        p.phase = self.phase();
+        p.stint = self.sink.stint(sid);
+        p.lap = view.and_then(|v| v.lap_number);
+        p.live = live.is_some();
+        p.live_session_type = live.map_or("other", |l| l.0);
+        p.track_length_m = if live.is_some() && len > 0.0 {
+            len
+        } else {
+            0.0
+        };
+        p.error_code = self.error;
+        p.message = self.message();
+        p.mapped = self.source.is_some();
+        p.in_garage = self.tracker.in_garage();
+        p.session_open = sid.is_some();
+        p.session_id = self.sink.remote_id(sid);
+        p.session_type = view.map(|v| vocab::session_type_of_name(v.session_type));
+        p.laps_queued = stats.laps_queued;
+        p.laps_sent = stats.laps_sent;
+        p.laps_rejected = stats.laps_rejected;
+        p.telemetry = self.telemetry.active();
+        p.uptime_s = (self.now)()
+            .duration_since(self.started)
+            .as_secs_f64()
+            .round();
+        let (_, car, track, layout) = live.unwrap_or(("", "", "", ""));
+        out.car.clear();
+        out.car.push_str(car);
+        out.track.clear();
+        out.track.push_str(track);
+        out.layout.clear();
+        out.layout.push_str(layout);
+        self.sink
+            .with_session_key(sid, |k| out.session_key.assign(k));
+        let mut pending = 0;
+        let mut rejected = 0;
+        self.sink.with_outbox_summary(|n, oldest, r| {
+            (pending, rejected) = (n, r);
+            out.oldest_at.assign(oldest);
+        });
+        out.plain.outbox_pending = pending;
+        out.plain.outbox_rejected = rejected;
+        let mut word = "waiting";
+        self.link.with_state(|state, message| {
+            word = state.as_str();
+            out.pitwall_message.assign(message);
+        });
+        out.plain.pitwall = word;
     }
 
     /// `connector.status` v1 (contract 5.2).
     pub fn protocol_status(&self) -> Json {
-        let view = self.tracker.status_view();
-        let sid = self.tracker.session_id();
-        json!({
-            "game_running": self.game_running,
-            "phase": self.phase(),
-            "session_key": self.sink.session_key(sid),
-            "stint": self.sink.stint(sid),
-            "lap": view.as_ref().and_then(|v| v.lap_number),
-            "live": self.live(),
-            "outbox": self.sink.outbox_summary(),
-            "error_code": self.error,
-            "message": self.message(),
-        })
+        let mut s = StatusInput::default();
+        self.fill_status(&mut s);
+        s.protocol_json()
     }
 
     /// What only the control app shows (`service.status`, contract 5.6).
     pub fn service_extra(&self) -> Json {
-        let (state, message) = self.link.state();
-        let stats = self.sink.stats();
-        let sid = self.tracker.session_id();
-        json!({
-            "pitwall": state.as_str(), "pitwall_message": message,
-            "mapped": self.source.is_some(), "in_garage": self.tracker.in_garage(),
-            "session_open": sid.is_some(),
-            "session_id": self.sink.remote_id(sid),
-            "session_type": self.tracker.status_view()
-                .map(|v| vocab::session_type_of_name(&v.session_type)),
-            "laps_queued": stats.laps_queued, "laps_sent": stats.laps_sent,
-            "laps_rejected": stats.laps_rejected,
-            "telemetry": self.telemetry.active(),
-            "uptime_s": (self.now)().duration_since(self.started).as_secs_f64().round(),
-        })
+        let mut s = StatusInput::default();
+        self.fill_status(&mut s);
+        s.extra_json()
     }
 }

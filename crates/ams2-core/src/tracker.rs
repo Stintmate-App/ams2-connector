@@ -432,6 +432,23 @@ pub struct StatusView {
     pub lap_number: Option<u32>,
 }
 
+/// [`StatusView`] borrowed from the tracker: no allocation ([`SessionTracker::status_ref`]).
+#[derive(Debug, Clone, Copy)]
+pub struct StatusRef<'a> {
+    /// The sink's id.
+    pub session_id: u64,
+    /// Car id.
+    pub car: &'a str,
+    /// Track id.
+    pub track: &'a str,
+    /// Layout id.
+    pub layout: &'a str,
+    /// AMS2 session state name.
+    pub session_type: &'a str,
+    /// The open lap's stored number.
+    pub lap_number: Option<u32>,
+}
+
 /// The session / lap state machine (see the module docs).
 pub struct SessionTracker {
     clock: Box<dyn Clock>,
@@ -484,6 +501,19 @@ impl SessionTracker {
             track: s.key.track.clone(),
             layout: s.key.variation.clone(),
             session_type: s.session_type.clone(),
+            lap_number: self.lap.as_ref().map(|l| l.number),
+        })
+    }
+
+    /// [`status_view`](Self::status_view) without copying: no allocation, for the loop.
+    pub fn status_ref(&self) -> Option<StatusRef<'_>> {
+        let s = self.session.as_ref()?;
+        Some(StatusRef {
+            session_id: s.id,
+            car: &s.key.car,
+            track: &s.key.track,
+            layout: &s.key.variation,
+            session_type: &s.session_type,
             lap_number: self.lap.as_ref().map(|l| l.number),
         })
     }

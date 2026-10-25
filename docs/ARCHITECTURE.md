@@ -408,8 +408,9 @@ trust. Full tables and method: [`BENCHMARKS.md`](../BENCHMARKS.md).
 | Metric | Target | Measured | Met |
 |---|---|---|---|
 | Recorder CPU at 50 Hz, no subscription | <= 0.2 % | 0.127 % | yes |
-| Recorder CPU with the stream at 90 frames/s | <= 0.4 % | 0.464 % | no |
-| What the stream adds | <= 0.2 % | 0.343 % | no |
+| Recorder CPU with the stream at 90 frames/s | <= 0.4 % | 0.490 % (2026-10-25) | no |
+| What the stream adds | <= 0.2 % | 0.363 % (2026-10-25; about 0.09 % is the sampling thread, about 0.27 % the IPC send) | no |
+| Allocations on the loop per tick, steady state (status ticks included) | 0 | 0 | yes |
 | Loop period p99 | <= 20.5 ms | 20.63 ms | within 0.15 ms |
 | `t_ns` after the frame (median) | <= 0.5 ms | 0.53 ms | within 0.04 ms |
 | Tick median (snapshot, tracker, detector, live publish) | <= 5 us | 9.4-9.8 us | no |
@@ -423,10 +424,17 @@ with it. The Rust recorder is about four times cheaper without the stream and mo
 with it. A target missed by little is reported with its numbers, not traded for robustness.
 
 What is still open, and why: the 20 kB snapshot copy (2.2 us) and the tracker (4.1 us) dominate
-the tick; the stream's remaining cost is the per-sample publish (copy, subscriber lock, the I/O
-thread's pipe write), not the wake-ups (a four times denser poll left it unchanged); the status
-JSON built every 0.5 s makes two of 25 ticks allocate, where the target is none. Building the
-status from a small fixed struct is the next step. The lap's encoded bytes equal the earlier
+the tick. The status is now a fixed struct (`status.rs`): the loop fills it in place every 0.5 s,
+compares it field by field with the last one handed over and, only when it differs (its uptime
+changes each second), copies it into a slot and wakes a publisher thread that builds the JSON;
+the allocation test now asserts zero allocations on every steady-state tick, status ticks
+included. The stream's cost did not move (0.349 % before, 0.363 % after, medians of 3, within
+noise): with the IPC send skipped the stream adds 0.09 % (the sampling thread: wake-ups, the
+mapping reads, the sample); the other 0.27 % is `StreamChannel::send` in `stintmate-ipc` (a
+`Bytes` copy, the subscriber lock and one `WriteFile` per sample, already written by the
+publishing thread with no pump wake-up). Fewer writes need the library to coalesce the queued
+samples of a subscription into one write (the wire format and the samples stay the same); that
+is a change in `stintmate-ipc`, not here. The lap's encoded bytes equal the earlier
 implementation's (checked by a test), so Pitwall sees no change.
 
 ## Decisions and their reasons

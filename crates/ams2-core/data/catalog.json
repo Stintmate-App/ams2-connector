@@ -13,7 +13,7 @@
    "priority": "high",
    "ttl_s": 15,
    "kind": "announcement",
-   "note": "Race control shows the driver a yellow flag. sector: 1, 2 or 3, where the driver is now.",
+   "note": "A yellow flag, said when another car is the likely cause. sector: 1, 2 or 3, where that car is (the incident), not where the driver is. A line naming the car follows.",
    "group": "flags"
   },
   "flag_double_yellow": {
@@ -25,7 +25,7 @@
    "priority": "high",
    "ttl_s": 15,
    "kind": "announcement",
-   "note": "A double yellow flag: the track may be blocked. sector: 1, 2 or 3.",
+   "note": "A double yellow flag: the track may be blocked. sector: 1, 2 or 3, where the car causing it is, when it is known. A line naming the car follows.",
    "group": "flags"
   },
   "flag_yellow_cause": {
@@ -52,6 +52,77 @@
    "ttl_s": 15,
    "kind": "announcement",
    "note": "Said right after a yellow flag when the game gives its reason.",
+   "group": "flags"
+  },
+  "flag_yellow_ahead": {
+   "text": "Yellow flag ahead.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 15,
+   "kind": "announcement",
+   "note": "A yellow flag when the car causing it could not be identified (no sector is made up). Followed by the game's reason when it gives one.",
+   "group": "flags"
+  },
+  "flag_double_yellow_ahead": {
+   "text": "Double yellow ahead. Be ready to stop.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 15,
+   "kind": "announcement",
+   "note": "A double yellow flag when the car causing it could not be identified. Followed by the game's reason when it gives one.",
+   "group": "flags"
+  },
+  "flag_yellow_driver": {
+   "text": "{driver} {cause}.",
+   "params": {
+    "cause": {
+     "kind": "enum",
+     "values": [
+      "solo_crash",
+      "vehicle_crash",
+      "obstruction",
+      "unknown"
+     ]
+    },
+    "driver": "text"
+   },
+   "values": {
+    "cause": {
+     "solo_crash": "has gone off",
+     "vehicle_crash": "is in a collision",
+     "obstruction": "is stopped on track",
+     "unknown": "is slow on track"
+    }
+   },
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 15,
+   "kind": "announcement",
+   "note": "Said right after a yellow when another car is the cause. driver: its name; cause: what it is doing (the game's reason, or slow on track when it gives none).",
+   "group": "flags"
+  },
+  "flag_yellow_self": {
+   "text": "You're {situation}.",
+   "params": {
+    "situation": {
+     "kind": "enum",
+     "values": [
+      "off_track",
+      "stopped"
+     ]
+    }
+   },
+   "values": {
+    "situation": {
+     "off_track": "off. Rejoin carefully, cars are coming",
+     "stopped": "stopped on track. Get going carefully"
+    }
+   },
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 8,
+   "kind": "announcement",
+   "note": "The yellow flag is about the driver's own car (he is off or stopped; the game shows the yellow to the car that causes it too), so a short note instead of a flag call. situation: off_track or stopped. Said once per incident; the clear call is not said for it.",
    "group": "flags"
   },
   "flag_clear": {
@@ -93,6 +164,18 @@
    "note": "The white flag: a slow car on the track ahead.",
    "group": "flags"
   },
+  "flag_slow_car_driver": {
+   "text": "Slow car ahead: {driver}.",
+   "params": {
+    "driver": "text"
+   },
+   "audience": "driver",
+   "priority": "normal",
+   "ttl_s": 10,
+   "kind": "announcement",
+   "note": "The white flag when the slow car ahead on track could be identified. driver: its name.",
+   "group": "flags"
+  },
   "final_lap": {
    "text": "Final lap.",
    "audience": "driver",
@@ -118,6 +201,15 @@
    "ttl_s": 20,
    "kind": "announcement",
    "note": "A warning for unsportsmanlike driving.",
+   "group": "flags"
+  },
+  "flag_track_limits": {
+   "text": "Track limits warning. Lap invalidated.",
+   "audience": "driver",
+   "priority": "high",
+   "ttl_s": 10,
+   "kind": "announcement",
+   "note": "The black and white flag right after the game invalidated the lap (the driver cut the track). Always the driver's own flag.",
    "group": "flags"
   },
   "flag_black_orange": {

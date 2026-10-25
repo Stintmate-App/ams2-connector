@@ -207,12 +207,12 @@ penalties, the player's and the rivals' race states) and sends **codes** to Pitw
 writes and speaks them in the user's language. Rules: only while driving, a quiet 10 s after a
 session load or a state change, debounce, cooldowns, once per session for the end-of-race
 events, rivals by name; at most 10 a minute; nothing is kept while Pitwall is away
-([ARCHITECTURE.md](ARCHITECTURE.md#race-announcements)). The catalog `connector.ams2` has 39
+([ARCHITECTURE.md](ARCHITECTURE.md#race-announcements)). The catalog `connector.ams2` has 34
 codes; `ams2-recorder.exe codes` lists them with their audience, priority and parameters.
 
 | Group | Codes |
 |---|---|
-| Flags | `flag_yellow`, `flag_double_yellow`, `flag_yellow_cause`, `flag_clear`, `flag_blue`, `flag_blue_unknown`, `flag_slow_car`, `final_lap`, `flag_red`, `flag_black_white`, `flag_black_orange` |
+| Flags | `flag_yellow`, `flag_double_yellow`, `flag_yellow_ahead`, `flag_double_yellow_ahead`, `flag_yellow_driver`, `flag_yellow_self`, `flag_yellow_cause`, `flag_clear`, `flag_blue`, `flag_blue_unknown`, `flag_slow_car`, `flag_slow_car_driver`, `final_lap`, `flag_red`, `flag_black_white`, `flag_track_limits`, `flag_black_orange` |
 | The player's race | `disqualified`, `retired`, `chequered`, `chequered_no_position` |
 | Safety car (full course yellow) | `fcy_start`, `fcy_pits_open`, `fcy_pits_lead_lap`, `fcy_last_lap`, `fcy_restart`, `fcy_halt` |
 | Penalties | `penalty_drive_through`, `penalty_stop_go`, `penalty_served` |

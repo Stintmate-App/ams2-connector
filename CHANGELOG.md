@@ -2,6 +2,17 @@
 
 ## 3.0.0 (unreleased)
 
+- **Flag calls know whose flag it is (PRY-090).** The game shows a yellow to the car that caused
+  it too, so the radio no longer calls the player's own stop a yellow for "a car blocking the
+  track". New catalog codes: `flag_yellow_self` (the player's own yellow: "You're off..." /
+  "You're stopped on track..."; the incident is closed silently, no `flag_clear` after it),
+  `flag_yellow_driver` (another car is the cause: `flag_yellow` / `flag_double_yellow` now carry
+  that car's sector, then "{driver} is stopped on track."), `flag_yellow_ahead` /
+  `flag_double_yellow_ahead` (the cause is unknown: no made-up sector), `flag_track_limits` (the
+  black and white right after the game invalidated the lap) and `flag_slow_car_driver`. The
+  deferred standstill yellow (BUG-130) now carries only the self note. The announcement notes
+  of the replaced meanings are in the catalog; `catalog.json` has 34 codes.
+
 - **`capture-raw` is usable on a real session (dev builds only).** It waits for the game's
   mapping, ends cleanly on a stop file, Ctrl+C / Ctrl+Break, the game exiting or `--seconds`
   (default 3 h), writes a `FILE.json` summary (refreshed every 10 s), uses a 4 MB write buffer

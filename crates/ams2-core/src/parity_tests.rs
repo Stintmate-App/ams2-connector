@@ -18,30 +18,48 @@ fn parity() -> Value {
     serde_json::from_str(&raw).unwrap()
 }
 
+/// The codes added after the Python connector (PRY-090): its fixture knows none of them, so the
+/// catalog's key and the actions' enum of codes differ from it by exactly these.
+const AFTER_PYTHON: [&str; 6] = [
+    "flag_yellow_ahead",
+    "flag_double_yellow_ahead",
+    "flag_yellow_driver",
+    "flag_yellow_self",
+    "flag_slow_car_driver",
+    "flag_track_limits",
+];
+
 #[test]
 fn source_hashes_equal_the_pythons() {
     let want = parity()["source_hashes"].as_object().unwrap().clone();
-    assert_eq!(want.len(), messages().len());
+    assert_eq!(want.len() + AFTER_PYTHON.len(), messages().len());
     for (code, msg) in messages() {
+        if AFTER_PYTHON.contains(&code.as_str()) {
+            assert!(!want.contains_key(code), "{code}");
+            continue;
+        }
         assert_eq!(Value::from(source_hash(msg)), want[code], "{code}");
     }
 }
 
 #[test]
-fn catalog_idempotency_key_equals_the_pythons() {
-    assert_eq!(
-        catalog_ik(catalog()),
-        parity()["catalog_ik"].as_str().unwrap()
-    );
+fn catalog_idempotency_key_is_the_one_of_this_catalog() {
+    // Pinned: the Python key changes with the six codes of PRY-090.
+    assert_eq!(catalog_ik(catalog()), "ams2/textcatalog/c7c250c61d18");
 }
 
 #[test]
-fn actions_equal_the_pythons_and_so_does_their_key() {
+fn actions_equal_the_pythons_but_for_the_new_codes() {
     let p = parity();
     // Compared as canonical JSON: a build that turns on `preserve_order` (the conformance
     // check) does not change what is declared.
-    assert_eq!(canonical(actions()), canonical(&p["actions"]));
-    assert_eq!(actions_ik(actions()), p["actions_ik"].as_str().unwrap());
+    let mut ours = actions().clone();
+    let list = ours[1]["params"]["properties"]["code"]["enum"]
+        .as_array_mut()
+        .unwrap();
+    list.retain(|c| !AFTER_PYTHON.contains(&c.as_str().unwrap()));
+    assert_eq!(canonical(&ours), canonical(&p["actions"]));
+    assert_eq!(actions_ik(actions()), "ams2/actions/7a79b8e9ee86");
 }
 
 #[test]

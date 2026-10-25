@@ -52,6 +52,7 @@ fn make_race(n: usize, session: u32, laps: u32) -> Box<SharedMemory> {
         p.current_sector = 1;
         put(&mut d.car_class_names[i], "GT3");
         d.race_states[i] = race::RACING as u32;
+        d.speeds[i] = 40.0;
     }
     d.participant_info[1].race_position = 1;
     d.participant_info[2].race_position = 2;
@@ -126,12 +127,12 @@ fn yellow_fires_after_the_debounce_with_the_sector() {
     let out = r.for_s(0.2);
     assert_eq!(
         out.iter().map(|a| a.code).collect::<Vec<_>>(),
-        ["flag_yellow"]
+        ["flag_yellow_ahead"]
     );
-    assert_eq!(Value::Object(out[0].params.clone()), json!({"sector": 2}));
+    assert_eq!(Value::Object(out[0].params.clone()), json!({}));
     assert_eq!(
         Value::Object(out[0].data.clone().unwrap()),
-        json!({"lap": 3, "sector": 2})
+        json!({"lap": 3, "sector": 2, "attribution": "unknown"})
     );
 }
 
@@ -157,7 +158,7 @@ fn yellow_cause_when_the_reason_is_given() {
     assert_eq!(
         got,
         [
-            ("flag_yellow", json!({"sector": 2})),
+            ("flag_yellow_ahead", json!({})),
             ("flag_yellow_cause", json!({"cause": "solo_crash"}))
         ]
     );
@@ -167,7 +168,7 @@ fn yellow_cause_when_the_reason_is_given() {
 fn clear_after_the_hold_then_rearm_and_cooldown() {
     let mut r = started();
     r.d.highest_flag_colour = flag::YELLOW as u32;
-    assert_eq!(r.codes(1.0), ["flag_yellow"]);
+    assert_eq!(r.codes(1.0), ["flag_yellow_ahead"]);
     r.d.highest_flag_colour = flag::GREEN as u32;
     assert!(r.codes(3.0).is_empty()); // 0.5 debounce + 3 s hold not reached yet
     assert_eq!(r.codes(1.0), ["flag_clear"]);
@@ -178,7 +179,7 @@ fn clear_after_the_hold_then_rearm_and_cooldown() {
     r.d.highest_flag_colour = flag::GREEN as u32;
     r.codes(30.0);
     r.d.highest_flag_colour = flag::YELLOW as u32;
-    assert_eq!(r.codes(1.0), ["flag_yellow"]);
+    assert_eq!(r.codes(1.0), ["flag_yellow_ahead"]);
 }
 
 #[test]
@@ -206,6 +207,7 @@ fn yellow_blue_and_slow_car_are_skipped_when_stopped() {
         r.d.highest_flag_colour = flag::GREEN as u32;
         r.codes(6.0);
         r.d.speed = 30.0;
+        r.codes(6.0); // past the window in which the stop would make the flag his own
         r.d.highest_flag_colour = colour as u32;
         assert!(!r.codes(1.0).is_empty(), "{colour}");
     }
@@ -227,9 +229,9 @@ fn yellow_not_rearmed_without_five_seconds_of_green() {
 fn double_yellow_escalates_from_a_yellow() {
     let mut r = started();
     r.d.highest_flag_colour = flag::YELLOW as u32;
-    assert_eq!(r.codes(1.0), ["flag_yellow"]);
+    assert_eq!(r.codes(1.0), ["flag_yellow_ahead"]);
     r.d.highest_flag_colour = flag::DOUBLE_YELLOW as u32;
-    assert_eq!(r.codes(1.0), ["flag_double_yellow"]);
+    assert_eq!(r.codes(1.0), ["flag_double_yellow_ahead"]);
 }
 
 #[test]
@@ -451,7 +453,7 @@ fn nothing_in_the_first_ten_seconds_after_the_load() {
     r.d.highest_flag_colour = flag::GREEN as u32;
     r.codes(6.0);
     r.d.highest_flag_colour = flag::YELLOW as u32;
-    assert_eq!(r.codes(1.0), ["flag_yellow"]);
+    assert_eq!(r.codes(1.0), ["flag_yellow_ahead"]);
 }
 
 #[test]
@@ -734,7 +736,7 @@ fn yellow_raised_while_stopped_is_said_when_the_car_moves() {
     r.d.highest_flag_colour = flag::YELLOW as u32;
     assert!(r.codes(2.0).is_empty());
     r.d.speed = 4.0;
-    assert_eq!(r.codes(0.2), ["flag_yellow"]);
+    assert_eq!(r.codes(0.2), ["flag_yellow_self"]);
     assert!(r.codes(5.0).is_empty());
     // A yellow that ended before the car moved is never said.
     let mut r = started();
@@ -745,4 +747,311 @@ fn yellow_raised_while_stopped_is_said_when_the_car_moves() {
     assert!(r.codes(1.0).is_empty());
     r.d.speed = 30.0;
     assert!(r.codes(6.0).is_empty());
+}
+
+// ------------------------------------------------------------------ PRY-090: whose flag
+
+fn params_of(a: &Announcement) -> Value {
+    Value::Object(a.params.clone())
+}
+
+fn data_of(a: &Announcement) -> Value {
+    Value::Object(a.data.clone().unwrap())
+}
+
+/// A stopped car at `distance` metres into the lap.
+fn stop_car(r: &mut Run, i: usize, distance: f32) {
+    r.d.speeds[i] = 0.0;
+    r.d.participant_info[i].current_lap_distance = distance;
+}
+
+#[test]
+fn self_off_track_says_the_note_not_the_yellow() {
+    let mut r = started();
+    r.d.crash_state = 1;
+    r.d.speed = 2.0;
+    r.codes(2.0);
+    r.d.highest_flag_colour = flag::DOUBLE_YELLOW as u32;
+    r.d.highest_flag_reason = 3;
+    let out = r.for_s(1.0);
+    assert_eq!(
+        out.iter().map(|a| a.code).collect::<Vec<_>>(),
+        ["flag_yellow_self"]
+    );
+    assert_eq!(params_of(&out[0]), json!({"situation": "off_track"}));
+    assert_eq!(
+        data_of(&out[0]),
+        json!({"lap": 3, "sector": 2, "attribution": "self"})
+    );
+    // the flag clears: no "track clear" for a flag the radio did not announce
+    r.d.highest_flag_colour = flag::GREEN as u32;
+    assert!(r.codes(8.0).is_empty());
+}
+
+#[test]
+fn self_stopped_on_track_after_a_contact() {
+    // The race shape: the surface under the car, 0.1 m/s, a single yellow with a reason.
+    let mut r = started();
+    r.d.speed = 0.1;
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    r.d.highest_flag_reason = 3;
+    assert!(r.codes(2.0).is_empty());
+    r.d.speed = 4.0; // he drives off: the note is useful now
+    let out = r.for_s(0.2);
+    assert_eq!(
+        out.iter().map(|a| a.code).collect::<Vec<_>>(),
+        ["flag_yellow_self"]
+    );
+    assert_eq!(params_of(&out[0]), json!({"situation": "stopped"}));
+    assert!(r.codes(5.0).is_empty());
+    r.d.highest_flag_colour = flag::GREEN as u32;
+    assert!(r.codes(8.0).is_empty()); // and no "track clear" after it
+}
+
+#[test]
+fn self_from_the_window() {
+    for (wait, expected) in [
+        (4.0, vec!["flag_yellow_self"]),
+        (6.0, vec!["flag_yellow_ahead"]),
+    ] {
+        let mut r = started();
+        r.d.speed = 2.0;
+        r.codes(0.2);
+        r.d.speed = 6.0;
+        r.codes(wait);
+        r.d.highest_flag_colour = flag::YELLOW as u32;
+        assert_eq!(r.codes(1.0), expected, "{wait}");
+    }
+}
+
+#[test]
+fn escalation_of_a_self_yellow_is_silent() {
+    let mut r = started();
+    r.d.speed = 2.0;
+    r.codes(0.2);
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    assert_eq!(r.codes(1.0), ["flag_yellow_self"]);
+    r.d.highest_flag_colour = flag::DOUBLE_YELLOW as u32;
+    assert!(r.codes(2.0).is_empty());
+}
+
+#[test]
+fn other_car_stopped_ahead_names_sector_and_driver() {
+    let mut r = started();
+    stop_car(&mut r, 3, 1400.0);
+    r.d.participant_info[3].current_sector = 2;
+    r.d.highest_flag_colours[3] = flag::DOUBLE_YELLOW as u32;
+    r.d.highest_flag_colour = flag::DOUBLE_YELLOW as u32;
+    r.d.highest_flag_reason = 3;
+    let out = r.for_s(1.0);
+    assert_eq!(
+        out.iter().map(|a| a.code).collect::<Vec<_>>(),
+        ["flag_double_yellow", "flag_yellow_driver"]
+    );
+    assert_eq!(params_of(&out[0]), json!({"sector": 3}));
+    assert_eq!(
+        params_of(&out[1]),
+        json!({"driver": "Rival 3", "cause": "obstruction"})
+    );
+    assert_eq!(
+        data_of(&out[0]),
+        json!({"lap": 3, "sector": 2, "attribution": "car",
+               "incident_sector": 3, "driver": "Rival 3"})
+    );
+}
+
+#[test]
+fn a_car_without_a_reason_is_slow_on_track() {
+    let mut r = started();
+    stop_car(&mut r, 2, 1200.0);
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    let out = r.for_s(1.0);
+    assert_eq!(
+        out.iter().map(|a| a.code).collect::<Vec<_>>(),
+        ["flag_yellow", "flag_yellow_driver"]
+    );
+    assert_eq!(
+        params_of(&out[1]),
+        json!({"driver": "Rival 2", "cause": "unknown"})
+    );
+}
+
+#[test]
+fn other_car_wins_over_a_fast_off() {
+    let mut r = started();
+    r.d.crash_state = 1;
+    r.d.speed = 30.0;
+    stop_car(&mut r, 3, 1400.0);
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    assert_eq!(r.codes(1.0), ["flag_yellow", "flag_yellow_driver"]);
+}
+
+#[test]
+fn a_fast_off_with_nobody_stopped_is_still_an_off() {
+    let mut r = started();
+    r.d.crash_state = 1;
+    r.d.speed = 30.0;
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    assert_eq!(r.codes(1.0), ["flag_yellow_self"]);
+}
+
+#[test]
+fn own_flag_preferred() {
+    let mut r = make_run(8);
+    stop_car(&mut r, 2, 1200.0);
+    stop_car(&mut r, 4, 1700.0);
+    r.d.highest_flag_colours[4] = flag::YELLOW as u32;
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    let out = r.for_s(1.0);
+    assert_eq!(params_of(&out[1])["driver"], "Rival 4");
+}
+
+fn make_run(n: usize) -> Run {
+    let mut r = Run::new(make_race(n, session_state::RACE, 10));
+    r.settle();
+    r
+}
+
+#[test]
+fn candidate_filters() {
+    let mut r = make_run(12);
+    stop_car(&mut r, 1, 1100.0);
+    r.d.pit_modes[1] = pit_mode::IN_PIT; // in the pit lane
+    stop_car(&mut r, 2, 1200.0);
+    put(&mut r.d.participant_info[2].name, "Safety Car"); // the Safety Car
+    stop_car(&mut r, 3, 1300.0);
+    r.d.participant_info[3].is_active = 0; // an inactive slot
+    stop_car(&mut r, 4, 1400.0);
+    put(&mut r.d.participant_info[4].name, "Me"); // the player's duplicate
+    stop_car(&mut r, 5, 600.0); // 400 m behind
+    stop_car(&mut r, 6, 2600.0); // 1600 m ahead
+    r.d.speeds[7] = 7.0; // too fast to be stopped
+    r.d.race_states[8] = race::FINISHED as u32; // done for good
+    stop_car(&mut r, 8, 1800.0);
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    r.d.highest_flag_reason = 1;
+    assert_eq!(r.codes(1.0), ["flag_yellow_ahead", "flag_yellow_cause"]);
+}
+
+#[test]
+fn candidates_just_inside_the_range() {
+    // 350 m behind and 1500 m ahead count.
+    for (i, distance) in [(5, 650.0), (6, 2500.0)] {
+        let mut r = make_run(8);
+        stop_car(&mut r, i, distance);
+        r.d.highest_flag_colour = flag::YELLOW as u32;
+        assert_eq!(
+            r.codes(1.0),
+            ["flag_yellow", "flag_yellow_driver"],
+            "{distance}"
+        );
+    }
+}
+
+#[test]
+fn gap_wraps_at_the_line() {
+    // 100 m before the line, a car 200 m after it: 300 m ahead; and the reverse, 300 m behind.
+    for (mine, theirs) in [(3900.0, 200.0), (200.0, 3900.0)] {
+        let mut r = make_run(6);
+        r.d.participant_info[0].current_lap_distance = mine;
+        stop_car(&mut r, 3, theirs);
+        r.d.highest_flag_colour = flag::YELLOW as u32;
+        assert_eq!(
+            r.codes(1.0),
+            ["flag_yellow", "flag_yellow_driver"],
+            "{mine}"
+        );
+    }
+}
+
+#[test]
+fn no_track_length_no_candidate() {
+    let mut r = started();
+    stop_car(&mut r, 3, 1400.0);
+    r.d.track_length = 0.0;
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    assert_eq!(r.codes(1.0), ["flag_yellow_ahead"]);
+}
+
+#[test]
+fn only_the_declared_participants_are_read() {
+    let mut r = started();
+    r.d.num_participants = 3;
+    stop_car(&mut r, 4, 1400.0); // beyond mNumParticipants
+    r.d.highest_flag_colour = flag::YELLOW as u32;
+    assert_eq!(r.codes(1.0), ["flag_yellow_ahead"]);
+}
+
+#[test]
+fn track_limits_after_an_invalidation() {
+    let mut r = started();
+    r.d.lap_invalidated = 1;
+    r.codes(0.02);
+    r.d.highest_flag_colour = flag::BLACK_AND_WHITE as u32;
+    let out = r.for_s(1.0);
+    assert_eq!(
+        out.iter().map(|a| a.code).collect::<Vec<_>>(),
+        ["flag_track_limits"]
+    );
+    assert_eq!(data_of(&out[0]), json!({"lap": 3, "sector": 2}));
+}
+
+#[test]
+fn black_white_without_an_invalidation() {
+    let mut r = started();
+    r.d.highest_flag_colour = flag::BLACK_AND_WHITE as u32;
+    assert_eq!(r.codes(1.0), ["flag_black_white"]);
+    // an invalidation long before is not a cut now
+    let mut r = started();
+    r.d.lap_invalidated = 1;
+    r.codes(5.0);
+    r.d.highest_flag_colour = flag::BLACK_AND_WHITE as u32;
+    assert_eq!(r.codes(1.0), ["flag_black_white"]);
+}
+
+#[test]
+fn black_white_on_an_invalid_out_lap() {
+    // The level is already 1 when the session starts: it never rises while playing.
+    let mut r = Run::new(race6());
+    r.d.lap_invalidated = 1;
+    r.settle();
+    r.d.highest_flag_colour = flag::BLACK_AND_WHITE as u32;
+    assert_eq!(r.codes(1.0), ["flag_black_white"]);
+}
+
+#[test]
+fn slow_car_names_the_car_ahead() {
+    let mut r = started();
+    r.d.speeds[1] = 10.0; // 100 m ahead, under 60 % of 50 m/s
+    r.d.speeds[2] = 29.0; // 200 m ahead, also slow: the nearest wins
+    r.d.highest_flag_colour = flag::WHITE_SLOW_CAR as u32;
+    let out = r.for_s(1.0);
+    assert_eq!(
+        out.iter().map(|a| a.code).collect::<Vec<_>>(),
+        ["flag_slow_car_driver"]
+    );
+    assert_eq!(params_of(&out[0]), json!({"driver": "Rival 1"}));
+}
+
+#[test]
+fn slow_car_self_is_silent() {
+    let mut r = started();
+    r.d.speed = 3.0;
+    r.d.speeds[1] = 1.0;
+    r.d.highest_flag_colour = flag::WHITE_SLOW_CAR as u32;
+    assert!(r.codes(1.0).is_empty());
+}
+
+#[test]
+fn slow_car_unknown() {
+    // A slow car behind, or too far ahead, or in the pit lane, is not named.
+    let mut r = started();
+    r.d.speeds[1] = 10.0;
+    r.d.participant_info[1].current_lap_distance = 400.0; // behind
+    r.d.speeds[2] = 10.0;
+    r.d.participant_info[2].current_lap_distance = 1600.0; // 600 m ahead
+    r.d.speeds[3] = 10.0;
+    r.d.pit_modes[3] = pit_mode::IN_PIT;
+    r.d.highest_flag_colour = flag::WHITE_SLOW_CAR as u32;
+    assert_eq!(r.codes(1.0), ["flag_slow_car"]);
 }

@@ -20,6 +20,7 @@ pub mod descriptor;
 #[cfg(windows)]
 pub mod dialog;
 pub mod endpoint;
+pub mod hold;
 pub mod icons;
 pub mod instance;
 pub mod logtail;

@@ -318,6 +318,11 @@ fn bad_arguments_print_the_usage_with_every_option() {
         "--uninstall",
         "--unregister",
         "--read-registration",
+        "--stintmate-hold",
+        "--stintmate-release",
+        "--no-start",
+        "--purpose",
+        "--wait",
         "--quit",
         "--version",
         "--workspace",
@@ -333,6 +338,38 @@ fn bad_arguments_print_the_usage_with_every_option() {
         &["--register", "--unregister"][..],
         &["--version", "--quit"][..],
         &["--read-registration", "o.txt", "--register"][..],
+    ] {
+        assert_eq!(run(combo).status.code(), Some(2), "{combo:?}");
+    }
+}
+
+#[test]
+fn the_hub_options_find_no_stintmate_without_a_workspace_or_a_key_and_check_arguments() {
+    // No pointer anywhere: there is no Stintmate to ask (5), nothing is started.
+    for opt in ["--stintmate-hold", "--stintmate-release"] {
+        let o = run(&[opt]);
+        assert_eq!(o.status.code(), Some(5), "{opt}: {}", text(&o));
+    }
+    // A workspace without an `ipc\key`: still nobody to ask.
+    let ws = tempfile::tempdir().unwrap();
+    let o = Command::new(env!("CARGO_BIN_EXE_ams2-connector-ui"))
+        .args(["--stintmate-hold", "--wait", "1"])
+        .env("STINTMATE_WORKSPACE", ws.path())
+        .env("STINTMATE_CONNECTORS_DIR", ws.path().join("c"))
+        .env("AMS2_CONNECTOR_DEV_INSTANCE", "clitest-no-key")
+        .env(
+            "STINTMATE_SETTINGS_FILE",
+            std::env::temp_dir().join("ams2-cli-test-no-settings.json"),
+        )
+        .output()
+        .unwrap();
+    assert_eq!(o.status.code(), Some(5), "{}", text(&o));
+    for combo in [
+        &["--stintmate-hold", "--purpose", "bogus"][..],
+        &["--stintmate-hold", "--stintmate-release"][..],
+        &["--stintmate-hold", "--workspace", "C:/w"][..],
+        &["--stintmate-release", "--wait", "3"][..],
+        &["--no-start"][..],
     ] {
         assert_eq!(run(combo).status.code(), Some(2), "{combo:?}");
     }

@@ -6,6 +6,8 @@
 //! * [`announcer`]: announcements and the per-connection declarations.
 
 pub mod announcer;
+#[cfg(feature = "capture-raw")]
+pub mod capture_raw;
 pub mod cli;
 pub mod link;
 pub mod live;

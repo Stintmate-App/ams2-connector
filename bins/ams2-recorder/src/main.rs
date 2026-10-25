@@ -104,7 +104,7 @@ fn subcommand(sub: &str, args: &WorkspaceArgs) -> i32 {
             }
         }
         #[cfg(feature = "capture-raw")]
-        "capture-raw" => cli::capture_raw(rest, &mut out),
+        "capture-raw" => ams2_recorder::capture_raw::run(rest, &mut out),
         _ => {
             eprintln!("ams2-recorder: {sub} is not available in this build");
             2

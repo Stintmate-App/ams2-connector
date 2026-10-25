@@ -62,6 +62,26 @@ pub fn process_start_time(handle: HANDLE) -> Option<SystemTime> {
     Some(UNIX_EPOCH + Duration::from_nanos(since_epoch * 100))
 }
 
+/// CPU time (kernel plus user) a process has used so far, or `None` if it cannot be opened
+/// (gone, or another user's). Two readings a second apart give its CPU use.
+pub fn process_cpu_time(pid: u32) -> Option<Duration> {
+    if pid == 0 {
+        return None;
+    }
+    // SAFETY: plain call; the result is checked.
+    let h = OwnedHandle::new(unsafe { OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, 0, pid) })?;
+    let zero = FILETIME {
+        dwLowDateTime: 0,
+        dwHighDateTime: 0,
+    };
+    let (mut created, mut exit, mut kernel, mut user) = (zero, zero, zero, zero);
+    // SAFETY: four valid out pointers.
+    if unsafe { GetProcessTimes(h.raw(), &mut created, &mut exit, &mut kernel, &mut user) } == 0 {
+        return None;
+    }
+    let ticks = |f: FILETIME| (u64::from(f.dwHighDateTime) << 32) | u64::from(f.dwLowDateTime);
+    Some(Duration::from_nanos((ticks(kernel) + ticks(user)) * 100))
+}
 /// A comparable form of a path: final path (junctions resolved), no `\\?\`, lowercase.
 fn norm(path: &Path) -> String {
     let real = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());

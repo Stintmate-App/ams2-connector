@@ -107,8 +107,8 @@ fn run() -> i32 {
     let title = texts.s("app.name");
     let options = eframe::NativeOptions {
         viewport: egui::ViewportBuilder::default()
-            .with_inner_size([760.0, 520.0])
-            .with_min_inner_size([560.0, 360.0])
+            .with_inner_size([680.0, 460.0])
+            .with_min_inner_size([560.0, 380.0])
             .with_title(&title)
             .with_icon(std::sync::Arc::new(egui::IconData {
                 rgba: ams2_connector_ui::icons::render_rgba("ok", 64),
@@ -121,6 +121,7 @@ fn run() -> i32 {
         &title,
         options,
         Box::new(move |cc| {
+            ams2_connector_window::theme::apply(&cc.egui_ctx);
             let _ = ctx_cell.set(cc.egui_ctx.clone());
             Ok(Box::new(Window::new(link, texts, page)))
         }),

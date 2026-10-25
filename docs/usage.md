@@ -48,13 +48,19 @@ recorded".
 
 **Open** starts the window, a separate short-lived process (`ams2-connector-window.exe`) that
 is gone when you close it. Open it between sessions rather than leaving it on screen during a
-race. Its panes:
+race. It opens at 680x460 (resizable) in a dark theme, with a side menu (Services, Options,
+Logs) and the version at its bottom. Its pages:
 
-- **Services**: the Recorder with its switch, state and detail lines (CPU, how many laps wait
-  for Pitwall), the data folder and where it comes from, and **Open data folder**.
-- **Options**: start with Windows, start minimized, the recorder's sampling rate, which log the
-  Logs pane shows first.
-- **Logs**: the tail of `recorder.log` and `ui.log`, with dates in your system's format.
+- **Services**: the Recorder with its status pill (amber waiting, green recording, blue
+  connected or in the garage, grey off, red failed), its switch with its state in words, tiles
+  for the Pitwall link, the CPU and the sampling rate, a sentence about the game and any laps
+  waiting for Pitwall; below, the data folder (shortened to start at your profile) and **Open**.
+  When Stintmate manages the connector a line says so.
+- **Options**: start with Windows (when not managed), start the Recorder with the app (follows the
+  Services switch), start minimized, and the recorder's sampling rate (advanced).
+- **Logs**: **Recorder** | **App** (`recorder.log`, `ui.log`), **Only warnings and errors**,
+  **Copy last 50** and **Open log file**. Each row shows time, level and message; hover a row
+  for the full line. Warnings are amber and errors red.
 
 Closing the window leaves the tray running. **Exit** (tray) stops the services cleanly (forced
 after 10 s) and quits. If the app crashes or is killed its services are killed with it.

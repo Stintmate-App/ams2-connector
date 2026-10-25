@@ -4,7 +4,9 @@
 //! the tray process never loads egui or a graphics context.
 //!
 //! * [`link`]: the endpoint client (the snapshot in, commands out);
-//! * [`gui`]: the egui application (Services, Options and Logs panes).
+//! * [`gui`]: the egui application (Services, Options and Logs pages);
+//! * [`theme`]: the palette, the bundled fonts and the painted widgets.
 
 pub mod gui;
 pub mod link;
+pub mod theme;

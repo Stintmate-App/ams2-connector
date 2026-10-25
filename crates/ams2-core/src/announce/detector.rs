@@ -308,6 +308,11 @@ pub struct EventDetector {
     fcy: Stable,
     yellow_armed: bool,
     yellow_said: bool,
+    /// A yellow (old, new) edge skipped because the car was at a standstill: said once the car
+    /// moves, if the yellow still holds.
+    yellow_deferred: Option<(i64, i64)>,
+    /// Off in the parity replay against the Python detector, which never defers (BUG-130).
+    defer_yellow: bool,
     clear_since: Option<f64>,
     clear_pending: Option<f64>,
     penalty: Option<i64>,
@@ -329,6 +334,13 @@ pub struct EventDetector {
 }
 
 impl EventDetector {
+    /// The Python detector never deferred a standstill yellow: the parity replay turns it off.
+    #[cfg(test)]
+    pub(crate) fn without_deferred_yellow(mut self) -> Self {
+        self.defer_yellow = false;
+        self
+    }
+
     /// A detector reading time from `clock`.
     pub fn new(clock: impl Clock + 'static, rival_hz: f64) -> Self {
         let mut d = Self {
@@ -345,6 +357,8 @@ impl EventDetector {
             fcy: Stable::default(),
             yellow_armed: true,
             yellow_said: false,
+            yellow_deferred: None,
+            defer_yellow: true,
             clear_since: None,
             clear_pending: None,
             penalty: None,
@@ -447,6 +461,7 @@ impl EventDetector {
         self.fcy = Stable::default();
         self.yellow_armed = true;
         self.yellow_said = false;
+        self.yellow_deferred = None;
         self.clear_since = None;
         self.clear_pending = None;
         self.penalty = None;
@@ -554,6 +569,14 @@ impl EventDetector {
         if let (Some(Some(old)), Some(new), false) = (old, stable, quiet) {
             self.flag_edge(d, old, new, now, in_lane, race, out);
         }
+        if let Some((old, new)) = self.yellow_deferred {
+            if stable != Some(new) {
+                self.yellow_deferred = None;
+            } else if !quiet && !in_lane && d.speed >= STANDSTILL_MS {
+                self.yellow_deferred = None;
+                self.flag_edge(d, old, new, now, in_lane, race, out);
+            }
+        }
         if let Some(pending) = self.clear_pending
             && is_clear(stable)
             && now - pending >= CLEAR_HOLD_S
@@ -614,8 +637,14 @@ impl EventDetector {
         }
         let standstill_muted = new == flag::BLUE || new == flag::WHITE_SLOW_CAR;
         if (is_yellow(new) || standstill_muted) && d.speed < STANDSTILL_MS {
+            // A contact stops the car right as the game raises the yellow: say it once the car
+            // moves, if the yellow still holds (BUG-130).
+            if is_yellow(new) && self.defer_yellow {
+                self.yellow_deferred = Some((old, new));
+            }
             return;
         }
+        self.yellow_deferred = None;
         let (lap, sector) = (self.player_lap(d), self.sector);
         let data = move || {
             let mut m = Map::new();

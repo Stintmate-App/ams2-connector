@@ -57,6 +57,9 @@ use serde::Serialize;
 pub const PENDING_TIMEOUT_S: f64 = 3.0;
 /// Ignore the invalid flag right after crossing the line: it may still belong to the previous lap.
 pub const INVALID_GRACE_S: f64 = 0.5;
+/// Lap distance up to which a car on lap 1 in the last sector is still on the grid, behind the
+/// line (the game holds the distance at 0 there).
+const GRID_DIST_M: f64 = 0.5;
 /// Partial laps shorter than this (e.g. a session ended right after a crossing) are dropped.
 pub const MIN_PARTIAL_LAP_S: f64 = 5.0;
 /// A lap starting this close to the line, with the lap clock near zero, counts as starting on it.
@@ -857,7 +860,13 @@ impl SessionTracker {
         lap.rows.push(row);
 
         let current_time = f64::from(d.current_time);
-        if d.lap_invalidated != 0 && current_time > INVALID_GRACE_S {
+        // On a standing start the game raises mLapInvalidated while the car sits on the grid
+        // (lap 1, last sector, lap distance still 0) and clears it when the car crosses the line
+        // (BUG-129): that is not the driver's fault, so it does not latch.
+        let on_grid = p.current_lap <= 1
+            && p.current_sector == 2
+            && f64::from(p.current_lap_distance) <= GRID_DIST_M;
+        if d.lap_invalidated != 0 && current_time > INVALID_GRACE_S && !on_grid {
             if !lap.invalid {
                 let (cause, certain) = invalid_cause(&lap.rows);
                 lap.invalid_cause = Some(cause);

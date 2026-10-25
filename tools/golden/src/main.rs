@@ -4,6 +4,7 @@
 //! ```text
 //! ams2-golden export <capture.a2raw> [--out DIR]
 //! ams2-golden compare A.jsonl B.jsonl
+//! ams2-golden dump <capture.a2raw> [--from S] [--to S] [--step N]
 //! ams2-golden bench <capture.a2raw> [--from SECONDS] [--seconds N]
 //! ```
 //!
@@ -15,6 +16,7 @@
 
 mod bench;
 mod compare;
+mod dump;
 mod export;
 mod sampler;
 
@@ -41,6 +43,16 @@ fn main() -> ExitCode {
         Some("export") if args.len() >= 2 => export(&args),
         Some("compare") if args.len() >= 3 => {
             compare::run(&PathBuf::from(&args[1]), &PathBuf::from(&args[2]))
+        }
+        Some("dump") if args.len() >= 2 => {
+            let num = |f: &str, d: f64| arg(&args, f).and_then(|v| v.parse().ok()).unwrap_or(d);
+            dump::run(
+                &PathBuf::from(&args[1]),
+                num("--from", 0.0),
+                num("--to", 60.0),
+                num("--step", 1.0) as u64,
+            )
+            .map(|()| true)
         }
         Some("bench") if args.len() >= 2 => {
             let num = |f: &str, d: f64| arg(&args, f).and_then(|v| v.parse().ok()).unwrap_or(d);

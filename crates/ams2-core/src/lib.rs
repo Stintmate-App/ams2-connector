@@ -25,6 +25,7 @@ pub mod channels;
 pub mod codes;
 pub mod frame;
 pub mod garage;
+pub mod golden;
 pub mod guidance;
 pub mod messages;
 pub mod names;

@@ -1,0 +1,25 @@
+[package]
+name = "ams2-golden"
+description = "PRY-057 C2: exports a raw capture through the Rust connector's logic as JSON Lines, compares two exports, and times the hot path on a capture"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+publish.workspace = true
+
+[dependencies]
+ams2-shm.workspace = true
+ams2-core.workspace = true
+ams2-platform.workspace = true
+ams2-recorder = { path = "../../bins/ams2-recorder" }
+serde_json.workspace = true
+zerocopy.workspace = true
+windows-sys = { workspace = true, features = [
+    "Win32_Foundation",
+    "Win32_System_Threading",
+] }
+
+[dev-dependencies]
+tempfile.workspace = true

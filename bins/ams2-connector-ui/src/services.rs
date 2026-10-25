@@ -88,6 +88,11 @@ pub trait Host: Send + Sync {
     fn close_job(&self);
     /// The game's process exists.
     fn game_running(&self) -> bool;
+    /// One cheap look at the game's session clock (BUG-128); hosts that cannot see the game say
+    /// there is no reading yet.
+    fn read_clock(&self) -> crate::resume_watch::Reading {
+        crate::resume_watch::Reading::Torn
+    }
 }
 
 /// The real host.
@@ -178,6 +183,14 @@ impl Host for WinHost {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .running()
+    }
+    fn read_clock(&self) -> crate::resume_watch::Reading {
+        use crate::resume_watch::Reading;
+        match ams2_shm::Mapping::open_game() {
+            Ok(m) => ams2_shm::SessionClock::read(&m).map_or(Reading::Torn, Reading::Clock),
+            Err(_) if self.game_running() => Reading::Torn,
+            Err(_) => Reading::Gone,
+        }
     }
 }
 
@@ -713,6 +726,22 @@ impl ServiceManager {
                 || t.stop_requested_at.is_some()
                 || (t.want_on && t.restart_at.is_some())
         })
+    }
+
+    /// A kept-open session waits at `resume` and no recorder runs: the app should look at the
+    /// game every second (see [`crate::resume_watch`]).
+    pub fn watching(&self, resume: &Path) -> bool {
+        crate::resume_watch::pending(resume) && !self.alive("recorder")
+    }
+
+    /// One look at the game for the kept-open session at `resume`; the file is deleted when the
+    /// game left the session. True when deleted.
+    pub fn watch_resume(&mut self, resume: &Path) -> bool {
+        if !self.watching(resume) {
+            return false;
+        }
+        let reading = self.host.read_clock();
+        crate::resume_watch::check(resume, &reading)
     }
 
     /// The game's process exists, from the same cached check (`control.state` when no service

@@ -2,6 +2,17 @@
 
 ## 3.0.0 (unreleased)
 
+- **A recorder restart keeps the game session (BUG-128).** A recorder stopped while the game
+  runs no longer sends `session_end`: it leaves `session-resume.json` (key, write sequences,
+  game pid, session clock) in the data folder, and the next recorder continues the same session
+  key when the pid, car, track, layout and session type match and the game's own clock
+  continued: `mEventTimeRemaining` not higher than at the stop (2 s of tolerance; a session that
+  began again has the total), the player's `mLapsCompleted` not lower, `mLapsInEvent` and
+  `mSessionDuration` equal (`ams2_shm::clock`). No time window. While no recorder runs, the
+  control app reads those fields once a second (only while the file exists) and deletes the file
+  when the game goes to its menus or exits, the session type, car or track changes, or the clock
+  contradicts the stored one.
+
 - **Updating without closing Stintmate (PRY-089).** Two new subcommands of
   `ams2-connector-ui`, `--stintmate-hold [--purpose update|uninstall] [--wait N]` and
   `--stintmate-release [--no-start]`, call the Stintmate hub (`hub.connector.hold` and

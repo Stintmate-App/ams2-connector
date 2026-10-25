@@ -9,11 +9,13 @@
 //! * [`capture`]: the raw capture file format.
 
 pub mod capture;
+pub mod clock;
 mod layout;
 mod mapping;
 mod source;
 pub mod testing;
 
+pub use clock::{SessionClock, Verdict};
 pub use layout::{FIELD_TABLE, ParticipantInfo, SharedMemory};
 pub use mapping::Mapping;
 pub use source::{FrameSource, MemorySource, SnapshotOutcome};

@@ -22,7 +22,9 @@ use ams2_core::tracker::{Clock, SessionTracker};
 use ams2_core::vocab;
 use ams2_platform::game::GameWatch;
 use ams2_platform::logging::local_iso;
-use ams2_shm::{FrameSource, Mapping, SHARED_MEMORY_VERSION, SharedMemory, SnapshotOutcome};
+use ams2_shm::{
+    FrameSource, Mapping, SHARED_MEMORY_VERSION, SessionClock, SharedMemory, SnapshotOutcome,
+};
 use serde_json::{Value as Json, json};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -442,6 +444,10 @@ impl Recorder {
             return;
         }
         let t1 = probe.map(|_| Instant::now());
+        if self.tracker.session_id().is_none() {
+            // where the game's clock stands if this frame opens a session (BUG-128)
+            self.sink.note_clock(SessionClock::from_frame(&self.frame));
+        }
         self.tracker.process(&self.frame, &mut self.sink);
         self.hints
             .in_garage
@@ -552,8 +558,13 @@ impl Recorder {
     /// Ends the session, stores what is queued, delivers what it can, closes the links.
     pub fn shutdown(&mut self) {
         self.telemetry.close();
-        if self.game_running && self.source.is_some() {
-            self.sink.keep_session_open(); // BUG-128: the game session goes on
+        if self.game_running && self.source.is_some() && self.have_frame {
+            // BUG-128: the game session goes on (unless the game is in its menus); the next
+            // recorder resumes it only if the game's clock continued
+            let clock = SessionClock::from_frame(&self.frame);
+            if !clock.in_menus() {
+                self.sink.keep_session_open(clock);
+            }
         }
         self.tracker.end_session(&mut self.sink);
         self.drop_source();

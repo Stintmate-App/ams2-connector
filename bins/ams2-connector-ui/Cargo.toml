@@ -15,6 +15,7 @@ path = "src/lib.rs"
 
 [dependencies]
 ams2-platform.workspace = true
+ams2-shm.workspace = true
 ams2-i18n.workspace = true
 stintmate-ipc.workspace = true
 serde_json.workspace = true

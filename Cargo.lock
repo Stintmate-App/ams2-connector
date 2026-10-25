@@ -44,6 +44,7 @@ version = "3.0.0"
 dependencies = [
  "ams2-i18n",
  "ams2-platform",
+ "ams2-shm",
  "embed-resource",
  "rmp-serde",
  "serde_json",

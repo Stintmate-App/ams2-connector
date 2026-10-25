@@ -75,7 +75,6 @@
   "flag_yellow_driver": {
    "text": "{driver} {cause}.",
    "params": {
-    "driver": "text",
     "cause": {
      "kind": "enum",
      "values": [
@@ -84,7 +83,8 @@
       "obstruction",
       "unknown"
      ]
-    }
+    },
+    "driver": "text"
    },
    "values": {
     "cause": {

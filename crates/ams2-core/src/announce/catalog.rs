@@ -286,8 +286,10 @@ pub fn check_params(code: &str, params: &Value, messages: &Map<String, Value>) -
                     .cloned()
                     .unwrap_or_default();
                 if !allowed.contains(value) {
+                    // The value is never echoed: it may hold what the driver said, and this
+                    // text reaches the log (BUG-093). The allowed values come from the catalog.
                     return Some(format!(
-                        "param {name:?}: {value} is not one of {}",
+                        "param {name:?} is not one of {}",
                         Value::Array(allowed)
                     ));
                 }

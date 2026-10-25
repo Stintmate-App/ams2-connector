@@ -87,6 +87,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "ams2-golden"
+version = "3.0.0"
+dependencies = [
+ "ams2-core",
+ "ams2-platform",
+ "ams2-recorder",
+ "ams2-shm",
+ "serde_json",
+ "tempfile",
+ "windows-sys 0.61.2",
+ "zerocopy",
+]
+
+[[package]]
 name = "ams2-i18n"
 version = "3.0.0"
 dependencies = [

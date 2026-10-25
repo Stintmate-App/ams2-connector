@@ -28,6 +28,10 @@
 //! 7. **The player's own fields** (flag, race state, pit schedule) only while the viewed car is
 //!    the player (its name is kept); viewing another car freezes them, and coming back re-takes
 //!    their current values silently.
+//! 8. **Whose flag** (PRY-090). A yellow is attributed at its edge: the player's own (slow on
+//!    track in the last [`SELF_WINDOW_S`]: a short note, then silence), another car (the slow
+//!    one near him, named with its sector), or unknown (`_ahead` codes); the black and white
+//!    after a lap invalidation is the track-limits call; the white flag names the slow car.
 
 use crate::codes::{game_state, pit_mode, session_state};
 use crate::tracker::Clock;

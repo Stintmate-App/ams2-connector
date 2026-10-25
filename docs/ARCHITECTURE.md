@@ -28,7 +28,7 @@ ams2-connector-ui.exe (tray, Local\Ams2Connector.UI)        pitwall-core (Pitwal
 | Process | Exe | Role | Named objects (`Local\`) |
 |---|---|---|---|
 | Control app (the tray process) | `ams2-connector-ui.exe`, GUI subsystem, no window | tray, supervises the recorder, serves `connector-ams2`, descriptor, autostart, managed mode | `Ams2Connector.UI` |
-| Window | `ams2-connector-window.exe`, GUI subsystem | the Services, Options and Logs panes; started on demand, gone when closed | one instance at most |
+| Window | `ams2-connector-window.exe`, GUI subsystem | the Services, Options and Logs pages; started on demand, gone when closed | one instance at most |
 | Recorder | `ams2-recorder.exe`, console subsystem, started hidden | shared memory, the 50 Hz loop, the tracker, the outbox, the `pitwall` link | `Ams2Connector.Recorder` (+ `.Stop`) |
 
 Pitwall sees one connector (`peer.app` `connector-ams2`, `peer.meta` with `connector_id`
@@ -46,6 +46,24 @@ and the window exists only while the user looks at it. The window talks to the c
 over the same endpoint a managing app uses: it receives a `ui.snapshot` and sends `ui.command`;
 a second "Open" while it runs only publishes a `window_request` in the snapshot, which the
 window watches. A crash of the window loses nothing.
+
+**The window's layout (PRY-087).** It opens at 680x460 logical px (minimum 560x380), resizable,
+always dark. A side menu of three items with painted icons (the selected one filled) and "Version
+x.y.z" at the bottom, then one page: **Services** (a card per service: name, a status pill coloured
+by state, the switch with its state in words, tiles for the Pitwall link, the CPU and the sampling
+rate, one sentence about the game; a data folder card with **Open**; a footer line when a managing
+app runs it), **Options** (cards of settings rows, each switch with its note and state in words,
+then the sampling rate) and **Logs** (a Recorder | App segmented control, "Only warnings and
+errors", Copy last 50, Open log file, and a monospace list of time, level and message with the full
+line as a tooltip; warnings amber, errors red). Every text is a key of the built-in catalog; the
+palette is a set of constants in `theme.rs`, which also paints the switch, the pill and the menu
+icons. The fonts are embedded in the exe (about 0.5 MB): Barlow (interface), Barlow Condensed
+ExtraBold (page titles) and JetBrains Mono (logs and figures), all SIL OFL 1.1, with their licence
+texts in `bins/ams2-connector-window/assets/fonts/` and in `THIRD-PARTY-NOTICES.txt`. The window adds
+no GPU or background work: a repaint at most once a second, the log list draws only its visible rows
+(a tail of 500 lines), and the recorder's CPU use is two `GetProcessTimes` readings a second apart,
+taken only while the Services page is open. `tests/render.rs` draws each page offscreen
+(egui's headless context and a small CPU rasteriser) into `target/tmp/pry087-*.png`.
 
 ## Crates
 
@@ -434,7 +452,8 @@ endpoint runs on a unique pipe name with a random key and a temporary workspace.
   `lap_bytes` test; `lap_write` (timing, ignored by default).
 - `ams2-connector-ui`: the endpoint over a real pipe, the services, managed mode, the
   descriptor, and the conformance tool `stintmate-ipc-check server` against the endpoint.
-- `ams2-connector-window`: the window's lifecycle.
+- `ams2-connector-window`: the window's lifecycle, and the offscreen renders of its pages
+  (`tests/render.rs`).
 
 What still needs the real game: the process names on a given PC, "return to garage" in the menu,
 closing AMS2 with another program holding the mapping, a real capture, the stream's cost in VR,

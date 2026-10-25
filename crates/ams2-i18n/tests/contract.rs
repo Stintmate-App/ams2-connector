@@ -244,11 +244,12 @@ fn resolve() {
 
 // ---------------------------------------------------------------- the embedded catalog
 
-/// sha256 of the Python connector's `ui/locales/en.json` at the time of the port.
-const EN_JSON_SHA256: &str = "47940a8d54672c982dcc919efefc7b9f1e89de82a6935bb7819bc6269005585a";
+/// sha256 of `locales/en.json`: the Python connector's catalog at the port, changed on purpose since
+/// (PRY-087 reworded and added the window's texts); a change to the catalog updates this pin.
+const EN_JSON_SHA256: &str = "6a34883d2f570b9089b0163e40aa80717c5e48be6b12e89ff47f9f7b579a513c";
 
 #[test]
-fn the_embedded_catalog_is_the_python_one_byte_for_byte() {
+fn the_embedded_catalog_is_the_pinned_file_byte_for_byte() {
     let hash = hex::encode(Sha256::digest(ams2_i18n::EMBEDDED_JSON.as_bytes()));
     assert_eq!(hash, EN_JSON_SHA256);
     let on_disk = fs::read(root().join("locales/en.json")).unwrap();

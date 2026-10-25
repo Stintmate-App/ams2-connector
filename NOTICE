@@ -8,3 +8,7 @@ Apache License, Version 2.0 (see LICENSE).
 owner. The licence does not grant permission to use them, except to describe the origin of
 the work (section 6 of the licence). Forks are welcome; please do not present them as
 official Stintmate software.
+
+The connector window embeds the fonts Barlow, Barlow Condensed and JetBrains Mono, licensed
+under the SIL Open Font License 1.1 (bins/ams2-connector-window/assets/fonts/OFL-*.txt, and
+THIRD-PARTY-NOTICES.txt in the installer).

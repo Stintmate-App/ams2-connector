@@ -26,10 +26,10 @@
       "text": "Last stop was forced: the lap in progress may be lost"
     },
     "detail.game_not_running": {
-      "text": "Game not running"
+      "text": "Automobilista 2 is not running. Laps are recorded as soon as you go out on track."
     },
     "detail.game_running": {
-      "text": "Game running"
+      "text": "Automobilista 2 is running."
     },
     "detail.outbox": {
       "text": {
@@ -73,6 +73,12 @@
         "n": "int"
       }
     },
+    "logs.footer": {
+      "text": "{file} · hover a line for the full text, or open the file",
+      "params": {
+        "file": "text"
+      }
+    },
     "logs.none_yet": {
       "text": "No log yet: {file}",
       "params": {
@@ -82,14 +88,17 @@
     "logs.open": {
       "text": "Open log file"
     },
-    "logs.selector": {
-      "text": "Log"
-    },
     "logs.ui": {
-      "text": "Connector app"
+      "text": "App"
     },
     "nav.name": {
       "text": "Screens"
+    },
+    "nav.version": {
+      "text": "Version {version}",
+      "params": {
+        "version": "text"
+      }
     },
     "notice.crashed.title": {
       "text": "{service} stopped unexpectedly",
@@ -152,8 +161,8 @@
         "error": "text"
       }
     },
-    "options.hz": {
-      "text": "Recorder sampling rate (advanced)"
+    "options.hz.advanced": {
+      "text": "(advanced)"
     },
     "options.hz.name": {
       "text": "Recorder sampling rate"
@@ -178,7 +187,7 @@
       "note": "service = a service's name (Recorder...)."
     },
     "options.start.note": {
-      "text": "Switching a service on or off on the Services screen changes this too: the services come back as you left them."
+      "text": "Laps are recorded only while the recorder runs. Switching it on the Services page changes this too."
     },
     "options.start.recorder.note": {
       "text": "On by default: laps are recorded only while it runs."
@@ -196,10 +205,13 @@
       "text": "Recorder"
     },
     "services.data_folder": {
-      "text": "Data folder: {folder}",
-      "params": {
-        "folder": "text"
-      }
+      "text": "Data folder"
+    },
+    "services.managed": {
+      "text": "Managed by Stintmate: it starts and stops it for you."
+    },
+    "services.open": {
+      "text": "Open"
     },
     "services.open_data_folder": {
       "text": "Open data folder"
@@ -306,6 +318,30 @@
         "state": "text"
       },
       "note": "One line of the tray tooltip: a service's name and its state."
+    },
+    "switch.off": {
+      "text": "Off"
+    },
+    "switch.on": {
+      "text": "On"
+    },
+    "tile.cpu": {
+      "text": "CPU"
+    },
+    "tile.pitwall": {
+      "text": "Pitwall"
+    },
+    "tile.pitwall.absent": {
+      "text": "Not running"
+    },
+    "tile.pitwall.connected": {
+      "text": "Connected"
+    },
+    "tile.pitwall.refused": {
+      "text": "Refused"
+    },
+    "tile.rate": {
+      "text": "Sampling"
     },
     "tray.exit": {
       "text": "Exit AMS2 connector"

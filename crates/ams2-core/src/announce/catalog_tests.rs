@@ -152,6 +152,19 @@ fn params_refused_name_the_param() {
 }
 
 #[test]
+fn a_refused_enum_value_is_not_echoed() {
+    // BUG-093: the refusal reaches the log; the value may hold what the driver said.
+    let reason = check_params(
+        "flag_yellow_cause",
+        &json!({"cause": "the driver's own words"}),
+        msgs(),
+    )
+    .unwrap();
+    assert!(reason.contains("not one of"), "{reason}");
+    assert!(!reason.contains("driver's own words"), "{reason}");
+}
+
+#[test]
 fn validate_catalog_finds_problems() {
     let mut bad = catalog().clone();
     let m = bad["messages"].as_object_mut().unwrap();

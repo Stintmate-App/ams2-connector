@@ -1,6 +1,12 @@
 # Changelog
 
-## 3.0.0 (unreleased)
+## 3.0.1 (2026-10-26)
+
+- stintmate-ipc v0.3.0 (the core and the conformance tool; compiled in as before). The core's
+  public API only gains items and the protocol is unchanged; a reconnect policy no longer holds
+  a client's close back.
+
+## 3.0.0 (2026-10-25)
 
 - **Flag calls know whose flag it is (PRY-090).** The game shows a yellow to the car that caused
   it too, so the radio no longer calls the player's own stop a yellow for "a car blocking the

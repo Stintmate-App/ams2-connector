@@ -117,7 +117,7 @@ ams2-connector-ui.exe --quit [--workspace DIR] [--allow-synced]
 ams2-connector-ui.exe --stintmate-hold [--purpose update|uninstall] [--wait SECONDS]
 ams2-connector-ui.exe --stintmate-release [--no-start]
 ams2-connector-ui.exe --version
-ams2-recorder.exe [--hz 50]            (one instance; Ctrl+C stops it)
+ams2-recorder.exe [--hz 50] [--shared-memory-name NAME]   (one instance; Ctrl+C stops it)
 ams2-recorder.exe --version
 ams2-connector-window.exe --version
 ```
@@ -158,6 +158,8 @@ text and the exit status in order. `ams2-recorder.exe` is a console program.
 All of them take `--workspace <dir>` and `--allow-synced` (accept a workspace inside OneDrive,
 refused by default) where a workspace matters. The control app passes its resolved workspace to
 every process it starts.
+
+`ams2-recorder.exe --shared-memory-name NAME` (development and tests only; the control app never passes it) opens the named test mapping instead of the game's `$pcars2$` and counts the game as running, so a replayed session (`ams2-replay`, which writes into such a mapping) drives the real recorder end to end. The game's own name (or any name containing `pcars2`) is refused with exit 2. Without the option nothing changes: the game's mapping, opened only while its process exists. Start the replay first: the mapping must exist, with a first frame, when the recorder opens it.
 
 Subcommands of `ams2-recorder.exe`:
 

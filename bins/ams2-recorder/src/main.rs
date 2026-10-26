@@ -1,11 +1,14 @@
 //! `ams2-recorder.exe`: reads the game at 50 Hz and records through Pitwall.
 
+use ams2_platform::game::GameWatch;
 use ams2_platform::location::{self, WORKSPACE_ERROR_EXIT, WorkspaceArgs};
 use ams2_platform::logging::{self, LogConfig};
 use ams2_platform::single::{Names, SingleInstance, StopEvent};
 use ams2_platform::workspace::SystemProbes;
 use ams2_recorder::cli;
 use ams2_recorder::recorder::{Config, Overrides, Recorder};
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 fn main() {
     if std::env::args().nth(1).as_deref() == Some("--version") {
@@ -23,17 +26,25 @@ fn main() {
     let mut hz = 50.0;
     let mut pitwall_pipe = None;
     let mut control_pipe = None;
+    let mut shm_name: Option<String> = None;
     let mut it = args.rest.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
             "--hz" => hz = it.next().and_then(|v| v.parse().ok()).unwrap_or(hz),
             "--pitwall-pipe" => pitwall_pipe = it.next().cloned(),
             "--control-pipe" => control_pipe = it.next().cloned(),
+            "--shared-memory-name" => shm_name = it.next().cloned(),
             other => {
                 eprintln!("ams2-recorder: unknown argument {other}");
                 std::process::exit(2);
             }
         }
+    }
+    if let Some(n) = &shm_name
+        && (n.is_empty() || n == ams2_shm::MAPPING_NAME || n.contains("pcars2"))
+    {
+        eprintln!("ams2-recorder: --shared-memory-name needs a test mapping, not the game's");
+        std::process::exit(2);
     }
     let loc = match location::resolve(args.workspace.as_deref(), args.allow_synced, &SystemProbes) {
         Ok(l) => l,
@@ -65,10 +76,24 @@ fn main() {
         pitwall_pipe,
         control_pipe,
         no_control: false,
-        shm_name: None,
+        shm_name: shm_name.clone(),
+    };
+    // A replayed session has no game process: with a test mapping the game counts as running.
+    let overrides = if shm_name.is_some() {
+        Overrides {
+            game: Some(GameWatch::with(
+                || true,
+                Instant::now,
+                Duration::from_secs(5),
+            )),
+            game_check: Some(Arc::new(|| true)),
+            ..Overrides::default()
+        }
+    } else {
+        Overrides::default()
     };
     ams2_platform::proc::lower_process_priority();
-    match Recorder::build(cfg, Overrides::default()) {
+    match Recorder::build(cfg, overrides) {
         Ok(mut rec) => rec.run(&|| stop.is_set()),
         Err(e) => {
             tracing::error!("Cannot start: {e}");

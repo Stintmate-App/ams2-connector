@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.2 (2026-10-27)
+
+- `ams2-recorder.exe --shared-memory-name NAME` (development and tests): opens a named test mapping
+  instead of the game's and counts the game as running, so `ams2-replay` can drive the real
+  recorder (PRY-097). The game's own mapping name is refused. Default behaviour unchanged.
+
 ## 3.0.1 (2026-10-26)
 
 - stintmate-ipc v0.3.0 (the core and the conformance tool; compiled in as before). The core's

@@ -10,8 +10,8 @@
     "sector": "int"
    },
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 15,
+   "priority": "critical",
+   "max_wait_s": 8,
    "kind": "announcement",
    "note": "A yellow flag, said when another car is the likely cause. sector: 1, 2 or 3, where that car is (the incident), not where the driver is. A line naming the car follows.",
    "group": "flags"
@@ -22,8 +22,8 @@
     "sector": "int"
    },
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 15,
+   "priority": "critical",
+   "max_wait_s": 8,
    "kind": "announcement",
    "note": "A double yellow flag: the track may be blocked. sector: 1, 2 or 3, where the car causing it is, when it is known. A line naming the car follows.",
    "group": "flags"
@@ -49,7 +49,7 @@
    },
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 15,
+   "max_wait_s": 8,
    "kind": "announcement",
    "note": "Said right after a yellow flag when the game gives its reason.",
    "group": "flags"
@@ -57,8 +57,9 @@
   "flag_yellow_ahead": {
    "text": "Yellow flag ahead.",
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 15,
+   "priority": "critical",
+   "max_wait_s": 5,
+   "slot": "local_flag",
    "kind": "announcement",
    "note": "A yellow flag when the car causing it could not be identified (no sector is made up). Followed by the game's reason when it gives one.",
    "group": "flags"
@@ -66,8 +67,9 @@
   "flag_double_yellow_ahead": {
    "text": "Double yellow ahead. Be ready to stop.",
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 15,
+   "priority": "critical",
+   "max_wait_s": 5,
+   "slot": "local_flag",
    "kind": "announcement",
    "note": "A double yellow flag when the car causing it could not be identified. Followed by the game's reason when it gives one.",
    "group": "flags"
@@ -96,7 +98,7 @@
    },
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 15,
+   "max_wait_s": 8,
    "kind": "announcement",
    "note": "Said right after a yellow when another car is the cause. driver: its name; cause: what it is doing (the game's reason, or slow on track when it gives none).",
    "group": "flags"
@@ -119,8 +121,8 @@
     }
    },
    "audience": "driver",
-   "priority": "normal",
-   "ttl_s": 8,
+   "priority": "high",
+   "max_wait_s": 5,
    "kind": "announcement",
    "note": "The yellow flag is about the driver's own car (he is off or stopped; the game shows the yellow to the car that causes it too), so a short note instead of a flag call. situation: off_track or stopped. Said once per incident; the clear call is not said for it.",
    "group": "flags"
@@ -129,7 +131,8 @@
    "text": "Track clear, green flag.",
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 15,
+   "max_wait_s": 6,
+   "slot": "local_flag",
    "kind": "announcement",
    "note": "The yellow is over and the track is clear again.",
    "group": "flags"
@@ -140,8 +143,9 @@
     "driver": "text"
    },
    "audience": "driver",
-   "priority": "normal",
-   "ttl_s": 10,
+   "priority": "high",
+   "max_wait_s": 6,
+   "slot": "blue_flag",
    "kind": "announcement",
    "note": "A faster car a lap or more ahead is behind the driver. driver: its name.",
    "group": "flags"
@@ -149,8 +153,9 @@
   "flag_blue_unknown": {
    "text": "Blue flag, let the faster car through.",
    "audience": "driver",
-   "priority": "normal",
-   "ttl_s": 10,
+   "priority": "high",
+   "max_wait_s": 6,
+   "slot": "blue_flag",
    "kind": "announcement",
    "note": "Blue flag when the lapping car could not be identified.",
    "group": "flags"
@@ -158,8 +163,9 @@
   "flag_slow_car": {
    "text": "Slow car ahead.",
    "audience": "driver",
-   "priority": "normal",
-   "ttl_s": 10,
+   "priority": "high",
+   "max_wait_s": 5,
+   "slot": "local_flag",
    "kind": "announcement",
    "note": "The white flag: a slow car on the track ahead.",
    "group": "flags"
@@ -170,8 +176,9 @@
     "driver": "text"
    },
    "audience": "driver",
-   "priority": "normal",
-   "ttl_s": 10,
+   "priority": "high",
+   "max_wait_s": 5,
+   "slot": "local_flag",
    "kind": "announcement",
    "note": "The white flag when the slow car ahead on track could be identified. driver: its name.",
    "group": "flags"
@@ -180,7 +187,7 @@
    "text": "Final lap.",
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 30,
+   "max_wait_s": 20,
    "kind": "announcement",
    "note": "The race's last lap has begun.",
    "group": "race"
@@ -188,8 +195,7 @@
   "flag_red": {
    "text": "Red flag. Slow down and come back to the pits.",
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 30,
+   "priority": "critical",
    "kind": "announcement",
    "note": "The session is stopped.",
    "group": "flags"
@@ -198,7 +204,7 @@
    "text": "Black and white flag: warning for driving standards.",
    "audience": "driver",
    "priority": "high",
-   "ttl_s": 20,
+   "max_wait_s": 30,
    "kind": "announcement",
    "note": "A warning for unsportsmanlike driving.",
    "group": "flags"
@@ -207,7 +213,7 @@
    "text": "Track limits warning. Lap invalidated.",
    "audience": "driver",
    "priority": "high",
-   "ttl_s": 10,
+   "max_wait_s": 15,
    "kind": "announcement",
    "note": "The black and white flag right after the game invalidated the lap (the driver cut the track). Always the driver's own flag.",
    "group": "flags"
@@ -215,8 +221,7 @@
   "flag_black_orange": {
    "text": "Black and orange flag: mechanical problem, box now.",
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 30,
+   "priority": "critical",
    "kind": "announcement",
    "note": "Race control calls the car in for a mechanical problem.",
    "group": "flags"
@@ -225,7 +230,6 @@
    "text": "Black flag. You are disqualified.",
    "audience": "driver",
    "priority": "high",
-   "ttl_s": 60,
    "kind": "announcement",
    "note": "The driver is disqualified (black flag or race state).",
    "group": "race"
@@ -234,7 +238,6 @@
    "text": "You are out of the race.",
    "audience": "driver",
    "priority": "high",
-   "ttl_s": 60,
    "kind": "announcement",
    "note": "The driver's race state became retired or did not finish.",
    "group": "race"
@@ -246,7 +249,7 @@
    },
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 60,
+   "max_wait_s": 60,
    "kind": "announcement",
    "note": "The driver took the chequered flag. position: the finishing position.",
    "group": "race"
@@ -255,7 +258,7 @@
    "text": "Chequered flag.",
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 60,
+   "max_wait_s": 60,
    "kind": "announcement",
    "note": "The driver took the chequered flag; the position is not known.",
    "group": "race"
@@ -263,8 +266,7 @@
   "fcy_start": {
    "text": "Full course yellow. Safety car on track.",
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 20,
+   "priority": "critical",
    "kind": "announcement",
    "note": "A full-course caution begins.",
    "group": "safety_car"
@@ -273,7 +275,7 @@
    "text": "Pits are open.",
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 20,
+   "max_wait_s": 20,
    "kind": "announcement",
    "note": "During the caution the pit lane opens.",
    "group": "safety_car"
@@ -282,7 +284,7 @@
    "text": "Pits open for the lead-lap cars.",
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 20,
+   "max_wait_s": 20,
    "kind": "announcement",
    "note": "During the caution the pit lane opens only for the cars on the lead lap.",
    "group": "safety_car"
@@ -290,8 +292,8 @@
   "fcy_last_lap": {
    "text": "Safety car in this lap.",
    "audience": "driver",
-   "priority": "normal",
-   "ttl_s": 30,
+   "priority": "high",
+   "max_wait_s": 30,
    "kind": "announcement",
    "note": "The caution ends at the end of this lap.",
    "group": "safety_car"
@@ -299,8 +301,8 @@
   "fcy_restart": {
    "text": "Restart coming, get ready.",
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 20,
+   "priority": "critical",
+   "max_wait_s": 10,
    "kind": "announcement",
    "note": "The race resumes after the caution.",
    "group": "safety_car"
@@ -308,8 +310,7 @@
   "fcy_halt": {
    "text": "Race halted: follow the safety car into the pits.",
    "audience": "driver",
-   "priority": "high",
-   "ttl_s": 30,
+   "priority": "critical",
    "kind": "announcement",
    "note": "The race is halted under the caution.",
    "group": "safety_car"
@@ -318,7 +319,6 @@
    "text": "Drive-through penalty. Box to serve it.",
    "audience": "driver",
    "priority": "high",
-   "ttl_s": 60,
    "kind": "announcement",
    "note": "The driver must drive through the pit lane.",
    "group": "penalties"
@@ -327,7 +327,6 @@
    "text": "Stop-and-go penalty. Box to serve it.",
    "audience": "driver",
    "priority": "high",
-   "ttl_s": 60,
    "kind": "announcement",
    "note": "The driver must stop in the pit box and go.",
    "group": "penalties"
@@ -336,7 +335,7 @@
    "text": "Penalty served.",
    "audience": "driver",
    "priority": "normal",
-   "ttl_s": 30,
+   "max_wait_s": 30,
    "kind": "announcement",
    "note": "The drive-through or stop-and-go penalty was served.",
    "group": "penalties"
@@ -347,8 +346,8 @@
     "driver": "text"
    },
    "audience": "driver",
-   "priority": "normal",
-   "ttl_s": 60,
+   "priority": "low",
+   "max_wait_s": 60,
    "kind": "announcement",
    "note": "Another driver was disqualified. driver: the name.",
    "group": "rivals"
@@ -359,8 +358,8 @@
     "driver": "text"
    },
    "audience": "driver",
-   "priority": "normal",
-   "ttl_s": 60,
+   "priority": "low",
+   "max_wait_s": 60,
    "kind": "announcement",
    "note": "Another driver retired. driver: the name.",
    "group": "rivals"
@@ -369,7 +368,7 @@
    "text": "Radio check from the AMS2 connector.",
    "audience": "driver",
    "priority": "low",
-   "ttl_s": 30,
+   "max_wait_s": 30,
    "kind": "message",
    "note": "A test of the announcement path, sent by hand.",
    "group": "test"
@@ -381,7 +380,7 @@
    },
    "audience": "agent",
    "priority": "low",
-   "ttl_s": 300,
+   "max_wait_s": 300,
    "kind": "message",
    "note": "A test message for the race engineer, sent by hand. text: a free sentence.",
    "group": "test"

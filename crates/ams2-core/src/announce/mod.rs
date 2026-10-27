@@ -6,14 +6,17 @@
 pub mod catalog;
 pub mod detector;
 pub mod rate;
+pub mod spotter;
 
 #[cfg(test)]
 mod catalog_tests;
 #[cfg(test)]
 mod detector_tests;
+#[cfg(test)]
+mod spotter_tests;
 
 pub use catalog::{
     CATALOG_ID, catalog, catalog_ik, check_params, parse_params, source_hash, validate_catalog,
 };
 pub use detector::{Announcement, EventDetector};
-pub use rate::{RATE_LIMIT, RATE_WINDOW_S, RateWindow};
+pub use rate::{RATE_LIMIT, RATE_WINDOW_S, RateWindow, SPOTTER_RATE_LIMIT};

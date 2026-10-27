@@ -389,6 +389,21 @@ window is the separate process described above.
   `es`, `en`, built in; entries validated one by one; plurals from the pack's number rules).
   Not localised: logs, JSON files, IPC messages and ids, the descriptor.
 
+- **Spotter** (`ams2-core::announce::spotter`, PRY-098): the one part of the detector that sees every
+  frame (the rest reads the participant arrays at 2 Hz). AMS2 has no proximity field, so it works from
+  `mWorldPosition`, `mOrientation[1]` and `mSpeeds`: in the player's frame (`theta = -yaw`) a car is
+  `x'` to the left and `z'` behind; a new overlap needs `|x'| > 1.8 m` and `|z'| < 4.4 m` ahead / `< 4.8 m`
+  behind, a held one stays while `|z'| < 4.9 m` (hysteresis); cars further than 20 m, in the pit lane or
+  closing at 12 m/s or more do not count. One state machine of what the driver was told (left 0/1,
+  right 0/1): each change sends one call, all in the slot `spotter` so a newer call replaces a queued
+  one; a side must stay empty 150 ms before its clear; an overlap back within 1.5 s of its clear is
+  called only if it still holds; "Still there" every 3 s since the last call; "All clear" after "In the
+  middle". Gates: practice, test, qualifying and race (not time attack, formation lap, private
+  sessions), the player on track at 10 m/s or more, a race from 20 s after the green, no full-course
+  yellow; a closing gate resets the state silently. The `Announcer` keeps a second `RateWindow` (120 per
+  60 s) for the `spotter` level. The tick runs it without allocating; its cost is in
+  [BENCHMARKS](../BENCHMARKS.md).
+
 ## Names
 
 Ids are AMS2's own strings (car = `mCarName`, class = `mCarClassName`, track =

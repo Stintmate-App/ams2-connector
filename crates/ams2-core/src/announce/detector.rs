@@ -33,6 +33,7 @@
 //!    one near him, named with its sector), or unknown (`_ahead` codes); the black and white
 //!    after a lap invalidation is the track-limits call; the white flag names the slow car.
 
+use super::spotter::Spotter;
 use crate::codes::{game_state, pit_mode, session_state};
 use crate::tracker::Clock;
 use ams2_shm::SharedMemory;
@@ -388,6 +389,10 @@ pub struct EventDetector {
     view_index: Option<i32>,
     view_ok: bool,
     rebaseline: bool,
+    /// The spotter (PRY-098): sees every frame, not only the 2 Hz scan.
+    spotter: Spotter,
+    /// Off in the parity replay against the Python detector, which had no spotter.
+    spotter_on: bool,
 }
 
 impl EventDetector {
@@ -396,6 +401,7 @@ impl EventDetector {
     pub(crate) fn without_deferred_yellow(mut self) -> Self {
         self.defer_yellow = false;
         self.attribute_flags = false;
+        self.spotter_on = false;
         self
     }
 
@@ -440,6 +446,8 @@ impl EventDetector {
             view_index: None,
             view_ok: false,
             rebaseline: false,
+            spotter: Spotter::new(),
+            spotter_on: true,
         };
         d.reset();
         d
@@ -459,6 +467,7 @@ impl EventDetector {
         self.game_state = Some(game);
         let mut out = Vec::new();
         if game != game_state::INGAME_PLAYING {
+            self.spotter.reset();
             return out;
         }
         let now = self.clock.now();
@@ -510,6 +519,17 @@ impl EventDetector {
         if session == session_state::RACE || session == session_state::FORMATION_LAP {
             self.caution(d, now, quiet, &mut out);
         }
+        if self.spotter_on
+            && let Some(code) = self
+                .spotter
+                .update(d, now, self.view_ok, now < self.quiet_until)
+        {
+            out.push(Announcement {
+                code,
+                params: Map::new(),
+                data: None,
+            });
+        }
         out
     }
 
@@ -547,6 +567,7 @@ impl EventDetector {
         self.view_index = None;
         self.view_ok = false;
         self.rebaseline = false;
+        self.spotter.reset();
     }
 
     fn quiet_now(&mut self, now: f64) {

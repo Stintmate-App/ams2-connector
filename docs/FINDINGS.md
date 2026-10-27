@@ -241,6 +241,16 @@ produced a junk session: a single out lap at 0 km/h.
 - 14 of 14 flying laps called; pressing the radio button before a call made the call wait, no
   overlap.
 
+## Proximity for the spotter (2026-10-27, PRY-098)
+
+Measured on the race capture 20261025-215838 (Oulton Park, 19 cars, 909 s); not committed.
+
+- **S1** AMS2 has no proximity field; every car's `mWorldPosition`, `mOrientations` and `mSpeeds` are in every frame.
+- **S2** Every car's position is new in every frame (about 75 frames/s) and relative positions jitter by 7 mm
+  p99, so no onset debounce is needed. The lap distance is not precise enough (1.65 m p99 against the world gap).
+- **S3** CrewChief's heading convention (`theta = -yaw`) matches the car's velocity (0.55 degrees median).
+- **S4** On the capture the spotter says 73 calls: 42 side changes (the probe's about 44) and 31 "Still there".
+
 ## Flags (2026-10-25, PRY-090)
 
 Measured on two real captures (practice 20261025-212520, race 20261025-215838); not committed.

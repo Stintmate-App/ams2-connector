@@ -110,7 +110,19 @@ fn the_loop_does_not_allocate_per_tick_in_steady_state() {
     let mut frame = |lap: u32, dist: f64, rec: &mut Recorder| {
         t += 0.02;
         secs.store(t.to_bits(), Ordering::Relaxed);
-        map.write_frame(sim.frame(lap, dist, t));
+        // A second car beside the player at a closing speed that makes it a passing car, not an
+        // overlap: the spotter scans it every tick (PRY-098) and calls nothing.
+        let mut f = Box::new(*sim.frame(lap, dist, t));
+        f.num_participants = f.num_participants.max(2);
+        f.orientation = [0.0; 3];
+        f.participant_info[1].is_active = 1;
+        f.participant_info[1].world_position = [
+            f.participant_info[0].world_position[0] + 3.0,
+            0.0,
+            f.participant_info[0].world_position[2],
+        ];
+        f.speeds[1] = f.speed - 20.0;
+        map.write_frame(&f);
         allocations(|| rec.tick())
     };
     for i in 0..1500 {

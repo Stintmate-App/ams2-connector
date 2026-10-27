@@ -18,15 +18,22 @@ fn parity() -> Value {
     serde_json::from_str(&raw).unwrap()
 }
 
-/// The codes added after the Python connector (PRY-090): its fixture knows none of them, so the
+/// The codes added after the Python connector (PRY-090, PRY-098): its fixture knows none of them, so the
 /// catalog's key and the actions' enum of codes differ from it by exactly these.
-const AFTER_PYTHON: [&str; 6] = [
+const AFTER_PYTHON: [&str; 13] = [
     "flag_yellow_ahead",
     "flag_double_yellow_ahead",
     "flag_yellow_driver",
     "flag_yellow_self",
     "flag_slow_car_driver",
     "flag_track_limits",
+    "spotter_car_left",
+    "spotter_car_right",
+    "spotter_in_the_middle",
+    "spotter_still_there",
+    "spotter_clear_left",
+    "spotter_clear_right",
+    "spotter_all_clear",
 ];
 
 #[test]
@@ -44,8 +51,8 @@ fn source_hashes_equal_the_pythons() {
 
 #[test]
 fn catalog_idempotency_key_is_the_one_of_this_catalog() {
-    // Pinned: the key changes with the catalog (PRY-090 codes, PRY-099 levels, waits and slots).
-    assert_eq!(catalog_ik(catalog()), "ams2/textcatalog/814c7795ccae");
+    // Pinned: the key changes with the catalog (PRY-090 codes, PRY-099 levels, waits and slots, PRY-098 spotter calls).
+    assert_eq!(catalog_ik(catalog()), "ams2/textcatalog/89acb5c54711");
 }
 
 #[test]
@@ -59,7 +66,7 @@ fn actions_equal_the_pythons_but_for_the_new_codes() {
         .unwrap();
     list.retain(|c| !AFTER_PYTHON.contains(&c.as_str().unwrap()));
     assert_eq!(canonical(&ours), canonical(&p["actions"]));
-    assert_eq!(actions_ik(actions()), "ams2/actions/7a79b8e9ee86");
+    assert_eq!(actions_ik(actions()), "ams2/actions/8e10fb4ec70d");
 }
 
 #[test]

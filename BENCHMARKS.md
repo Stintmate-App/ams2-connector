@@ -162,3 +162,17 @@ adds about 0.09 % and the IPC send about 0.27 % (a `Bytes` copy, the subscriber 
 the samples it sends or when; the remaining lever is `stintmate-ipc` writing the queued
 samples of a subscription in one call. Batching in the connector would only delay samples,
 which the brake cues cannot afford, and still make one write each.
+
+## Spotter (2026-10-27, PRY-098)
+
+`ams2-golden bench` on the race capture 20261025-215838 (43,455 ticks, release build): the spotter alone
+per frame, median 0.10 us (the timer's resolution), p99 0.10 us, p99.9 0.20 us, max 2.5 us; the whole hot
+path at full speed median 1.50 us, paced at 50 Hz median 9.2 us, 0.154 % of a core. The spotter says 73
+calls on the capture (42 side changes and 31 "Still there").
+
+`ams2-measure --seconds 15 --rounds 2` (30 participants around the player, two alongside, against 1 as
+before; the `--cars` switch): tick median 11.5 us against 10.7 us (the same run on this PC; the tracker's
+stage also grows 0.7 us with the extra participants, the detector + status stage 0.1 us), p99 69 us against
+52 us. The test `bins/ams2-recorder/tests/alloc.rs` runs the spotter's scan (a passing car beside the
+player) on every tick: 0 allocations per steady-state tick. A call allocates (one `Announcement`), so a
+tick with a state change does.

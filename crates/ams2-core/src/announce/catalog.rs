@@ -20,7 +20,7 @@ pub const SCHEMA: &str = "stintmate-catalog/1";
 /// Valid audiences.
 pub const AUDIENCES: [&str; 2] = ["driver", "agent"];
 /// Valid groups (contract 4.4, PRY-058).
-pub const GROUPS: [&str; 11] = [
+pub const GROUPS: [&str; 12] = [
     "laps",
     "fuel",
     "setup",
@@ -31,6 +31,7 @@ pub const GROUPS: [&str; 11] = [
     "rivals",
     "car",
     "test",
+    "spotter",
     "other",
 ];
 /// Valid priorities (contract: `pitwall.catalog.declare`).
@@ -86,6 +87,15 @@ pub fn messages() -> &'static Map<String, Value> {
     catalog()["messages"]
         .as_object()
         .expect("the catalog has messages")
+}
+
+/// Whether `code` is a `spotter`-level message (its own, larger rate window).
+pub fn is_spotter(code: &str) -> bool {
+    messages()
+        .get(code)
+        .and_then(|m| m.get("priority"))
+        .and_then(Value::as_str)
+        == Some("spotter")
 }
 
 /// What has been checked for a code (docs/test.md runs fill this in); `None`: not a code.

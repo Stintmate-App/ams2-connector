@@ -209,7 +209,7 @@ penalties, the player's and the rivals' race states) and sends **codes** to Pitw
 writes and speaks them in the user's language. Rules: only while driving, a quiet 10 s after a
 session load or a state change, debounce, cooldowns, once per session for the end-of-race
 events, rivals by name; at most 10 a minute; nothing is kept while Pitwall is away
-([ARCHITECTURE.md](ARCHITECTURE.md#race-announcements)). The catalog `connector.ams2` has 34
+([ARCHITECTURE.md](ARCHITECTURE.md#race-announcements)). The catalog `connector.ams2` has 41
 codes; `ams2-recorder.exe codes` lists them with their audience, priority and parameters.
 
 | Group | Codes |
@@ -219,7 +219,14 @@ codes; `ams2-recorder.exe codes` lists them with their audience, priority and pa
 | Safety car (full course yellow) | `fcy_start`, `fcy_pits_open`, `fcy_pits_lead_lap`, `fcy_last_lap`, `fcy_restart`, `fcy_halt` |
 | Penalties | `penalty_drive_through`, `penalty_stop_go`, `penalty_served` |
 | Rivals | `rival_disqualified`, `rival_out` |
+| Spotter | `spotter_car_left`, `spotter_car_right`, `spotter_in_the_middle`, `spotter_still_there`, `spotter_clear_left`, `spotter_clear_right`, `spotter_all_clear` |
 | Tests | `radio_check`, `engineer_test` |
+
+The spotter calls ("Car left", "Clear right"...) are not edge events of the race but proximity: the
+connector watches the other cars' positions in every frame and says a call within about a tenth of a
+second of a car coming alongside or leaving. They work in practice, qualifying and race (a race from 20 s
+after the green), on track at 10 m/s or more, not under a full-course yellow; the rate limit for them
+is 120 a minute ([ARCHITECTURE.md](ARCHITECTURE.md#race-announcements)).
 
 Each is built from the game's header and from experience with other programs; confirm them in
 a real race before relying on them.

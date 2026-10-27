@@ -186,7 +186,12 @@ impl Announcer {
         match sent {
             Ok(()) => {
                 lock(&self.stats).sent += 1;
-                tracing::info!("Announcement {} sent", a.code);
+                if spotter {
+                    // a spotter call per side change: hundreds per race
+                    tracing::debug!("Announcement {} sent", a.code);
+                } else {
+                    tracing::info!("Announcement {} sent", a.code);
+                }
                 true
             }
             Err(e) => {

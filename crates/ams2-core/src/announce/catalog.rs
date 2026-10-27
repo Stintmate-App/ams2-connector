@@ -439,6 +439,9 @@ pub fn validate_catalog(catalog: &Value) -> Vec<String> {
             if p == "spotter" && msg.get("audience").and_then(Value::as_str) != Some("driver") {
                 out.push(format!("{at} priority spotter needs audience driver"));
             }
+            if p == "spotter" && !msg.contains_key("max_wait_s") {
+                out.push(format!("{at} priority spotter needs max_wait_s"));
+            }
             if msg.get("audience").and_then(Value::as_str) == Some("agent")
                 && !AGENT_PRIORITIES.contains(&p)
             {

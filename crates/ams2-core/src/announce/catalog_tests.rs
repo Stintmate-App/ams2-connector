@@ -194,6 +194,7 @@ fn validate_catalog_finds_problems() {
     m["fcy_halt"]["ttl_s"] = json!(30);
     m["flag_blue"]["slot"] = json!("Blue-Flag");
     m["engineer_test"]["priority"] = json!("spotter");
+    m["disqualified"]["priority"] = json!("spotter");
     m["flag_yellow_cause"]["values"] = json!({"cause": {"solo_crash": "x"}});
     m["final_lap"]["text"] = json!("Final {lap");
     m["retired"]["text"] = json!("x".repeat(201));
@@ -209,6 +210,7 @@ fn validate_catalog_finds_problems() {
         "flag_blue: slot",
         "engineer_test: priority of an agent",
         "engineer_test: priority spotter",
+        "disqualified: priority spotter needs max_wait_s",
         "flag_yellow_cause: enum",
         "final_lap: bad placeholder",
         "retired: longer",

@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.1.0 (2026-10-27)
+
+- **Spotter calls (PRY-098).** "Car left", "Car right", "In the middle", "Still there", "Clear left / right"
+  and "All clear" (seven codes, group `spotter`, level `spotter`, one slot) from the other cars' world
+  positions in every frame (`announce/spotter.rs`, CrewChief's geometry). Only in practice, qualifying and
+  race (from 20 s after the green), on track at 10 m/s or more, not under a full-course yellow, not in a
+  private session. A second rate window of 120 per 60 s serves the `spotter` level beside the 10 per 60 s.
+  `spotter` is a valid catalog group. `ams2-measure --cars N` puts traffic around the player.
+
 ## 3.0.3 (2026-10-27)
 
 - **Radio priority levels, maximum waits and slots (PRY-099).** Every catalog message declares one of five

@@ -364,6 +364,76 @@
    "note": "Another driver retired. driver: the name.",
    "group": "rivals"
   },
+  "spotter_car_left": {
+   "text": "Car left.",
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 1,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "A car is alongside on the driver's left and the right is empty (also when a three-wide drops to the left only). Say it short: Spanish \"Coche a la izquierda.\"",
+   "group": "spotter"
+  },
+  "spotter_car_right": {
+   "text": "Car right.",
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 1,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "A car is alongside on the driver's right and the left is empty (also when a three-wide drops to the right only). Say it short: Spanish \"Coche a la derecha.\"",
+   "group": "spotter"
+  },
+  "spotter_in_the_middle": {
+   "text": "In the middle.",
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 1,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "Cars on both sides of the driver (three wide). Say it short: Spanish \"Vas en medio.\"",
+   "group": "spotter"
+  },
+  "spotter_still_there": {
+   "text": "Still there.",
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 1,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "A car called alongside is still there, repeated every 3 seconds while it holds. Say it short: Spanish \"Sigue ahí.\"",
+   "group": "spotter"
+  },
+  "spotter_clear_left": {
+   "text": "Clear left.",
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 2,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "The car alongside on the left has gone. Say it short: Spanish \"Libre a la izquierda.\"",
+   "group": "spotter"
+  },
+  "spotter_clear_right": {
+   "text": "Clear right.",
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 2,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "The car alongside on the right has gone. Say it short: Spanish \"Libre a la derecha.\"",
+   "group": "spotter"
+  },
+  "spotter_all_clear": {
+   "text": "All clear.",
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 2,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "Both sides are empty again after \"In the middle\". Say it short: Spanish \"Todo libre.\"",
+   "group": "spotter"
+  },
   "radio_check": {
    "text": "Radio check from the AMS2 connector.",
    "audience": "driver",

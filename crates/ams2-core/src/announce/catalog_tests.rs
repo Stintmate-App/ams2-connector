@@ -67,6 +67,13 @@ fn the_first_set_of_the_research_is_there() {
         "rival_out",
         "radio_check",
         "engineer_test",
+        "spotter_car_left",
+        "spotter_car_right",
+        "spotter_in_the_middle",
+        "spotter_still_there",
+        "spotter_clear_left",
+        "spotter_clear_right",
+        "spotter_all_clear",
     ];
     for code in expected {
         assert!(msgs().contains_key(code), "{code}");
@@ -242,6 +249,8 @@ fn every_code_has_its_group() {
             assert_eq!(group, "penalties", "{code}");
         } else if code.starts_with("rival_") {
             assert_eq!(group, "rivals", "{code}");
+        } else if code.starts_with("spotter_") {
+            assert_eq!(group, "spotter", "{code}");
         }
     }
     for code in [

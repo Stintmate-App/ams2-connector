@@ -3,6 +3,7 @@
 
 use crate::sampler::Sampler;
 use ams2_core::announce::detector::EventDetector;
+use ams2_core::announce::spotter::Spotter;
 use ams2_core::testing::{FakeClock, RecordingSink};
 use ams2_core::tracker::SessionTracker;
 use ams2_platform::timer::WaitableTimer;
@@ -104,6 +105,8 @@ pub fn run(capture: &Path, from_s: f64, paced_s: f64) -> Result<(), String> {
     let t0 = sampler.t0_us();
     let mut ns = Vec::new();
     let mut busy = 0.0;
+    let mut spot = Spotter::new();
+    let (mut spot_ns, mut spot_calls) = (Vec::new(), 0usize);
     while let Some(rel) = sampler.advance().map_err(|e| e.to_string())? {
         let t_s = (t0 + rel) as f64 / 1e6;
         let start = Instant::now();
@@ -111,6 +114,10 @@ pub fn run(capture: &Path, from_s: f64, paced_s: f64) -> Result<(), String> {
         let d = start.elapsed().as_secs_f64();
         busy += d;
         ns.push(d * 1e9);
+        // The spotter alone on the same frame (always playing, the player's own view, no quiet).
+        let start = Instant::now();
+        spot_calls += usize::from(spot.update(sampler.frame(), t_s, true, false).is_some());
+        spot_ns.push(start.elapsed().as_secs_f64() * 1e9);
     }
     println!(
         "full speed: {} records, {:.1} s busy in the hot path, {:.0} ticks/s",
@@ -119,6 +126,8 @@ pub fn run(capture: &Path, from_s: f64, paced_s: f64) -> Result<(), String> {
         ns.len() as f64 / busy
     );
     report("full speed", ns);
+    println!("spotter calls on the capture: {spot_calls}");
+    report("spotter alone", spot_ns);
 
     // Paced: a segment into memory, then 50 Hz.
     let mut sampler = open()?;

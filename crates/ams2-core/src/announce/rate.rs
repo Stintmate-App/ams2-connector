@@ -9,6 +9,8 @@ use std::collections::VecDeque;
 pub const RATE_LIMIT: usize = 10;
 /// The window, seconds.
 pub const RATE_WINDOW_S: f64 = 60.0;
+/// `spotter`-level announcements per connector per window (Pitwall's budget, PRY-099).
+pub const SPOTTER_RATE_LIMIT: usize = 120;
 
 /// A sliding window of send times.
 #[derive(Debug, Clone)]

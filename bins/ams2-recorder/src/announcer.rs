@@ -5,13 +5,13 @@
 //! answered), `pitwall.guidance.declare` and `pitwall.actions.declare` (5 s, a failure is only
 //! logged). [`Announcer::announce`] sends `pitwall.announce {code, params, session_key?, data?}`
 //! without waiting, after checking the params against the catalog and keeping the contract's
-//! window itself (10 per 60 s); while Pitwall is away, or over the limit, it drops (never
+//! windows itself (10 per 60 s, and 120 per 60 s for the `spotter` level); while Pitwall is away, or over the limit, it drops (never
 //! queues).
 
 use crate::link::{CallError, Transport, to_value};
 use ams2_core::actions::{self, DECLARE_TIMEOUT_S};
 use ams2_core::announce::catalog::{self as cat, check_params};
-use ams2_core::announce::{Announcement, RateWindow};
+use ams2_core::announce::{Announcement, RATE_WINDOW_S, RateWindow, SPOTTER_RATE_LIMIT};
 use ams2_core::guidance;
 use serde_json::{Value as Json, json};
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -48,6 +48,7 @@ pub struct Announcer {
     clock: Box<dyn Fn() -> f64 + Send + Sync>,
     declared: AtomicBool,
     window: Mutex<RateWindow>,
+    spotter_window: Mutex<RateWindow>,
     stats: Mutex<AnnounceStats>,
 }
 
@@ -64,6 +65,7 @@ impl Announcer {
             clock: Box::new(clock),
             declared: AtomicBool::new(false),
             window: Mutex::new(RateWindow::default()),
+            spotter_window: Mutex::new(RateWindow::new(SPOTTER_RATE_LIMIT, RATE_WINDOW_S)),
             stats: Mutex::default(),
         }
     }
@@ -113,7 +115,7 @@ impl Announcer {
     }
 
     /// The `pitwall.announce` params and the window slot, or why it is dropped.
-    fn admit(&self, a: &Announcement) -> Result<(Value, f64), String> {
+    fn admit(&self, a: &Announcement) -> Result<(Value, f64, bool), String> {
         let params_json = Json::Object(a.params.clone());
         if let Some(problem) = check_params(a.code, &params_json, cat::messages()) {
             tracing::error!("Announcement {} not sent: {problem}", a.code);
@@ -126,8 +128,13 @@ impl Announcer {
             return Err("Pitwall is not connected".into());
         }
         let now = (self.clock)();
+        let spotter = cat::is_spotter(a.code);
         let slot = {
-            let mut w = lock(&self.window);
+            let mut w = lock(if spotter {
+                &self.spotter_window
+            } else {
+                &self.window
+            });
             match w.admit(now) {
                 Some(s) => s,
                 None => {
@@ -156,12 +163,12 @@ impl Announcer {
                 );
             }
         }
-        Ok((to_value(&p), slot))
+        Ok((to_value(&p), slot, spotter))
     }
 
     /// Sends one announcement now, or drops it. Never blocks.
     pub fn announce(self: &Arc<Self>, a: &Announcement) -> bool {
-        let Ok((params, slot)) = self.admit(a) else {
+        let Ok((params, slot, spotter)) = self.admit(a) else {
             return false;
         };
         let (me, code) = (self.clone(), a.code);
@@ -185,7 +192,12 @@ impl Announcer {
             Err(e) => {
                 tracing::info!("Announcement {} dropped: {e}", a.code);
                 self.drop_count();
-                lock(&self.window).release(slot);
+                lock(if spotter {
+                    &self.spotter_window
+                } else {
+                    &self.window
+                })
+                .release(slot);
                 false
             }
         }
@@ -194,7 +206,7 @@ impl Announcer {
     /// As [`announce`](Self::announce) but waits (at most `timeout`) for Pitwall's accept: for a
     /// thread that is not the loop (an action's handler).
     pub fn announce_wait(&self, a: &Announcement, timeout: Duration) -> Result<Value, String> {
-        let (params, _) = self.admit(a)?;
+        let (params, _, _) = self.admit(a)?;
         match self.link.call("pitwall.announce", params, None, timeout) {
             Ok(v) => {
                 lock(&self.stats).sent += 1;

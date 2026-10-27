@@ -3,7 +3,7 @@
 //! pipe, a throw-away key and workspace in the temp folder, a test mapping.
 //!
 //! ```text
-//! ams2-measure [--seconds 20] [--rounds 3] [--fps 90] [--rate N]
+//! ams2-measure [--seconds 20] [--rounds 3] [--fps 90] [--rate N] [--cars 30]
 //! ```
 //!
 //! Two processes: this one plays Pitwall (a fake endpoint that subscribes to
@@ -18,6 +18,7 @@ use ams2_core::testing::Sim;
 use ams2_platform::game::GameWatch;
 use ams2_platform::timer::WaitableTimer;
 use ams2_recorder::recorder::{Config, Overrides, Recorder};
+use ams2_shm::SharedMemory;
 use ams2_shm::testing::{TestMapping, unique_name};
 use serde_json::json;
 use std::collections::hash_map::RandomState;
@@ -61,6 +62,7 @@ fn main() {
         num("--rounds", 3.0) as usize,
         num("--fps", 90.0),
         rate,
+        num("--cars", 30.0) as usize,
     );
 }
 
@@ -163,7 +165,7 @@ fn median(v: &[f64]) -> f64 {
     pct(&sorted(v.to_vec()), 0.5)
 }
 
-fn parent(seconds: f64, rounds: usize, fps: f64, rate: Option<i64>) {
+fn parent(seconds: f64, rounds: usize, fps: f64, rate: Option<i64>, cars: usize) {
     let key = random_key();
     let dir = std::env::temp_dir().join(format!("ams2-measure-{}", std::process::id()));
     let ipc = dir.join("ipc");
@@ -225,8 +227,9 @@ fn parent(seconds: f64, rounds: usize, fps: f64, rate: Option<i64>) {
             let t0 = Instant::now();
             while !stop.load(Ordering::Relaxed) {
                 let t = t0.elapsed().as_secs_f64();
-                let f = sim.frame(1, (t * 40.0) % 4300.0, t);
-                map.write_frame(f);
+                let mut f = Box::new(*sim.frame(1, (t * 40.0) % 4300.0, t));
+                add_traffic(&mut f, cars);
+                map.write_frame(&f);
                 writes.lock().unwrap().push(now_ns());
                 timer.wait_timeout(Duration::from_millis(100));
             }
@@ -496,5 +499,37 @@ fn report(
             "start (build + links + mapping) to the first snapshot: {:.1} ms",
             f * 1e3
         );
+    }
+}
+
+/// Fills the frame with `cars` participants around the player (PRY-098): one alongside on each
+/// side (the spotter calls them, "In the middle", then "Still there" every 3 s) and the rest
+/// ahead and behind, some within the spotter's 20 m search range but not alongside.
+fn add_traffic(f: &mut SharedMemory, cars: usize) {
+    let n = cars.clamp(1, f.participant_info.len());
+    f.num_participants = f.num_participants.max(n as i32);
+    f.orientation = [0.0; 3];
+    let (px, pz) = (
+        f.participant_info[0].world_position[0],
+        f.participant_info[0].world_position[2],
+    );
+    for i in 1..n {
+        let (dx, dz) = match i {
+            1 => (3.0, 0.0),
+            2 => (-3.0, 1.0),
+            _ => {
+                let k = (i - 3) as f32;
+                let side = if i % 2 == 0 { 7.0 } else { -7.0 };
+                let dz = if i % 4 < 2 {
+                    -(8.0 + 9.0 * k)
+                } else {
+                    8.0 + 9.0 * k
+                };
+                (side, dz)
+            }
+        };
+        f.participant_info[i].is_active = 1;
+        f.participant_info[i].world_position = [px + dx, 0.0, pz + dz];
+        f.speeds[i] = f.speed;
     }
 }

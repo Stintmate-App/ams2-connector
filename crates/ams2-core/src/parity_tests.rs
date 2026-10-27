@@ -44,8 +44,8 @@ fn source_hashes_equal_the_pythons() {
 
 #[test]
 fn catalog_idempotency_key_is_the_one_of_this_catalog() {
-    // Pinned: the Python key changes with the six codes of PRY-090.
-    assert_eq!(catalog_ik(catalog()), "ams2/textcatalog/c7c250c61d18");
+    // Pinned: the key changes with the catalog (PRY-090 codes, PRY-099 levels, waits and slots).
+    assert_eq!(catalog_ik(catalog()), "ams2/textcatalog/814c7795ccae");
 }
 
 #[test]

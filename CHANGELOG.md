@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.3 (2026-10-27)
+
+- **Radio priority levels, maximum waits and slots (PRY-099).** Every catalog message declares one of five
+  levels (`critical` for yellows, red, FCY start/restart/halt and black-orange; `high` for blue and slow-car
+  flags, own yellow, penalties; `low` for rival messages), a `max_wait_s` where the message goes stale (none for
+  red, black-orange, FCY start/halt, penalties, disqualified, retired) and a `slot` (`local_flag`, `blue_flag`)
+  so a newer message replaces a queued one. `ttl_s` is gone from the catalog and refused by its validation.
+
 ## 3.0.2 (2026-10-27)
 
 - `ams2-recorder.exe --shared-memory-name NAME` (development and tests): opens a named test mapping

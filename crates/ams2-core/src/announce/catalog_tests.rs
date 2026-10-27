@@ -100,7 +100,7 @@ fn source_hashes_are_12_hex_digits_and_follow_the_text() {
     assert_ne!(source_hash(&changed), h0);
     // The PRY-052 fields and the note are not part of the hash.
     let mut other = base.clone();
-    other["ttl_s"] = json!(99);
+    other["max_wait_s"] = json!(99);
     other["note"] = json!("x");
     assert_eq!(source_hash(&other), h0);
 }
@@ -190,7 +190,11 @@ fn validate_catalog_finds_problems() {
     m["flag_clear"]["text"] = json!("Clear\u{7}");
     m["flag_red"]["priority"] = json!("urgent");
     m["flag_slow_car"]["audience"] = json!("everyone");
-    m["fcy_start"]["ttl_s"] = json!(0);
+    m["fcy_start"]["max_wait_s"] = json!(0);
+    m["fcy_halt"]["ttl_s"] = json!(30);
+    m["flag_blue"]["slot"] = json!("Blue-Flag");
+    m["engineer_test"]["priority"] = json!("spotter");
+    m["disqualified"]["priority"] = json!("spotter");
     m["flag_yellow_cause"]["values"] = json!({"cause": {"solo_crash": "x"}});
     m["final_lap"]["text"] = json!("Final {lap");
     m["retired"]["text"] = json!("x".repeat(201));
@@ -201,7 +205,12 @@ fn validate_catalog_finds_problems() {
         "flag_clear: control",
         "flag_red: priority",
         "flag_slow_car: audience",
-        "fcy_start: ttl_s",
+        "fcy_start: max_wait_s",
+        "fcy_halt: ttl_s",
+        "flag_blue: slot",
+        "engineer_test: priority of an agent",
+        "engineer_test: priority spotter",
+        "disqualified: priority spotter needs max_wait_s",
         "flag_yellow_cause: enum",
         "final_lap: bad placeholder",
         "retired: longer",

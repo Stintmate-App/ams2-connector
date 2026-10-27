@@ -284,7 +284,7 @@ type, game state, flags), declared with `rate_hz: 100`.
 ## Race announcements
 
 The connector never composes user text. It declares its catalog `connector.ams2` (English
-texts, typed params, and per message `audience`, `priority`, `ttl_s`, `kind` and a translator's
+texts, typed params, and per message `audience`, `priority` (five levels), `max_wait_s`, `slot`, `kind` and a translator's
 note) and sends only `pitwall.announce {code, params, session_key?, data?}`. Pitwall composes
 the written and spoken text in the user's language.
 

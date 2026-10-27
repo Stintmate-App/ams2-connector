@@ -5,7 +5,7 @@
 //! params (`pitwall.announce`). The catalog is data (`data/catalog.json`, written from the
 //! Python connector's by `scripts/gen_announce_fixtures.py`) in the team's catalog format:
 //! `text` with `{name}` placeholders, `params`, `values` for `enum` params, a `note`, and per
-//! message `audience`, `priority`, `ttl_s`, `kind` and `group`. The source hash of a message and
+//! message `audience`, `priority`, `max_wait_s`, `slot`, `kind` and `group`. The source hash of a message and
 //! the idempotency key of the whole catalog are the Python connector's, byte for byte (canonical
 //! JSON: sorted keys, no spaces, no ASCII escaping).
 
@@ -33,14 +33,20 @@ pub const GROUPS: [&str; 11] = [
     "test",
     "other",
 ];
-/// Valid priorities.
-pub const PRIORITIES: [&str; 3] = ["low", "normal", "high"];
+/// Valid priorities (contract: `pitwall.catalog.declare`).
+pub const PRIORITIES: [&str; 5] = ["low", "normal", "high", "critical", "spotter"];
+/// Priorities an `agent` message may use.
+pub const AGENT_PRIORITIES: [&str; 3] = ["low", "normal", "high"];
 /// Valid message kinds.
 pub const KINDS: [&str; 2] = ["announcement", "message"];
-/// Smallest `ttl_s`.
-pub const TTL_MIN: i64 = 1;
-/// Largest `ttl_s`.
-pub const TTL_MAX: i64 = 600;
+/// Smallest `max_wait_s`.
+pub const MAX_WAIT_MIN: f64 = 0.5;
+/// Largest `max_wait_s`.
+pub const MAX_WAIT_MAX: f64 = 600.0;
+/// Largest `max_wait_s` of a `spotter` message.
+pub const SPOTTER_MAX_WAIT: f64 = 3.0;
+/// Longest `slot`.
+pub const SLOT_MAX: usize = 32;
 /// Longest filled text.
 pub const MAX_TEXT: usize = 200;
 /// Longest value a text param is expected to carry when filled (a driver's name).
@@ -429,14 +435,45 @@ pub fn validate_catalog(catalog: &Value) -> Vec<String> {
         if !in_list("priority", &PRIORITIES) {
             out.push(format!("{at} priority must be one of {PRIORITIES:?}"));
         }
-        if !msg
-            .get("ttl_s")
-            .filter(|v| is_int(v))
-            .and_then(Value::as_i64)
-            .is_some_and(|t| (TTL_MIN..=TTL_MAX).contains(&t))
+        if let Some(p) = msg.get("priority").and_then(Value::as_str) {
+            if p == "spotter" && msg.get("audience").and_then(Value::as_str) != Some("driver") {
+                out.push(format!("{at} priority spotter needs audience driver"));
+            }
+            if p == "spotter" && !msg.contains_key("max_wait_s") {
+                out.push(format!("{at} priority spotter needs max_wait_s"));
+            }
+            if msg.get("audience").and_then(Value::as_str) == Some("agent")
+                && !AGENT_PRIORITIES.contains(&p)
+            {
+                out.push(format!(
+                    "{at} priority of an agent message must be one of {AGENT_PRIORITIES:?}"
+                ));
+            }
+        }
+        if msg.contains_key("ttl_s") {
+            out.push(format!("{at} ttl_s is gone: use max_wait_s"));
+        }
+        if let Some(w) = msg.get("max_wait_s") {
+            let max = if msg.get("priority").and_then(Value::as_str) == Some("spotter") {
+                SPOTTER_MAX_WAIT
+            } else {
+                MAX_WAIT_MAX
+            };
+            if !w
+                .as_f64()
+                .is_some_and(|w| (MAX_WAIT_MIN..=max).contains(&w))
+            {
+                out.push(format!(
+                    "{at} max_wait_s must be a number {MAX_WAIT_MIN}..{max}"
+                ));
+            }
+        }
+        if let Some(sl) = msg.get("slot")
+            && !sl.as_str().is_some_and(valid_slot)
         {
             out.push(format!(
-                "{at} ttl_s must be an integer {TTL_MIN}..{TTL_MAX}"
+                "{at} slot must match ^[a-z][a-z0-9_]{{0,{}}}$",
+                SLOT_MAX - 1
             ));
         }
         if !in_list("group", &GROUPS) {
@@ -452,6 +489,14 @@ pub fn validate_catalog(catalog: &Value) -> Vec<String> {
         }
     }
     out
+}
+
+/// `^[a-z][a-z0-9_]{0,31}$`.
+fn valid_slot(s: &str) -> bool {
+    let mut it = s.bytes();
+    it.next().is_some_and(|b| b.is_ascii_lowercase())
+        && s.len() <= SLOT_MAX
+        && it.all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_')
 }
 
 /// A copy of `v` with every object's keys in sorted order, whatever the `serde_json` map is

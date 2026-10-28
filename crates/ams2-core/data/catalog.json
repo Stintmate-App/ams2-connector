@@ -150,6 +150,19 @@
    "note": "A faster car a lap or more ahead is behind the driver. driver: its name.",
    "group": "flags"
   },
+  "flag_blue_next": {
+   "text": "Let {driver} through.",
+   "params": {
+    "driver": "text"
+   },
+   "audience": "driver",
+   "priority": "high",
+   "max_wait_s": 6,
+   "slot": "blue_flag",
+   "kind": "announcement",
+   "note": "The blue flag still holds and another faster car a lap or more ahead is now behind the driver (a train of lapping cars); said only after flag_blue, for each new car. driver: its name. Say it short: Spanish \"Deja pasar a {driver}.\"",
+   "group": "flags"
+  },
   "flag_blue_unknown": {
    "text": "Blue flag, let the faster car through.",
    "audience": "driver",

@@ -20,7 +20,7 @@ fn parity() -> Value {
 
 /// The codes added after the Python connector (PRY-090, PRY-098): its fixture knows none of them, so the
 /// catalog's key and the actions' enum of codes differ from it by exactly these.
-const AFTER_PYTHON: [&str; 15] = [
+const AFTER_PYTHON: [&str; 16] = [
     "flag_yellow_ahead",
     "flag_double_yellow_ahead",
     "flag_yellow_driver",
@@ -30,6 +30,7 @@ const AFTER_PYTHON: [&str; 15] = [
     "spotter_car_left",
     "spotter_car_right",
     "spotter_in_the_middle",
+    "flag_blue_next",
     "spotter_still_right",
     "spotter_still_left",
     "spotter_still_middle",
@@ -54,7 +55,7 @@ fn source_hashes_equal_the_pythons() {
 #[test]
 fn catalog_idempotency_key_is_the_one_of_this_catalog() {
     // Pinned: the key changes with the catalog (PRY-090 codes, PRY-099 levels, waits and slots, PRY-098 spotter calls).
-    assert_eq!(catalog_ik(catalog()), "ams2/textcatalog/7c8e04a7d617");
+    assert_eq!(catalog_ik(catalog()), "ams2/textcatalog/82af9565d4f5");
 }
 
 #[test]
@@ -72,7 +73,7 @@ fn actions_equal_the_pythons_but_for_the_new_codes() {
         .unwrap()
         .remove("variant"); // PRY-100
     assert_eq!(canonical(&ours), canonical(&p["actions"]));
-    assert_eq!(actions_ik(actions()), "ams2/actions/611bace1e206");
+    assert_eq!(actions_ik(actions()), "ams2/actions/4d18f44c98bf");
 }
 
 #[test]

@@ -42,6 +42,7 @@ fn the_first_set_of_the_research_is_there() {
         "flag_yellow_self",
         "flag_clear",
         "flag_blue",
+        "flag_blue_next",
         "flag_blue_unknown",
         "flag_slow_car",
         "flag_slow_car_driver",

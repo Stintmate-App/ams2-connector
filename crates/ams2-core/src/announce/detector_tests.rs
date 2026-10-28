@@ -4,7 +4,8 @@
 
 use super::catalog::{check_params, messages};
 use super::detector::{
-    Announcement, BLUE_MAX_PER_CAR, EventDetector, flag, race, schedule, yellow,
+    Announcement, BLUE_CAR_COOLDOWN_S, BLUE_MAX_PER_CAR, BLUE_NEXT_GAP_S, EventDetector, flag,
+    race, schedule, yellow,
 };
 use crate::codes::{game_state, pit_mode, session_state};
 use crate::testing::FakeClock;
@@ -329,6 +330,124 @@ fn blue_only_in_races() {
     let mut r = in_session(session_state::PRACTICE);
     r.d.highest_flag_colour = flag::BLUE as u32;
     assert!(r.codes(2.0).is_empty());
+}
+
+/// A race where cars 3, 4 and 5 are a lap ahead and behind the player (100, 300 and 400 m).
+fn train() -> Run {
+    let mut d = race6();
+    for (i, dist) in [(4, 900.0), (3, 700.0), (5, 600.0)] {
+        d.participant_info[i].current_lap = 4;
+        d.participant_info[i].current_lap_distance = dist;
+    }
+    let mut r = Run::new(d);
+    r.settle();
+    r
+}
+
+/// Runs `seconds` in 0.25 s steps; (time since `from`, code, driver) of each call.
+fn blue_calls(r: &mut Run, from: f64, seconds: f64) -> Vec<(f64, &'static str, String)> {
+    let mut out = Vec::new();
+    let mut t = 0.0;
+    while t < seconds {
+        for a in r.for_s(0.25) {
+            let who = a.params.get("driver").and_then(Value::as_str).unwrap_or("");
+            out.push((from + t, a.code, who.to_string()));
+        }
+        t += 0.25;
+    }
+    out
+}
+
+/// Car `i` has gone by: it is now ahead of the player on the track.
+fn passes(r: &mut Run, i: usize) {
+    r.d.participant_info[i].current_lap_distance = 1150.0;
+}
+
+#[test]
+fn a_train_of_three_cars_under_one_held_flag_is_called_car_by_car() {
+    let mut r = train();
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    let mut calls = blue_calls(&mut r, 0.0, 2.0);
+    passes(&mut r, 4);
+    calls.extend(blue_calls(&mut r, 2.0, 5.0)); // car 3 is the nearest now
+    passes(&mut r, 3);
+    calls.extend(blue_calls(&mut r, 7.0, 6.0)); // then car 5
+    passes(&mut r, 5);
+    calls.extend(blue_calls(&mut r, 13.0, 30.0));
+    let codes: Vec<_> = calls.iter().map(|c| c.1).collect();
+    assert_eq!(
+        codes,
+        ["flag_blue", "flag_blue_next", "flag_blue_next"],
+        "{calls:?}"
+    );
+    let who: Vec<_> = calls.iter().map(|c| c.2.as_str()).collect();
+    assert_eq!(who, ["Rival 4", "Rival 3", "Rival 5"]);
+    assert!(calls[0].0 <= 1.0, "{calls:?}");
+    assert!(
+        calls[1].0 - calls[0].0 >= BLUE_NEXT_GAP_S - 0.5,
+        "{calls:?}"
+    );
+    assert!(
+        calls[2].0 - calls[1].0 >= BLUE_NEXT_GAP_S - 0.5,
+        "{calls:?}"
+    );
+}
+
+#[test]
+fn a_new_flag_after_the_old_one_dropped_starts_a_new_episode() {
+    let mut r = train();
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    assert_eq!(r.codes(1.0), ["flag_blue"]);
+    r.d.highest_flag_colour = flag::GREEN as u32;
+    r.codes(3.0);
+    passes(&mut r, 4);
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    assert_eq!(r.codes(1.0), ["flag_blue"]); // car 3, a new car: not 20 s after any code
+}
+
+#[test]
+fn a_blue_flag_raised_in_the_pit_lane_is_called_when_the_car_leaves_it() {
+    let mut r = train();
+    r.d.pit_mode = pit_mode::DRIVING_INTO_PITS;
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    assert!(r.codes(3.0).is_empty());
+    r.d.pit_mode = pit_mode::NONE;
+    let out = r.for_s(1.0);
+    assert_eq!(out.len(), 1);
+    assert_eq!(out[0].code, "flag_blue"); // the first call of the episode
+    assert_eq!(out[0].params["driver"], "Rival 4");
+}
+
+#[test]
+fn a_held_blue_flag_is_not_called_at_a_standstill() {
+    let mut r = train();
+    r.d.speed = 0.5;
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    assert!(r.codes(6.0).is_empty());
+    r.d.speed = 30.0;
+    assert_eq!(r.codes(1.0), ["flag_blue"]);
+}
+
+#[test]
+fn the_same_car_is_called_every_20_s_and_at_most_three_times() {
+    let mut r = train();
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    let calls = blue_calls(&mut r, 0.0, 100.0);
+    let codes: Vec<_> = calls.iter().map(|c| c.1).collect();
+    assert_eq!(
+        codes,
+        ["flag_blue", "flag_blue_next", "flag_blue_next"],
+        "{calls:?}"
+    );
+    assert!(calls.iter().all(|c| c.2 == "Rival 4"));
+    assert!(
+        calls[1].0 - calls[0].0 >= BLUE_CAR_COOLDOWN_S - 0.5,
+        "{calls:?}"
+    );
+    assert!(
+        calls[2].0 - calls[1].0 >= BLUE_CAR_COOLDOWN_S - 0.5,
+        "{calls:?}"
+    );
 }
 
 // ------------------------------------------------------------------ race states, penalties
@@ -713,16 +832,25 @@ fn replay_of_a_seeded_random_run_equals_the_python_detectors_announcements() {
         r.clock.advance(1.0 / HZ);
         r.d.sequence_number += 2;
         for a in r.det.update(&r.d) {
+            if a.code.starts_with("flag_blue") {
+                continue; // BUG-139: the blue flag is followed now; tested apart
+            }
             got.push(json!({
                 "tick": tick, "code": a.code, "params": a.params,
                 "data": a.data.map_or(Value::Null, Value::Object),
             }));
         }
     }
-    let want = fx["events"].as_array().unwrap();
+    let want: Vec<_> = fx["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| !e["code"].as_str().unwrap().starts_with("flag_blue"))
+        .cloned()
+        .collect();
     assert!(want.len() >= 50, "the fixture has {} events", want.len());
     assert_eq!(got.len(), want.len());
-    for (g, w) in got.iter().zip(want) {
+    for (g, w) in got.iter().zip(&want) {
         assert_eq!(g, w);
     }
 }

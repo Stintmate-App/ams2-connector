@@ -16,8 +16,8 @@
 //! 2. **Debounce.** A value counts once it has been the same for its hold time ([`HOLD_S`]).
 //! 3. **Hysteresis.** A yellow re-arms only after [`YELLOW_REARM_S`] of NONE/GREEN;
 //!    `flag_clear` only after YELLOW/DOUBLE_YELLOW to GREEN/NONE held [`CLEAR_HOLD_S`].
-//! 4. **Cooldowns** per code ([`cooldown`]); the blue flag at most [`BLUE_MAX_PER_CAR`] times
-//!    for the same lapping car per session. Once-per-session codes: [`ONCE`].
+//! 4. **Cooldowns** per code ([`cooldown`]); the blue flag per lapping car ([`BLUE_CAR_COOLDOWN_S`] apart, at most [`BLUE_MAX_PER_CAR`] times
+//!    per session; a held blue flag follows the train, see `blue`). Once-per-session codes: [`ONCE`].
 //! 5. **Rivals by identity** (name + car class), never by array index: inactive slots, names
 //!    starting with NUL, the player's duplicates and the safety car are ignored; a DQ or
 //!    retirement is announced once per session per identity; the arrays are read at
@@ -148,6 +148,10 @@ pub const CLEAR_HOLD_S: f64 = 3.0;
 pub const FCY_JUMP_DELAY_S: f64 = 8.0;
 /// Blue flags for the same lapping car per session.
 pub const BLUE_MAX_PER_CAR: u32 = 3;
+/// The same lapping car is not called again within this long (BUG-139).
+pub const BLUE_CAR_COOLDOWN_S: f64 = 20.0;
+/// Two blue calls (of different cars) are at least this far apart.
+pub const BLUE_NEXT_GAP_S: f64 = 4.0;
 /// Below this speed (m/s) yellow, blue and slow-car calls are skipped.
 pub const STANDSTILL_MS: f32 = 1.0;
 /// The lapping car is looked for this far behind on track.
@@ -195,11 +199,7 @@ pub fn cooldown(code: &str) -> f64 {
         | "flag_yellow_cause"
         | "flag_red"
         | "flag_black_orange" => 30.0,
-        "flag_clear"
-        | "flag_blue"
-        | "flag_blue_unknown"
-        | "flag_slow_car"
-        | "flag_slow_car_driver" => 20.0,
+        "flag_clear" | "flag_slow_car" | "flag_slow_car_driver" => 20.0,
         "flag_black_white" | "flag_track_limits" => 15.0,
         _ => 0.0,
     }
@@ -380,7 +380,14 @@ pub struct EventDetector {
     fcy_said: Vec<&'static str>,
     fcy_due: Option<(f64, i64)>,
     sector: i32,
-    blue_count: HashMap<Option<Ident>, u32>,
+    /// Per lapping car (None: nobody named): the last blue call and how many were made.
+    blue_cars: HashMap<Option<Ident>, (f64, u32)>,
+    /// The time of the last blue call of any car.
+    blue_last: f64,
+    /// The first call of this blue-flag episode was made.
+    blue_episode: bool,
+    /// The blue flag is not looked at again before this time (the rival period).
+    blue_next_at: f64,
     rivals: HashMap<Ident, Stable>,
     rivals_said: Vec<Ident>,
     seen: Vec<Ident>,
@@ -437,7 +444,10 @@ impl EventDetector {
             fcy_said: Vec::new(),
             fcy_due: None,
             sector: 1,
-            blue_count: HashMap::new(),
+            blue_cars: HashMap::new(),
+            blue_last: f64::NEG_INFINITY,
+            blue_episode: false,
+            blue_next_at: f64::NEG_INFINITY,
             rivals: HashMap::new(),
             rivals_said: Vec::new(),
             seen: Vec::new(),
@@ -560,7 +570,10 @@ impl EventDetector {
         self.fcy_said.clear();
         self.fcy_due = None;
         self.sector = 1;
-        self.blue_count.clear();
+        self.blue_cars.clear();
+        self.blue_last = f64::NEG_INFINITY;
+        self.blue_episode = false;
+        self.blue_next_at = f64::NEG_INFINITY;
         self.rivals.clear();
         self.rivals_said.clear();
         self.next_rival_scan = now;
@@ -678,6 +691,14 @@ impl EventDetector {
                 self.yellow_edge(d, old, new, att, now, out);
             }
         }
+        if stable == Some(flag::BLUE) {
+            if race && !quiet && !in_lane && d.speed >= STANDSTILL_MS && now >= self.blue_next_at {
+                self.blue_next_at = now + self.rival_period;
+                self.blue(d, now, out);
+            }
+        } else {
+            self.blue_episode = false;
+        }
         if let Some(pending) = self.clear_pending
             && is_clear(stable)
             && now - pending >= CLEAR_HOLD_S
@@ -752,9 +773,8 @@ impl EventDetector {
             let att = self.attribute(d, now);
             self.yellow_edge(d, old, new, att, now, out);
         } else if new == flag::BLUE {
-            if race {
-                self.blue(d, now, out);
-            }
+            // Called by `blue_follow` (now, or when the car leaves the pit lane or moves).
+            self.blue_next_at = f64::NEG_INFINITY;
         } else if new == flag::WHITE_FINAL_LAP {
             self.emit(out, now, "final_lap", None, None);
         } else if new == flag::BLACK {
@@ -1053,7 +1073,11 @@ impl EventDetector {
         }
     }
 
-    /// The nearest car behind on track that is ahead in the race (lapping us).
+    /// The blue flag holds: calls the nearest car behind on track that is ahead in the race (lapping
+    /// us). The first call of an episode is `flag_blue`, each new car of the train `flag_blue_next`
+    /// at least [`BLUE_NEXT_GAP_S`] later; a car is not called again within [`BLUE_CAR_COOLDOWN_S`]
+    /// and at most [`BLUE_MAX_PER_CAR`] times a session (BUG-139). Runs at the rival period, not
+    /// every frame.
     fn blue(&mut self, d: &SharedMemory, now: f64, out: &mut Vec<Announcement>) {
         let me = self.view_index.unwrap_or(0);
         let length = f64::from(d.track_length);
@@ -1086,20 +1110,37 @@ impl EventDetector {
                 }
             }
         }
-        let count = self.blue_count.get(&who).copied().unwrap_or(0);
-        if count >= BLUE_MAX_PER_CAR {
+        if self.blue_episode && who.is_none() {
+            return; // nobody to name any more: the train has passed
+        }
+        if self.blue_episode && now - self.blue_last < BLUE_NEXT_GAP_S {
+            return;
+        }
+        let (last, count) = self
+            .blue_cars
+            .get(&who)
+            .copied()
+            .unwrap_or((f64::NEG_INFINITY, 0));
+        if count >= BLUE_MAX_PER_CAR || now - last < BLUE_CAR_COOLDOWN_S {
             return;
         }
         let sent = match &who {
             Some((name, _)) => {
                 let mut params = Map::new();
                 params.insert("driver".into(), json!(name));
-                self.emit(out, now, "flag_blue", Some(params), None)
+                let code = if self.blue_episode {
+                    "flag_blue_next"
+                } else {
+                    "flag_blue"
+                };
+                self.emit(out, now, code, Some(params), None)
             }
             None => self.emit(out, now, "flag_blue_unknown", None, None),
         };
         if sent {
-            self.blue_count.insert(who, count + 1);
+            self.blue_cars.insert(who, (now, count + 1));
+            self.blue_last = now;
+            self.blue_episode = true;
         }
     }
 

@@ -272,6 +272,8 @@ fn fcy_off(v: i64) -> bool {
 pub struct Announcement {
     /// The catalog code.
     pub code: &'static str,
+    /// Which wording: 0 is the catalog `text`, 1.. its `variants`.
+    pub variant: u8,
     /// Its params, as the catalog declares them.
     pub params: Map<String, Value>,
     /// Facts for the engineer (`pitwall.announce` `data`).
@@ -446,7 +448,7 @@ impl EventDetector {
             view_index: None,
             view_ok: false,
             rebaseline: false,
-            spotter: Spotter::new(),
+            spotter: Spotter::seeded(clock_seed()),
             spotter_on: true,
         };
         d.reset();
@@ -520,12 +522,13 @@ impl EventDetector {
             self.caution(d, now, quiet, &mut out);
         }
         if self.spotter_on
-            && let Some(code) = self
+            && let Some(call) = self
                 .spotter
                 .update(d, now, self.view_ok, now < self.quiet_until)
         {
             out.push(Announcement {
-                code,
+                code: call.code,
+                variant: call.variant,
                 params: Map::new(),
                 data: None,
             });
@@ -1272,9 +1275,17 @@ impl EventDetector {
         self.last.insert(code, now);
         out.push(Announcement {
             code,
+            variant: 0,
             params: params.unwrap_or_default(),
             data,
         });
         true
     }
+}
+
+/// A seed for the spotter's variant choice: the nanoseconds of the wall clock.
+fn clock_seed() -> u64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0x5EED, |d| d.as_nanos() as u64)
 }

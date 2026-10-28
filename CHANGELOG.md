@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.2.0 (2026-10-28)
+
+- **Message variants (PRY-100).** A catalog message may declare `variants` (1 to 8 other wordings of the same
+  message); `pitwall.announce` carries `variant` (omitted for 0, the `text`). `spotter_still_there` is replaced by
+  `spotter_still_right`, `spotter_still_left` and `spotter_still_middle`, each with variants chosen at random
+  and never the one before it. `test.announce` and `ams2-recorder announce` accept `variant`.
+
 ## 3.1.0 (2026-10-27)
 
 - **Spotter calls (PRY-098).** "Car left", "Car right", "In the middle", "Still there", "Clear left / right"

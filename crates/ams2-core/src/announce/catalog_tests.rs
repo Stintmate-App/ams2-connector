@@ -70,7 +70,9 @@ fn the_first_set_of_the_research_is_there() {
         "spotter_car_left",
         "spotter_car_right",
         "spotter_in_the_middle",
-        "spotter_still_there",
+        "spotter_still_left",
+        "spotter_still_middle",
+        "spotter_still_right",
         "spotter_clear_left",
         "spotter_clear_right",
         "spotter_all_clear",
@@ -271,4 +273,56 @@ fn every_code_has_its_group() {
             .join("\n")
             .contains("flag_red: group")
     );
+}
+
+#[test]
+fn variants_are_validated() {
+    assert!(validate_catalog(catalog()).is_empty());
+    let cases: [(&str, Value, &str); 9] = [
+        ("flag_blue", json!("x"), "variants must be a list"),
+        ("flag_blue", json!([]), "variants must be a list"),
+        (
+            "flag_blue",
+            json!(["a", "b", "c", "d", "e", "f", "g", "h", "i"]),
+            "variants must be a list",
+        ),
+        ("flag_blue", json!(["  "]), "variant 1 must be a non-empty"),
+        (
+            "flag_blue",
+            json!(["Move\u{7} {driver}."]),
+            "control character in variant 1",
+        ),
+        (
+            "flag_blue",
+            json!(["Move {nobody}."]),
+            "variant 1 placeholders",
+        ),
+        ("flag_blue", json!(["x".repeat(201)]), "variant 1 longer"),
+        (
+            "flag_blue",
+            json!(["Left {driver}.", "Left {driver}."]),
+            "variant 2 repeats",
+        ),
+        (
+            "spotter_still_right",
+            json!(["Still on your right."]),
+            "variant 1 repeats",
+        ),
+    ];
+    for (code, variants, word) in cases {
+        let mut bad = catalog().clone();
+        bad["messages"][code]["variants"] = variants;
+        let problems = validate_catalog(&bad).join("\n");
+        assert!(problems.contains(word), "{word}\n{problems}");
+    }
+}
+
+#[test]
+fn still_codes_declare_their_variant_counts() {
+    use super::spotter::*;
+    assert_eq!(variant_count(STILL_RIGHT), STILL_RIGHT_VARIANTS);
+    assert_eq!(variant_count(STILL_LEFT), STILL_LEFT_VARIANTS);
+    assert_eq!(variant_count(STILL_MIDDLE), STILL_MIDDLE_VARIANTS);
+    assert_eq!(variant_count("flag_red"), 1);
+    assert_eq!(variant_count("nope"), 1);
 }

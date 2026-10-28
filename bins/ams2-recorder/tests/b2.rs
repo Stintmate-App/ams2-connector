@@ -501,6 +501,74 @@ fn actions_ping_announce_and_errors() {
     r.finish();
 }
 
+fn announced_params(r: &Run) -> Json {
+    let calls = r.fake.calls();
+    let last = calls
+        .iter()
+        .rev()
+        .find(|c| c.method == "pitwall.announce")
+        .unwrap();
+    to_json(&last.params)
+}
+
+#[test]
+fn variant_is_sent_only_when_not_zero() {
+    let _rt = shared();
+    let r = run();
+    ready(&r);
+    for (variant, sent) in [(0, false), (1, true), (2, true)] {
+        let said = r
+            .call(
+                "connector.action",
+                json!({"code": "test.announce",
+                       "data": {"code": "spotter_still_right", "variant": variant}}),
+            )
+            .unwrap();
+        assert_eq!(said["announced"], true, "{said}");
+        let p = announced_params(&r);
+        assert_eq!(p["code"], "spotter_still_right");
+        assert_eq!(p.get("variant").is_some(), sent, "{p}");
+        if sent {
+            assert_eq!(p["variant"], variant);
+        }
+    }
+    r.finish();
+}
+
+#[test]
+fn a_variant_beyond_the_catalog_is_not_sent() {
+    let _rt = shared();
+    let r = run();
+    ready(&r);
+    let sent_before = r
+        .fake
+        .calls()
+        .iter()
+        .filter(|c| c.method == "pitwall.announce")
+        .count();
+    for (code, variant) in [("spotter_still_right", 3), ("spotter_still_middle", 2)] {
+        let res = r
+            .call(
+                "connector.action",
+                json!({"code": "test.announce", "data": {"code": code, "variant": variant}}),
+            )
+            .unwrap();
+        assert_eq!(res["announced"], false, "{res}");
+        assert!(
+            res["refused"].as_str().unwrap().contains("variant"),
+            "{res}"
+        );
+    }
+    let sent_after = r
+        .fake
+        .calls()
+        .iter()
+        .filter(|c| c.method == "pitwall.announce")
+        .count();
+    assert_eq!(sent_before, sent_after);
+    r.finish();
+}
+
 #[test]
 fn actions_wait_through_the_announcers_rate_window() {
     let _rt = shared();

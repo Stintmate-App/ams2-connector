@@ -397,7 +397,9 @@ window is the separate process described above.
   closing at 12 m/s or more do not count. One state machine of what the driver was told (left 0/1,
   right 0/1): each change sends one call, all in the slot `spotter` so a newer call replaces a queued
   one; a side must stay empty 150 ms before its clear; an overlap back within 1.5 s of its clear is
-  called only if it still holds; "Still there" every 3 s since the last call; "All clear" after "In the
+  called only if it still holds; a side-specific still call (`spotter_still_right|left|middle`) every 3 s since
+  the last call, in one of its catalog wordings (`variants`, PRY-100) picked by splitmix64 and never the one
+  before it; "All clear" after "In the
   middle". Gates: practice, test, qualifying and race (not time attack, formation lap, private
   sessions), the player on track at 10 m/s or more, a race from 20 s after the green, no full-course
   yellow; a closing gate resets the state silently. The `Announcer` keeps a second `RateWindow` (120 per

@@ -40,10 +40,15 @@ pub struct Summary {
     pub seconds: f64,
 }
 
-/// The announcement line (`data` is null when the detector gave none).
+/// The announcement line (`data` is null when the detector gave none; `variant` only when not 0,
+/// so the goldens taken before PRY-100 still compare).
 fn announce_json(t_ms: u64, a: &Announcement) -> Value {
-    json!({"t_ms": t_ms, "kind": "announce", "code": a.code, "params": a.params,
-           "data": a.data})
+    let mut v = json!({"t_ms": t_ms, "kind": "announce", "code": a.code, "params": a.params,
+           "data": a.data});
+    if a.variant != 0 {
+        v["variant"] = json!(a.variant);
+    }
+    v
 }
 
 fn put(out: &mut impl Write, v: &Value) -> std::io::Result<()> {

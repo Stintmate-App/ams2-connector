@@ -74,7 +74,7 @@ impl ActionServer {
         Self { announcer }
     }
 
-    /// One call: `{code, data?, call_id?}`.
+    /// One call: `{code, params?, variant?, data?, call_id?}`.
     pub fn call(&self, params: &Value) -> Result<Value, RemoteError> {
         let p = to_json(params);
         let code = p.get("code").and_then(Json::as_str).unwrap_or_default();
@@ -96,9 +96,10 @@ impl ActionServer {
         Ok(to_value(&out))
     }
 
-    fn send(&self, code: &'static str, params: Map<String, Json>) -> Json {
+    fn send(&self, code: &'static str, variant: u8, params: Map<String, Json>) -> Json {
         let a = Announcement {
             code,
+            variant,
             params,
             data: None,
         };
@@ -128,7 +129,7 @@ impl ActionServer {
         if data.get("say") == Some(&Json::Bool(false)) {
             return json!({"pong": "pong", "announced": false});
         }
-        let mut sent = self.send("radio_check", Map::new());
+        let mut sent = self.send("radio_check", 0, Map::new());
         sent.as_object_mut().map(|m| m.remove("refused")); // the ping's answer has no reason field
         let mut out = json!({"pong": "pong"});
         out.as_object_mut()
@@ -161,8 +162,15 @@ impl ActionServer {
         {
             return Err(bad(problem));
         }
+        let variant = match data.get("variant") {
+            None | Some(Json::Null) => 0,
+            Some(v) => v
+                .as_u64()
+                .and_then(|n| u8::try_from(n).ok())
+                .ok_or_else(|| bad("variant: must be an integer 0..255".into()))?,
+        };
         let code = static_code(code).ok_or_else(|| bad(format!("unknown code {code:?}")))?;
-        Ok(self.send(code, params))
+        Ok(self.send(code, variant, params))
     }
 }
 

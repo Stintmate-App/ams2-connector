@@ -1,5 +1,15 @@
 # Changelog
 
+## 3.2.0 (2026-10-28)
+
+- **Message variants (PRY-100).** A catalog message may declare `variants` (1 to 8 other wordings of the same
+  message); `pitwall.announce` carries `variant` (omitted for 0, the `text`). `spotter_still_there` is replaced by
+  `spotter_still_right`, `spotter_still_left` and `spotter_still_middle`, each with variants chosen at random
+  and never the one before it. `test.announce` and `ams2-recorder announce` accept `variant`.
+- **A held blue flag follows the train of lapping cars (BUG-139).** The first car is called `flag_blue`, each
+  new car of the train `flag_blue_next` (new code, "Let {driver} through.") at least 4 s later; cooldown (20 s)
+  and limit (3) are per car; a blue flag already up when the car leaves the pit lane is called then.
+
 ## 3.1.0 (2026-10-27)
 
 - **Spotter calls (PRY-098).** "Car left", "Car right", "In the middle", "Still there", "Clear left / right"

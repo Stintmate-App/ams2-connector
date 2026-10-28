@@ -58,7 +58,9 @@ pub fn actions() -> &'static Value {
                                    "name": {"type": "string", "maxLength": 32,
                                             "description": "The param's name, as the catalog declares it."},
                                    "value": {"type": "string", "maxLength": 200,
-                                             "description": "The value as text."}}}}}},
+                                             "description": "The value as text."}}}},
+                    "variant": {"type": "integer", "minimum": 0, "maximum": 7,
+                                "description": "Which wording of the code to send: 0 (default) its text, 1.. its variants (list_connector_messages); beyond the code's variants it is refused."}}},
                 "result": {"type": "object", "additionalProperties": false,
                            "required": ["announced"], "properties": {
                     "announced": {"type": "boolean",

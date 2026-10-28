@@ -54,7 +54,7 @@ impl Run {
         away(&mut d, 1);
         away(&mut d, 2);
         Self {
-            sp: Spotter::new(),
+            sp: Spotter::seeded(7),
             d,
             t: 1000.0,
             view_ok: true,
@@ -67,7 +67,7 @@ impl Run {
         for _ in 0..((seconds * HZ).round() as usize).max(1) {
             self.t += 1.0 / HZ;
             if let Some(c) = self.sp.update(&self.d, self.t, self.view_ok, false) {
-                out.push((self.t, c));
+                out.push((self.t, c.code));
             }
         }
         out
@@ -220,25 +220,79 @@ fn a_bounce_within_1_5_s_of_the_clear_is_called_only_if_it_holds() {
 }
 
 #[test]
-fn still_there_every_three_seconds_while_the_overlap_holds() {
+fn still_right_every_three_seconds_while_the_overlap_holds() {
     let mut r = practice();
     place(&mut r.d, 1, -3.0, 0.0);
     let ev = r.run(7.0);
     let codes: Vec<_> = ev.iter().map(|e| e.1).collect();
-    assert_eq!(codes, [CAR_RIGHT, STILL_THERE, STILL_THERE]);
+    assert_eq!(codes, [CAR_RIGHT, STILL_RIGHT, STILL_RIGHT]);
     assert!((ev[1].0 - ev[0].0 - STILL_THERE_S).abs() < 0.05);
     assert!((ev[2].0 - ev[1].0 - STILL_THERE_S).abs() < 0.05);
 }
 
 #[test]
-fn in_the_middle_restarts_the_still_there_timer() {
+fn in_the_middle_restarts_the_still_timer() {
     let mut r = practice();
     place(&mut r.d, 1, 3.0, 0.0);
     assert_eq!(r.codes(2.5), [CAR_LEFT]);
     place(&mut r.d, 2, -3.0, 0.0);
     assert_eq!(r.codes(0.1), [IN_THE_MIDDLE]);
     assert!(r.codes(2.5).is_empty());
-    assert_eq!(r.codes(1.0), [STILL_THERE]);
+    assert_eq!(r.codes(1.0), [STILL_MIDDLE]);
+}
+
+#[test]
+fn still_left_and_still_middle_say_the_side() {
+    let mut r = practice();
+    place(&mut r.d, 1, 3.0, 0.0);
+    assert_eq!(r.codes(7.0), [CAR_LEFT, STILL_LEFT, STILL_LEFT]);
+    place(&mut r.d, 2, -3.0, 0.0);
+    assert_eq!(r.codes(0.1), [IN_THE_MIDDLE]);
+    assert_eq!(r.codes(3.1), [STILL_MIDDLE]);
+}
+
+#[test]
+fn still_variants_never_repeat_and_all_appear() {
+    for (code, n, x) in [
+        (STILL_RIGHT, STILL_RIGHT_VARIANTS, -3.0f32),
+        (STILL_LEFT, STILL_LEFT_VARIANTS, 3.0),
+    ] {
+        let mut sp = Spotter::seeded(0);
+        let mut r = practice();
+        place(&mut r.d, 1, x, 0.0);
+        let mut got = Vec::new();
+        let mut t = 1000.0;
+        while got.len() < 300 {
+            t += 1.0 / HZ;
+            if let Some(c) = sp.update(&r.d, t, true, false)
+                && c.code == code
+            {
+                got.push(c.variant);
+            }
+        }
+        assert!(got.windows(2).all(|w| w[0] != w[1]), "{code}: {got:?}");
+        assert!((0..n).all(|v| got.contains(&v)), "{code}: {got:?}");
+        assert!(got.iter().all(|v| *v < n), "{code}");
+    }
+    let mut sp = Spotter::seeded(u64::MAX);
+    let mut r = practice();
+    place(&mut r.d, 1, 3.0, 0.0);
+    place(&mut r.d, 2, -3.0, 0.0);
+    let mut got = Vec::new();
+    let mut t = 1000.0;
+    while got.len() < 300 {
+        t += 1.0 / HZ;
+        if let Some(c) = sp.update(&r.d, t, true, false)
+            && c.code == STILL_MIDDLE
+        {
+            got.push(c.variant);
+        }
+    }
+    assert!(got.windows(2).all(|w| w[0] != w[1]), "{got:?}");
+    assert!(
+        (0..STILL_MIDDLE_VARIANTS).all(|v| got.contains(&v)),
+        "{got:?}"
+    );
 }
 
 #[test]
@@ -290,7 +344,10 @@ fn the_detectors_quiet_time_gates_it() {
     let mut r = practice();
     place(&mut r.d, 1, 3.0, 0.0);
     assert_eq!(r.sp.update(&r.d, 1000.0, true, true), None);
-    assert_eq!(r.sp.update(&r.d, 1000.02, true, false), Some(CAR_LEFT));
+    assert_eq!(
+        r.sp.update(&r.d, 1000.02, true, false).map(|c| c.code),
+        Some(CAR_LEFT)
+    );
 }
 
 #[test]
@@ -335,12 +392,14 @@ fn the_spotter_budget_is_120_per_minute_in_its_own_window() {
 }
 
 #[test]
-fn the_seven_calls_are_spotter_level_with_one_slot_and_no_params() {
+fn the_nine_calls_are_spotter_level_with_one_slot_and_no_params() {
     let codes = [
         CAR_LEFT,
         CAR_RIGHT,
         IN_THE_MIDDLE,
-        STILL_THERE,
+        STILL_RIGHT,
+        STILL_LEFT,
+        STILL_MIDDLE,
         CLEAR_LEFT,
         CLEAR_RIGHT,
         ALL_CLEAR,

@@ -163,7 +163,7 @@ every process it starts.
 
 Subcommands of `ams2-recorder.exe`:
 
-- `announce CODE [--param NAME=VALUE ...] [--data JSON]`: send one of the connector's
+- `announce CODE [--param NAME=VALUE ...] [--variant N] [--data JSON]`: send one of the connector's
   announcement codes through Pitwall (a test hook). The code and its parameters are checked
   before sending (exit 2 otherwise). Prints the message id (exit 0) or the refusal (exit 1).
 - `codes`: list the catalog.
@@ -209,17 +209,17 @@ penalties, the player's and the rivals' race states) and sends **codes** to Pitw
 writes and speaks them in the user's language. Rules: only while driving, a quiet 10 s after a
 session load or a state change, debounce, cooldowns, once per session for the end-of-race
 events, rivals by name; at most 10 a minute; nothing is kept while Pitwall is away
-([ARCHITECTURE.md](ARCHITECTURE.md#race-announcements)). The catalog `connector.ams2` has 41
+([ARCHITECTURE.md](ARCHITECTURE.md#race-announcements)). The catalog `connector.ams2` has 44
 codes; `ams2-recorder.exe codes` lists them with their audience, priority and parameters.
 
 | Group | Codes |
 |---|---|
-| Flags | `flag_yellow`, `flag_double_yellow`, `flag_yellow_ahead`, `flag_double_yellow_ahead`, `flag_yellow_driver`, `flag_yellow_self`, `flag_yellow_cause`, `flag_clear`, `flag_blue`, `flag_blue_unknown`, `flag_slow_car`, `flag_slow_car_driver`, `final_lap`, `flag_red`, `flag_black_white`, `flag_track_limits`, `flag_black_orange` |
+| Flags | `flag_yellow`, `flag_double_yellow`, `flag_yellow_ahead`, `flag_double_yellow_ahead`, `flag_yellow_driver`, `flag_yellow_self`, `flag_yellow_cause`, `flag_clear`, `flag_blue`, `flag_blue_next`, `flag_blue_unknown`, `flag_slow_car`, `flag_slow_car_driver`, `final_lap`, `flag_red`, `flag_black_white`, `flag_track_limits`, `flag_black_orange` |
 | The player's race | `disqualified`, `retired`, `chequered`, `chequered_no_position` |
 | Safety car (full course yellow) | `fcy_start`, `fcy_pits_open`, `fcy_pits_lead_lap`, `fcy_last_lap`, `fcy_restart`, `fcy_halt` |
 | Penalties | `penalty_drive_through`, `penalty_stop_go`, `penalty_served` |
 | Rivals | `rival_disqualified`, `rival_out` |
-| Spotter | `spotter_car_left`, `spotter_car_right`, `spotter_in_the_middle`, `spotter_still_there`, `spotter_clear_left`, `spotter_clear_right`, `spotter_all_clear` |
+| Spotter | `spotter_car_left`, `spotter_car_right`, `spotter_in_the_middle`, `spotter_still_right`, `spotter_still_left`, `spotter_still_middle`, `spotter_clear_left`, `spotter_clear_right`, `spotter_all_clear` |
 | Tests | `radio_check`, `engineer_test` |
 
 The spotter calls ("Car left", "Clear right"...) are not edge events of the race but proximity: the

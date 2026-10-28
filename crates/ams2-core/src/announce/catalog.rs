@@ -48,6 +48,8 @@ pub const MAX_WAIT_MAX: f64 = 600.0;
 pub const SPOTTER_MAX_WAIT: f64 = 3.0;
 /// Longest `slot`.
 pub const SLOT_MAX: usize = 32;
+/// Most `variants` a message may declare.
+pub const MAX_VARIANTS: usize = 8;
 /// Longest filled text.
 pub const MAX_TEXT: usize = 200;
 /// Longest value a text param is expected to carry when filled (a driver's name).
@@ -96,6 +98,17 @@ pub fn is_spotter(code: &str) -> bool {
         .and_then(|m| m.get("priority"))
         .and_then(Value::as_str)
         == Some("spotter")
+}
+
+/// How many wordings `code` has: its `text` plus its `variants` (1 when it declares none, and
+/// for an unknown code). Reads the static catalog, no allocation.
+pub fn variant_count(code: &str) -> u8 {
+    let n = messages()
+        .get(code)
+        .and_then(|m| m.get("variants"))
+        .and_then(Value::as_array)
+        .map_or(0, Vec::len);
+    u8::try_from(1 + n).unwrap_or(u8::MAX)
 }
 
 /// What has been checked for a code (docs/test.md runs fill this in); `None`: not a code.
@@ -433,6 +446,52 @@ pub fn validate_catalog(catalog: &Value) -> Vec<String> {
             out.push(format!(
                 "{at} longer than {MAX_TEXT} characters when filled"
             ));
+        }
+        if let Some(v) = msg.get("variants") {
+            let extra = filled - text.chars().count();
+            match v.as_array() {
+                Some(list) if (1..=MAX_VARIANTS).contains(&list.len()) => {
+                    let mut seen: Vec<&str> = vec![text];
+                    for (i, item) in list.iter().enumerate() {
+                        let n = i + 1;
+                        let Some(vt) = item.as_str().filter(|t| !t.trim().is_empty()) else {
+                            out.push(format!("{at} variant {n} must be a non-empty string"));
+                            continue;
+                        };
+                        if has_control(vt) {
+                            out.push(format!("{at} control character in variant {n}"));
+                        }
+                        match placeholders(vt) {
+                            None => out.push(format!("{at} bad placeholder in variant {n}")),
+                            Some(names) => {
+                                let mut used: Vec<&str> =
+                                    names.iter().map(String::as_str).collect();
+                                used.sort_unstable();
+                                used.dedup();
+                                let declared: Vec<&str> =
+                                    params.keys().map(String::as_str).collect();
+                                if used != declared {
+                                    out.push(format!(
+                                        "{at} variant {n} placeholders {used:?} differ from params {declared:?}"
+                                    ));
+                                }
+                            }
+                        }
+                        if vt.chars().count() + extra > MAX_TEXT {
+                            out.push(format!(
+                                "{at} variant {n} longer than {MAX_TEXT} characters when filled"
+                            ));
+                        }
+                        if seen.contains(&vt) {
+                            out.push(format!("{at} variant {n} repeats another wording"));
+                        }
+                        seen.push(vt);
+                    }
+                }
+                _ => out.push(format!(
+                    "{at} variants must be a list of 1..{MAX_VARIANTS} texts"
+                )),
+            }
         }
         let in_list = |key: &str, list: &[&str]| {
             msg.get(key)

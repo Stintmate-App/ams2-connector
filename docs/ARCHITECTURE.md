@@ -293,8 +293,8 @@ the written and spoken text in the user's language.
   while playing and the viewed car is the player; nothing in the first 10 s after a session
   load or a session or race state transition; debounce (flags 0.5 s, race states 1 s, pit
   schedule and caution 0.5 s stable); re-arm and hysteresis (a yellow again only after 5 s of
-  none or green; "track clear" after 3 s); cooldowns per code (yellow 30 s, blue 20 s and at
-  most 3 per lapping car...); no flags in the pit lane; blue, penalties and race states in
+  none or green; "track clear" after 3 s); cooldowns per code (yellow 30 s; the blue flag is per lapping car, see below, 20 s and at
+  most 3 each); no flags in the pit lane; blue, penalties and race states in
   races only; the AMS2 caution quirk (none straight to "pits open": `fcy_start`, then
   `fcy_pits_open` 8 s later); once per session for final lap, chequered, disqualified, retired;
   rivals by identity (name and class, never the array index; inactive slots, duplicates of the
@@ -389,6 +389,14 @@ window is the separate process described above.
   `es`, `en`, built in; entries validated one by one; plurals from the pack's number rules).
   Not localised: logs, JSON files, IPC messages and ids, the descriptor.
 
+- **A held blue flag follows the train of lapping cars** (BUG-139). While the game's blue flag holds in a
+  race (not in the pit lane, not below 1 m/s) the detector looks, at the rival period and not every frame,
+  for the nearest car behind on track that is a lap or more ahead in the race. The first call of an
+  episode (the flag up until it drops) is `flag_blue` ("Blue flag, let {driver} through."); each further
+  car of the train only `flag_blue_next` ("Let {driver} through."), at least 4 s after the previous blue
+  call. Cooldown and limit are per car: the same car is not called again within 20 s, at most 3 times a
+  session. A blue flag already up when the car leaves the pit lane (or starts moving) is called then, as
+  the first call of the episode. With nobody to name only the first call (`flag_blue_unknown`) is made.
 - **Spotter** (`ams2-core::announce::spotter`, PRY-098): the one part of the detector that sees every
   frame (the rest reads the participant arrays at 2 Hz). AMS2 has no proximity field, so it works from
   `mWorldPosition`, `mOrientation[1]` and `mSpeeds`: in the player's frame (`theta = -yaw`) a car is
@@ -397,7 +405,9 @@ window is the separate process described above.
   closing at 12 m/s or more do not count. One state machine of what the driver was told (left 0/1,
   right 0/1): each change sends one call, all in the slot `spotter` so a newer call replaces a queued
   one; a side must stay empty 150 ms before its clear; an overlap back within 1.5 s of its clear is
-  called only if it still holds; "Still there" every 3 s since the last call; "All clear" after "In the
+  called only if it still holds; a side-specific still call (`spotter_still_right|left|middle`) every 3 s since
+  the last call, in one of its catalog wordings (`variants`, PRY-100) picked by splitmix64 and never the one
+  before it; "All clear" after "In the
   middle". Gates: practice, test, qualifying and race (not time attack, formation lap, private
   sessions), the player on track at 10 m/s or more, a race from 20 s after the green, no full-course
   yellow; a closing gate resets the state silently. The `Announcer` keeps a second `RateWindow` (120 per

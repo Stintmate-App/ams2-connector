@@ -21,13 +21,15 @@ pub const CONNECT_TIMEOUT: Duration = Duration::from_secs(5);
 /// The subcommands this executable has besides the recorder itself.
 pub const SUBCOMMANDS: [&str; 4] = ["announce", "codes", "diagnose", "capture-raw"];
 
-/// `announce CODE [--param NAME=VALUE]... [--data JSON] [--pitwall-pipe NAME]`, parsed.
+/// `announce CODE [--param NAME=VALUE]... [--variant N] [--data JSON] [--pitwall-pipe NAME]`, parsed.
 #[derive(Debug, Default, PartialEq)]
 pub struct AnnounceArgs {
     /// A code of the catalog.
     pub code: String,
     /// `NAME=VALUE` pairs.
     pub params: Vec<String>,
+    /// Which wording to send (0: the `text`).
+    pub variant: u8,
     /// Facts for the engineer.
     pub data: Option<Map<String, Json>>,
     /// Pitwall's endpoint (tests).
@@ -53,6 +55,11 @@ pub fn parse_announce(args: &[String]) -> Result<AnnounceArgs, String> {
                     Ok(_) => return Err("--data: must be a JSON object".into()),
                     Err(e) => return Err(format!("--data: not JSON: {e}")),
                 }
+            }
+            "--variant" => {
+                out.variant = value("--variant")?
+                    .parse()
+                    .map_err(|_| "--variant: must be an integer 0..255".to_string())?;
             }
             "--pitwall-pipe" => out.pipe = Some(value("--pitwall-pipe")?),
             s if s.starts_with("--") => return Err(format!("unknown argument {s}")),
@@ -94,6 +101,9 @@ pub fn send(link: Arc<dyn Transport>, args: &AnnounceArgs, out: &mut dyn FnMut(S
         return 1;
     }
     let mut body = json!({"code": args.code, "params": params});
+    if args.variant != 0 {
+        body["variant"] = json!(args.variant);
+    }
     if let Some(d) = args.data.as_ref().filter(|d| !d.is_empty()) {
         if Json::Object(d.clone()).to_string().len() > MAX_DATA {
             out(format!("error: --data is over {MAX_DATA} bytes"));

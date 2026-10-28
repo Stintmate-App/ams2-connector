@@ -1,4 +1,4 @@
-//! The spotter (PRY-098): "Car left", "Car right", "In the middle", "Still there", "Clear left /
+//! The spotter (PRY-098): "Car left", "Car right", "In the middle", "Still right / left / middle", "Clear left /
 //! right", "All clear", from the other cars' world positions in every frame.
 //!
 //! AMS2 has no proximity field: the geometry is CrewChief's, over `mWorldPosition`,
@@ -13,7 +13,7 @@
 //!   side count as one.
 //! * **State.** One state machine (left 0/1, right 0/1) of what the driver was told; each change
 //!   sends one call. A side empty for [`CLEAR_DELAY_S`] clears; an overlap back on a side within
-//!   [`BOUNCE_S`] of its clear is called only if it still holds then; "Still there" every
+//!   [`BOUNCE_S`] of its clear is called only if it still holds then; a side-specific still call every
 //!   [`STILL_THERE_S`] after the last call while a called overlap holds; "All clear" instead of
 //!   "Clear left / right" after "In the middle".
 //! * **Gates.** Practice, test, qualifying and race (not time attack or the formation lap);
@@ -43,7 +43,7 @@ pub const MIN_SPEED: f32 = 10.0;
 pub const CLEAR_DELAY_S: f64 = 0.15;
 /// An overlap back within this long of a side's clear is not called at once.
 pub const BOUNCE_S: f64 = 1.5;
-/// "Still there" every this long since the last call.
+/// A side-specific still call every this long since the last call.
 pub const STILL_THERE_S: f64 = 3.0;
 /// In a race, silent until this long after the green.
 pub const RACE_DELAY_S: f64 = 20.0;
@@ -57,13 +57,48 @@ pub const CAR_RIGHT: &str = "spotter_car_right";
 /// See [`CAR_LEFT`].
 pub const IN_THE_MIDDLE: &str = "spotter_in_the_middle";
 /// See [`CAR_LEFT`].
-pub const STILL_THERE: &str = "spotter_still_there";
+pub const STILL_RIGHT: &str = "spotter_still_right";
+/// See [`CAR_LEFT`].
+pub const STILL_LEFT: &str = "spotter_still_left";
+/// See [`CAR_LEFT`].
+pub const STILL_MIDDLE: &str = "spotter_still_middle";
 /// See [`CAR_LEFT`].
 pub const CLEAR_LEFT: &str = "spotter_clear_left";
 /// See [`CAR_LEFT`].
 pub const CLEAR_RIGHT: &str = "spotter_clear_right";
 /// See [`CAR_LEFT`].
 pub const ALL_CLEAR: &str = "spotter_all_clear";
+
+/// Wordings of [`STILL_RIGHT`] (its text and two variants); the catalog declares the same.
+pub const STILL_RIGHT_VARIANTS: u8 = 3;
+/// Wordings of [`STILL_LEFT`].
+pub const STILL_LEFT_VARIANTS: u8 = 3;
+/// Wordings of [`STILL_MIDDLE`].
+pub const STILL_MIDDLE_VARIANTS: u8 = 2;
+
+/// A call: the catalog code and which of its wordings to say (0: the `text`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Call {
+    /// The catalog code.
+    pub code: &'static str,
+    /// 0 for the `text`, 1.. for the `variants`.
+    pub variant: u8,
+}
+
+impl Call {
+    fn plain(code: &'static str) -> Self {
+        Self { code, variant: 0 }
+    }
+}
+
+/// splitmix64 step.
+fn splitmix64(state: &mut u64) -> u64 {
+    *state = state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+    let mut z = *state;
+    z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+    z ^ (z >> 31)
+}
 
 /// One side of the player.
 #[derive(Debug, Default, Clone, Copy)]
@@ -113,10 +148,14 @@ pub struct Spotter {
     right: Side,
     /// "In the middle" was said and the sides have not been both clear since.
     middle_said: bool,
-    /// The time of the last call (for "Still there").
+    /// The time of the last call (for the still calls).
     last_call: f64,
     /// The race went green at this time (race sessions).
     green_at: Option<f64>,
+    /// splitmix64 state of the variant choice.
+    rng: u64,
+    /// The last variant said per still code (right, left, middle).
+    last_variant: [u8; 3],
 }
 
 impl Spotter {
@@ -125,9 +164,36 @@ impl Spotter {
         Self::default()
     }
 
+    /// A spotter whose variant choice starts from `seed` (any value, 0 included).
+    pub fn seeded(seed: u64) -> Self {
+        Self {
+            rng: seed,
+            ..Self::default()
+        }
+    }
+
+    /// The variant of a still call: uniform over the wordings but the last one said.
+    fn pick(&mut self, slot: usize, n: u8) -> u8 {
+        if n <= 1 {
+            return 0;
+        }
+        let r = (splitmix64(&mut self.rng) % u64::from(n - 1)) as u8;
+        let v = if r >= self.last_variant[slot] {
+            r + 1
+        } else {
+            r
+        };
+        self.last_variant[slot] = v;
+        v
+    }
+
     /// Forgets everything, silently.
     pub fn reset(&mut self) {
-        *self = Self::default();
+        *self = Self {
+            rng: self.rng,
+            last_variant: self.last_variant,
+            ..Self::default()
+        };
     }
 
     /// Whether the spotter has anything tracked (for tests).
@@ -143,7 +209,7 @@ impl Spotter {
         now: f64,
         view_ok: bool,
         quiet: bool,
-    ) -> Option<&'static str> {
+    ) -> Option<Call> {
         if !self.gates(d, now, view_ok, quiet) {
             let green_at = self.green_at;
             self.reset();
@@ -160,33 +226,40 @@ impl Spotter {
         let code = match (was_l, was_r, want_l, want_r) {
             (a, b, c, e) if (a, b) == (c, e) => {
                 if (c || e) && now - self.last_call >= STILL_THERE_S {
-                    Some(STILL_THERE)
-                } else {
-                    None
+                    let (code, slot, n) = match (c, e) {
+                        (true, true) => (STILL_MIDDLE, 2, STILL_MIDDLE_VARIANTS),
+                        (true, false) => (STILL_LEFT, 1, STILL_LEFT_VARIANTS),
+                        _ => (STILL_RIGHT, 0, STILL_RIGHT_VARIANTS),
+                    };
+                    let variant = self.pick(slot, n);
+                    return self.finish(Call { code, variant }, now);
                 }
+                return None;
             }
             (_, _, true, true) => {
                 self.middle_said = true;
-                Some(IN_THE_MIDDLE)
+                IN_THE_MIDDLE
             }
-            (_, _, true, false) => Some(CAR_LEFT),
-            (_, _, false, true) => Some(CAR_RIGHT),
+            (_, _, true, false) => CAR_LEFT,
+            (_, _, false, true) => CAR_RIGHT,
             (_, _, false, false) => {
                 let all = self.middle_said || (was_l && was_r);
                 self.middle_said = false;
-                Some(if all {
+                if all {
                     ALL_CLEAR
                 } else if was_l {
                     CLEAR_LEFT
                 } else {
                     CLEAR_RIGHT
-                })
+                }
             }
         };
-        if code.is_some() {
-            self.last_call = now;
-        }
-        code
+        self.finish(Call::plain(code), now)
+    }
+
+    fn finish(&mut self, call: Call, now: f64) -> Option<Call> {
+        self.last_call = now;
+        Some(call)
     }
 
     /// The gates of the module docs.

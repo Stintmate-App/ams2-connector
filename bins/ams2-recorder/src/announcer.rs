@@ -127,6 +127,15 @@ impl Announcer {
             self.drop_count();
             return Err("Pitwall is not connected".into());
         }
+        if a.variant >= cat::variant_count(a.code) {
+            tracing::error!(
+                "Announcement {} not sent: variant {} is not in the catalog",
+                a.code,
+                a.variant
+            );
+            self.drop_count();
+            return Err(format!("variant {} is not in the catalog", a.variant));
+        }
         let now = (self.clock)();
         let spotter = cat::is_spotter(a.code);
         let slot = {
@@ -147,6 +156,9 @@ impl Announcer {
             }
         };
         let mut p = json!({"code": a.code, "params": params_json});
+        if a.variant != 0 {
+            p["variant"] = a.variant.into();
+        }
         if let Some(key) = (self.session_key)() {
             p["session_key"] = key.into();
         }

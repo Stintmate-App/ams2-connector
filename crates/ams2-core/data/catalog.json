@@ -150,6 +150,19 @@
    "note": "A faster car a lap or more ahead is behind the driver. driver: its name.",
    "group": "flags"
   },
+  "flag_blue_next": {
+   "text": "Let {driver} through.",
+   "params": {
+    "driver": "text"
+   },
+   "audience": "driver",
+   "priority": "high",
+   "max_wait_s": 6,
+   "slot": "blue_flag",
+   "kind": "announcement",
+   "note": "The blue flag still holds and another faster car a lap or more ahead is now behind the driver (a train of lapping cars); said only after flag_blue, for each new car. driver: its name. Say it short: Spanish \"Deja pasar a {driver}.\"",
+   "group": "flags"
+  },
   "flag_blue_unknown": {
    "text": "Blue flag, let the faster car through.",
    "audience": "driver",
@@ -394,14 +407,45 @@
    "note": "Cars on both sides of the driver (three wide). Say it short: Spanish \"Vas en medio.\"",
    "group": "spotter"
   },
-  "spotter_still_there": {
-   "text": "Still there.",
+  "spotter_still_right": {
+   "text": "Still on your right.",
+   "variants": [
+    "Still right.",
+    "Still there."
+   ],
    "audience": "driver",
    "priority": "spotter",
    "max_wait_s": 1,
    "slot": "spotter",
    "kind": "announcement",
-   "note": "A car called alongside is still there, repeated every 3 seconds while it holds. Say it short: Spanish \"Sigue ahí.\"",
+   "note": "The car called alongside on the right is still there, repeated every 3 seconds while it holds. Say it short. Spanish: variant 0 \"Sigue a la derecha.\", variant 1 \"Todavía a tu derecha.\", variant 2 \"Sigue ahí.\"",
+   "group": "spotter"
+  },
+  "spotter_still_left": {
+   "text": "Still on your left.",
+   "variants": [
+    "Still left.",
+    "Still there."
+   ],
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 1,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "The car called alongside on the left is still there, repeated every 3 seconds while it holds. Say it short. Spanish: variant 0 \"Sigue a la izquierda.\", variant 1 \"Todavía a tu izquierda.\", variant 2 \"Sigue ahí.\"",
+   "group": "spotter"
+  },
+  "spotter_still_middle": {
+   "text": "Still in the middle.",
+   "variants": [
+    "Still there."
+   ],
+   "audience": "driver",
+   "priority": "spotter",
+   "max_wait_s": 1,
+   "slot": "spotter",
+   "kind": "announcement",
+   "note": "The cars called on both sides are still there, repeated every 3 seconds while it holds. Say it short. Spanish: variant 0 \"Sigues en medio.\", variant 1 \"Sigue ahí.\"",
    "group": "spotter"
   },
   "spotter_clear_left": {

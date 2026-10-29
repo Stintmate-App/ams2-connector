@@ -194,7 +194,8 @@ session. Units, signs and the reasons behind each choice: [FINDINGS.md](FINDINGS
   starts; a stale lap counter when a race loads restarts the lap instead of opening a session;
   a finished lap waits up to 3 s for `mLastLapTime`, else uses the game lap clock at its last
   sample. Laps are numbered 1..n per session (the game's number is kept as `sim_lap`) and get a
-  type (`formation`, `out`, `in`, `flying`). **Stints are Pitwall's**: at each pit exit the
+  type (`formation` only before the race's first timed lap, `out`, `in` -- a lap waited in the pit box
+  included --, `flying`). **Stints are Pitwall's**: at each pit exit the
   tracker flushes the pending lap, closes the open one as partial if the car had been on track,
   and queues `pit_exit` and then the setup snapshot, in that order. The quirks behind these
   rules: [FINDINGS.md](FINDINGS.md#game-quirks).

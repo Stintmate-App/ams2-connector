@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.2 (2026-10-29)
+
+- **A lap waited in the pit box mid race is no longer a formation lap (BUG-140).** `formation` applies only
+  before the first timed lap of the race session; an untimed, non-out lap after it (the box has no lap clock) is
+  stored as `in`, in the live frame too.
+
 ## 3.2.1 (2026-10-29)
 
 - **The blue flag train survives a short drop of the flag and names each car once (BUG-161).** A train ends only

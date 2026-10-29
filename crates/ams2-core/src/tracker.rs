@@ -273,6 +273,9 @@ pub(crate) struct Session {
     pub(crate) id: u64,
     key: SessionKey,
     pub(crate) laps_saved: u32,
+    /// A timed lap has run in this session: a race has started, so an untimed lap is no longer
+    /// a formation lap (BUG-140).
+    timed_seen: bool,
     /// The car has been on track since the last pit exit (a cheap flag).
     driven: bool,
     /// AMS2 session state name (`PRACTICE`, `UNKNOWN_9`...).
@@ -773,6 +776,7 @@ impl SessionTracker {
             id: session_id,
             key,
             laps_saved: 0,
+            timed_seen: false,
             driven: false,
             session_type,
             best_lap_s: None,
@@ -908,6 +912,7 @@ impl SessionTracker {
         let pit = d.pit_mode;
         if current_time >= 0.0 && pit == pit_mode::NONE {
             lap.timed = true;
+            session.timed_seen = true;
         }
         lap.weather = Some([
             f64::from(d.ambient_temperature),
@@ -949,12 +954,12 @@ impl SessionTracker {
     /// flagged it, the cause. `None` with no open lap.
     pub fn live_lap(&self) -> Option<LiveLap> {
         let (lap, s) = (self.lap.as_ref()?, self.session.as_ref()?);
-        let formation = is_race_type(&s.session_type) && !lap.timed && !lap.out_lap;
+        let (formation, box_lap) = untimed_race_lap(s, lap);
         let lap_type = if formation {
             "formation"
         } else if lap.out_lap {
             "out"
-        } else if lap.in_lap {
+        } else if lap.in_lap || box_lap {
             "in"
         } else {
             "flying"
@@ -1083,8 +1088,7 @@ impl SessionTracker {
             .find(|r| !is_stopped_mode(r[PIT]))
             .unwrap_or(&rows[rows.len() - 1])[FUEL];
         let session = self.session.as_ref().filter(|s| s.id == session_id);
-        let formation =
-            session.is_some_and(|s| is_race_type(&s.session_type) && !lap.timed && !lap.out_lap);
+        let (formation, box_lap) = session.map_or((false, false), |s| untimed_race_lap(s, &lap));
         let [ambient, track_c, rain, _cloud, wind] = match lap.weather {
             Some(w) => w.map(Some),
             None => [None; 5],
@@ -1101,7 +1105,7 @@ impl SessionTracker {
             complete,
             valid: !lap.invalid,
             out_lap: lap.out_lap,
-            in_lap: lap.in_lap,
+            in_lap: lap.in_lap || box_lap,
             fuel_start_l: Some(rows[0][FUEL]),
             fuel_end_l: Some(fuel_end),
             max_speed_kmh: Some(top_speed),
@@ -1127,6 +1131,15 @@ impl SessionTracker {
         }
         self.flush_rivals = true; // rival rows ride along with the player's lap write
     }
+}
+
+/// Classify an untimed, non-out lap of a race as `(formation, box_lap)`. Before the first timed
+/// lap of the session it is the formation lap; afterwards it is a lap spent waiting in the pit
+/// box (the box has no lap clock), part of the stop that began with the `in` lap, so it is
+/// stored as `in` (BUG-140).
+fn untimed_race_lap(s: &Session, lap: &Lap) -> (bool, bool) {
+    let untimed_race = is_race_type(&s.session_type) && !lap.timed && !lap.out_lap;
+    (untimed_race && !s.timed_seen, untimed_race && s.timed_seen)
 }
 
 fn lap_event(s: &mut Session, r: &LapRecord, position: Option<u32>) -> LapEvent {

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.2.1 (2026-10-29)
+
+- **The blue flag train survives a short drop of the flag and names each car once (BUG-161).** A train ends only
+  after the flag has been off for 20 s; a flag back within it continues with `flag_blue_next`; a car already
+  named in the train is not named again.
+
 ## 3.2.0 (2026-10-28)
 
 - **Message variants (PRY-100).** A catalog message may declare `variants` (1 to 8 other wordings of the same

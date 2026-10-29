@@ -601,6 +601,55 @@ fn test_race_load_formation_and_start_stay_in_one_session() {
 }
 
 #[test]
+fn test_race_lap_waited_in_the_pit_box_is_not_a_formation_lap() {
+    // BUG-140 (session 50): formation lap, lap 1 timed, an in lap, a stay in the box with no lap
+    // clock, an out lap. The box lap is part of the stop (`in`), never `formation`.
+    let mut h = Harness::new();
+    h.sim.d.session_state = ss::RACE;
+    for i in 0..20 {
+        h.feed_kmh(1, 0.0, -1.0, 50.0 + f64::from(i)); // formation lap: no lap clock
+        h.tick(1.0);
+    }
+    assert_eq!(live(&h).lap_type, "formation"); // before the start it is still formation
+    h.drive(1, 0.0, 90.0, 0.0); // lap 1, timed
+    assert_eq!(live(&h).lap_type, "flying");
+    h.sim.d.last_lap_time = f(90.0);
+    h.feed(2, 1.0, 0.02);
+    h.drive(2, 1.0, 60.0, 40.0);
+    h.sim.d.pit_mode = pm::DRIVING_INTO_PITS; // in lap
+    h.drive(2, 60.0, 80.0, 2000.0);
+    assert_eq!(live(&h).lap_type, "in");
+    // The counter rolls in the pit lane (the new lap opens there, no lap clock), then the box.
+    h.feed_kmh(3, 5.0, -1.0, 40.0);
+    h.tick(1.0);
+    h.sim.d.pit_mode = pm::IN_PIT;
+    for i in 0..40 {
+        h.feed_kmh(3, 100.0, -1.0, 20.0 + f64::from(i % 3));
+        h.tick(1.0);
+    }
+    assert_eq!(
+        live(&h).lap_type,
+        "in",
+        "a lap waited in the box is not formation"
+    );
+    h.sim.d.pit_mode = pm::DRIVING_OUT_OF_PITS; // out lap
+    for i in 0..40 {
+        h.feed_kmh(3, 200.0 + f64::from(i) * 10.0, -1.0, 60.0);
+        h.tick(1.0);
+    }
+    assert_eq!(live(&h).lap_type, "out");
+    h.end();
+
+    let kinds: Vec<&str> = laps(&h).iter().map(|l| l.kind).collect();
+    assert!(!kinds.is_empty() && kinds[0] == "formation", "{kinds:?}");
+    assert_eq!(
+        kinds.iter().filter(|k| **k == "formation").count(),
+        1,
+        "only the lap before the start is formation: {kinds:?}"
+    );
+}
+
+#[test]
 fn test_empty_session_is_never_stored() {
     let mut h = Harness::new();
     h.feed_kmh(1, 0.0, -1.0, 0.0); // a session that never got going

@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 3.2.2 (2026-10-29)
 
 - **A lap waited in the pit box mid race is no longer a formation lap (BUG-140).** `formation` applies only
   before the first timed lap of the race session; an untimed, non-out lap after it (the box has no lap clock) is

@@ -392,10 +392,11 @@ window is the separate process described above.
 - **A held blue flag follows the train of lapping cars** (BUG-139). While the game's blue flag holds in a
   race (not in the pit lane, not below 1 m/s) the detector looks, at the rival period and not every frame,
   for the nearest car behind on track that is a lap or more ahead in the race. The first call of an
-  episode (the flag up until it drops) is `flag_blue` ("Blue flag, let {driver} through."); each further
-  car of the train only `flag_blue_next` ("Let {driver} through."), at least 4 s after the previous blue
-  call. Cooldown and limit are per car: the same car is not called again within 20 s, at most 3 times a
-  session. A blue flag already up when the car leaves the pit lane (or starts moving) is called then, as
+  train (the flag up, surviving a drop of up to `BLUE_TRAIN_GRACE_S` = 20 s: the game dropped it for 9 to
+  18 s between the cars of one train in Run 53, BUG-161) is `flag_blue` ("Blue flag, let {driver}
+  through."); each further car of the train only `flag_blue_next` ("Let {driver} through."), at least 4 s
+  after the previous blue call. A car is named once per train, as opener or next. Cooldown and limit are
+  per car across trains: the same car is not called again within 20 s, at most 3 times a session. A blue flag already up when the car leaves the pit lane (or starts moving) is called then, as
   the first call of the episode. With nobody to name only the first call (`flag_blue_unknown`) is made.
 - **Spotter** (`ams2-core::announce::spotter`, PRY-098): the one part of the detector that sees every
   frame (the rest reads the participant arrays at 2 Hz). AMS2 has no proximity field, so it works from

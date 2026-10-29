@@ -39,7 +39,7 @@ use crate::tracker::Clock;
 use ams2_shm::SharedMemory;
 use serde_json::{Map, Value, json};
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 /// `mHighestFlagColour` (SharedMemory.h).
 pub mod flag {
@@ -150,6 +150,11 @@ pub const FCY_JUMP_DELAY_S: f64 = 8.0;
 pub const BLUE_MAX_PER_CAR: u32 = 3;
 /// The same lapping car is not called again within this long (BUG-139).
 pub const BLUE_CAR_COOLDOWN_S: f64 = 20.0;
+/// A blue flag train (episode) survives the flag being off this long; a flag back within it
+/// continues the train (`flag_blue_next`, no new opener, cars already named stay named). Run 53
+/// (BUG-161) showed the game dropping the flag for 9 to 18 s between the cars of one train, so 20 s
+/// covers them while a flag off longer is a different train.
+pub const BLUE_TRAIN_GRACE_S: f64 = 20.0;
 /// Two blue calls (of different cars) are at least this far apart.
 pub const BLUE_NEXT_GAP_S: f64 = 4.0;
 /// Below this speed (m/s) yellow, blue and slow-car calls are skipped.
@@ -386,6 +391,10 @@ pub struct EventDetector {
     blue_last: f64,
     /// The first call of this blue-flag episode was made.
     blue_episode: bool,
+    /// When the flag went off during the episode (the grace of [`BLUE_TRAIN_GRACE_S`] runs from it).
+    blue_off_since: Option<f64>,
+    /// The cars already named in the current train: none is named twice in it (BUG-161).
+    blue_named: HashSet<Ident>,
     /// The blue flag is not looked at again before this time (the rival period).
     blue_next_at: f64,
     rivals: HashMap<Ident, Stable>,
@@ -447,6 +456,8 @@ impl EventDetector {
             blue_cars: HashMap::new(),
             blue_last: f64::NEG_INFINITY,
             blue_episode: false,
+            blue_off_since: None,
+            blue_named: HashSet::new(),
             blue_next_at: f64::NEG_INFINITY,
             rivals: HashMap::new(),
             rivals_said: Vec::new(),
@@ -573,6 +584,8 @@ impl EventDetector {
         self.blue_cars.clear();
         self.blue_last = f64::NEG_INFINITY;
         self.blue_episode = false;
+        self.blue_off_since = None;
+        self.blue_named.clear();
         self.blue_next_at = f64::NEG_INFINITY;
         self.rivals.clear();
         self.rivals_said.clear();
@@ -692,12 +705,19 @@ impl EventDetector {
             }
         }
         if stable == Some(flag::BLUE) {
+            self.blue_off_since = None;
             if race && !quiet && !in_lane && d.speed >= STANDSTILL_MS && now >= self.blue_next_at {
                 self.blue_next_at = now + self.rival_period;
                 self.blue(d, now, out);
             }
-        } else {
-            self.blue_episode = false;
+        } else if self.blue_episode {
+            // The train survives a short drop of the flag (BUG-161).
+            let since = *self.blue_off_since.get_or_insert(now);
+            if now - since >= BLUE_TRAIN_GRACE_S {
+                self.blue_episode = false;
+                self.blue_off_since = None;
+                self.blue_named.clear();
+            }
         }
         if let Some(pending) = self.clear_pending
             && is_clear(stable)
@@ -1077,7 +1097,8 @@ impl EventDetector {
     /// us). The first call of an episode is `flag_blue`, each new car of the train `flag_blue_next`
     /// at least [`BLUE_NEXT_GAP_S`] later; a car is not called again within [`BLUE_CAR_COOLDOWN_S`]
     /// and at most [`BLUE_MAX_PER_CAR`] times a session (BUG-139). Runs at the rival period, not
-    /// every frame.
+    /// every frame. A car is named once per train, and the train outlives a drop of the flag of up
+    /// to [`BLUE_TRAIN_GRACE_S`] (BUG-161).
     fn blue(&mut self, d: &SharedMemory, now: f64, out: &mut Vec<Announcement>) {
         let me = self.view_index.unwrap_or(0);
         let length = f64::from(d.track_length);
@@ -1101,6 +1122,12 @@ impl EventDetector {
                     continue;
                 };
                 let car_class = name_of(&d.car_class_names[i]);
+                if self
+                    .blue_named
+                    .contains(&(name.to_string(), car_class.to_string()))
+                {
+                    continue; // already named in this train
+                }
                 let gap = (f64::from(p.current_lap_distance) - f64::from(q.current_lap_distance))
                     .rem_euclid(length);
                 let theirs = f64::from(q.current_lap) * length + f64::from(q.current_lap_distance);
@@ -1138,6 +1165,9 @@ impl EventDetector {
             None => self.emit(out, now, "flag_blue_unknown", None, None),
         };
         if sent {
+            if let Some(id) = &who {
+                self.blue_named.insert(id.clone());
+            }
             self.blue_cars.insert(who, (now, count + 1));
             self.blue_last = now;
             self.blue_episode = true;

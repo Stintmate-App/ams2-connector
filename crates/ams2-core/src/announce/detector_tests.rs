@@ -4,8 +4,8 @@
 
 use super::catalog::{check_params, messages};
 use super::detector::{
-    Announcement, BLUE_CAR_COOLDOWN_S, BLUE_MAX_PER_CAR, BLUE_NEXT_GAP_S, EventDetector, flag,
-    race, schedule, yellow,
+    Announcement, BLUE_MAX_PER_CAR, BLUE_NEXT_GAP_S, BLUE_TRAIN_GRACE_S, EventDetector, flag, race,
+    schedule, yellow,
 };
 use crate::codes::{game_state, pit_mode, session_state};
 use crate::testing::FakeClock;
@@ -399,10 +399,42 @@ fn a_new_flag_after_the_old_one_dropped_starts_a_new_episode() {
     r.d.highest_flag_colour = flag::BLUE as u32;
     assert_eq!(r.codes(1.0), ["flag_blue"]);
     r.d.highest_flag_colour = flag::GREEN as u32;
-    r.codes(3.0);
+    r.codes(BLUE_TRAIN_GRACE_S + 2.0);
     passes(&mut r, 4);
     r.d.highest_flag_colour = flag::BLUE as u32;
-    assert_eq!(r.codes(1.0), ["flag_blue"]); // car 3, a new car: not 20 s after any code
+    assert_eq!(r.codes(1.0), ["flag_blue"]); // car 3: a flag off past the grace is a new train
+}
+
+#[test]
+fn a_flag_that_drops_for_12_s_between_two_cars_is_one_train() {
+    let mut r = train();
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    assert_eq!(r.codes(1.0), ["flag_blue"]); // car 4
+    passes(&mut r, 4);
+    r.d.highest_flag_colour = flag::GREEN as u32;
+    assert!(r.codes(12.0).is_empty());
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    let out = r.for_s(1.0);
+    assert_eq!(out.len(), 1);
+    assert_eq!(out[0].code, "flag_blue_next");
+    assert_eq!(out[0].params["driver"], "Rival 3");
+}
+
+#[test]
+fn a_car_is_named_once_per_train_even_if_the_flag_drops_and_returns() {
+    let mut r = train();
+    r.d.highest_flag_colour = flag::BLUE as u32;
+    assert_eq!(r.codes(1.0), ["flag_blue"]); // car 4
+    for _ in 0..3 {
+        r.d.highest_flag_colour = flag::GREEN as u32;
+        assert!(r.codes(5.0).is_empty());
+        r.d.highest_flag_colour = flag::BLUE as u32;
+        // Car 4 is still the nearest lapping car, 20 s have passed: only the next car is named.
+        let seen = r.codes(10.0);
+        assert!(!seen.contains(&"flag_blue"), "{seen:?}");
+    }
+    let calls = blue_calls(&mut r, 0.0, 30.0);
+    assert!(calls.iter().all(|c| c.2 != "Rival 4"), "{calls:?}");
 }
 
 #[test]
@@ -429,25 +461,17 @@ fn a_held_blue_flag_is_not_called_at_a_standstill() {
 }
 
 #[test]
-fn the_same_car_is_called_every_20_s_and_at_most_three_times() {
+fn the_same_car_is_called_once_per_train_and_at_most_three_times_a_session() {
     let mut r = train();
-    r.d.highest_flag_colour = flag::BLUE as u32;
-    let calls = blue_calls(&mut r, 0.0, 100.0);
-    let codes: Vec<_> = calls.iter().map(|c| c.1).collect();
-    assert_eq!(
-        codes,
-        ["flag_blue", "flag_blue_next", "flag_blue_next"],
-        "{calls:?}"
-    );
-    assert!(calls.iter().all(|c| c.2 == "Rival 4"));
-    assert!(
-        calls[1].0 - calls[0].0 >= BLUE_CAR_COOLDOWN_S - 0.5,
-        "{calls:?}"
-    );
-    assert!(
-        calls[2].0 - calls[1].0 >= BLUE_CAR_COOLDOWN_S - 0.5,
-        "{calls:?}"
-    );
+    let mut calls = Vec::new();
+    for _ in 0..5 {
+        r.d.highest_flag_colour = flag::BLUE as u32;
+        calls.extend(blue_calls(&mut r, 0.0, 30.0)); // car 4 first; 3 and 5 only if they are nearest
+        r.d.highest_flag_colour = flag::GREEN as u32;
+        r.codes(BLUE_TRAIN_GRACE_S + 5.0);
+    }
+    let count = |n: &str| calls.iter().filter(|c| c.2 == n).count();
+    assert_eq!(count("Rival 4"), BLUE_MAX_PER_CAR as usize, "{calls:?}");
 }
 
 // ------------------------------------------------------------------ race states, penalties

@@ -30,7 +30,13 @@ fn main() {
     let mut it = args.rest.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
-            "--hz" => hz = it.next().and_then(|v| v.parse().ok()).unwrap_or(hz),
+            "--hz" => match cli::parse_hz(it.next().map(String::as_str)) {
+                Ok(v) => hz = v,
+                Err(e) => {
+                    eprintln!("ams2-recorder: {e}");
+                    std::process::exit(2);
+                }
+            },
             "--pitwall-pipe" => pitwall_pipe = it.next().cloned(),
             "--control-pipe" => control_pipe = it.next().cloned(),
             "--shared-memory-name" => shm_name = it.next().cloned(),

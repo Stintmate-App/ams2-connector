@@ -37,6 +37,15 @@ pub struct AnnounceArgs {
 }
 
 /// Parses the arguments after `announce`; the error is the line to print (exit 2).
+/// Parses the value of `--hz`: a positive, finite number of samples per second.
+pub fn parse_hz(value: Option<&str>) -> Result<f64, String> {
+    let v = value.ok_or("--hz needs a value")?;
+    match v.parse::<f64>() {
+        Ok(hz) if hz.is_finite() && hz > 0.0 => Ok(hz),
+        _ => Err(format!("--hz needs a positive number, got {v:?}")),
+    }
+}
+
 pub fn parse_announce(args: &[String]) -> Result<AnnounceArgs, String> {
     let mut out = AnnounceArgs::default();
     let mut it = args.iter();

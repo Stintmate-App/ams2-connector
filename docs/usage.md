@@ -160,7 +160,7 @@ All of them take `--workspace <dir>` and `--allow-synced` (accept a workspace in
 refused by default) where a workspace matters. The control app passes its resolved workspace to
 every process it starts.
 
-`--hz` takes a rate in Hz. The control app only passes values from 1 to 200 (its `recorder_hz` is checked against that range); the recorder does not check the value itself, so give it a positive number. `--pitwall-pipe` and `--control-pipe` replace the two pipe paths the recorder dials (tests only; the control app never passes them).
+`--hz` takes a rate in Hz. The control app only passes values from 1 to 200 (its `recorder_hz` is checked against that range); the recorder itself accepts any positive, finite number; `0`, a negative value, a word or a missing value is a usage error (message on stderr, exit code 2). `--pitwall-pipe` and `--control-pipe` replace the two pipe paths the recorder dials (tests only; the control app never passes them).
 
 `ams2-recorder.exe --shared-memory-name NAME` (development and tests only; the control app never passes it) opens the named test mapping instead of the game's `$pcars2$` and counts the game as running, so a replayed session (`ams2-replay`, which writes into such a mapping) drives the real recorder end to end. The game's own name (or any name containing `pcars2`) is refused with exit 2. Without the option nothing changes: the game's mapping, opened only while its process exists. Start the replay first: the mapping must exist, with a first frame, when the recorder opens it.
 

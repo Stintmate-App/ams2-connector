@@ -236,7 +236,7 @@ session. Units, signs and the reasons behind each choice: [FINDINGS.md](FINDINGS
   has a new one. The check is cheap by design: a zero-timeout wait on the game's process handle
   while it runs, otherwise a window lookup by the game's class and title, with a full process
   snapshot only when such a window appears or every 60 s as a backstop (the full snapshot is the
-  expensive call, a few milliseconds on the development PC).
+  expensive call, several milliseconds).
 - **Return to the garage from the menu.** The tracker takes no samples while the game is
   paused or in a menu, so a lap ended by "return to garage" never had a sample in the garage
   and would be stored as a flying lap. In the paused or menu branch an open lap is marked as an
@@ -351,7 +351,7 @@ window is the separate process described above.
   off it asks whether the game's process runs, so the row can say "Off - Automobilista 2 is
   running: laps are not recorded".
 - **Idle cost**: the supervisor sleeps on a condition variable and wakes every 1 s only while a
-  service runs, is wanted, stopping or restarting; every 2 s in managed mode (the parent
+  service runs, is stopping or restarting, or a kept-open session waits to resume with no recorder; every 2 s in managed mode (the parent
   check); otherwise every 5 s. `ui.snapshot` and `control.state` are pushed only on change, and
   the tray is told only on change. The autostart registry value is cached for 30 s.
 - **The endpoint `connector-ams2`** (a named pipe per user; its registry entry is written to
@@ -442,7 +442,7 @@ trust. Full tables and method: [`BENCHMARKS.md`](../BENCHMARKS.md).
 | Allocations on the loop per tick, steady state (status ticks included) | 0 | 0 | yes |
 | Loop period p99 | <= 20.5 ms | 20.63 ms | within 0.15 ms |
 | `t_ns` after the frame (median) | <= 0.5 ms | 0.53 ms | within 0.04 ms |
-| Tick median (snapshot, tracker, detector, live publish) | <= 5 us | 9.4-9.8 us | no |
+| Tick median (snapshot, tracker, detector, live publish) | <= 5 us | 9.6-10.0 us | no |
 | A 90 s lap encoded and stored | <= 5 ms | 4.7-5.0 ms (1.30 MB) | yes (marginal) |
 | Start to first snapshot, in process | <= 0.3 s | about 2 ms | yes |
 | Recorder private working set | <= 15 MB | 7.3 MB | yes |

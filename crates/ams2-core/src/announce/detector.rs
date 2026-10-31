@@ -151,7 +151,7 @@ pub const BLUE_MAX_PER_CAR: u32 = 3;
 /// The same lapping car is not called again within this long.
 pub const BLUE_CAR_COOLDOWN_S: f64 = 20.0;
 /// A blue flag train (episode) survives the flag being off this long; a flag back within it
-/// continues the train (`flag_blue_next`, no new opener, cars already named stay named). Run 53
+/// continues the train (`flag_blue_next`, no new opener, cars already named stay named). A recorded race
 /// showed the game dropping the flag for 9 to 18 s between the cars of one train, so 20 s
 /// covers them while a flag off longer is a different train.
 pub const BLUE_TRAIN_GRACE_S: f64 = 20.0;

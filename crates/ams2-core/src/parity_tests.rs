@@ -71,7 +71,7 @@ fn actions_equal_the_pythons_but_for_the_new_codes() {
     ours[1]["params"]["properties"]
         .as_object_mut()
         .unwrap()
-        .remove("variant"); // PRY-100
+        .remove("variant"); // the Python catalog has no such option
     assert_eq!(canonical(&ours), canonical(&p["actions"]));
     assert_eq!(actions_ik(actions()), "ams2/actions/4d18f44c98bf");
 }

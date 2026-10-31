@@ -1,6 +1,6 @@
 """Generate the v14 offset fixture and the Rust layout from the Python ctypes layout.
 
-Usage (read-only against the monorepo's Python source):
+Usage (read-only against the Python connector source):
   uv run --no-project crates/ams2-shm/scripts/gen_layout.py <path to .../ams2_connector/shm> \
       <fixture.json> <layout_generated.rs>
 """

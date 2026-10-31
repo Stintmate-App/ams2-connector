@@ -739,7 +739,7 @@ fn rival_frame(
     } else {
         f((t - 30.0).max(0.0))
     };
-    d.participant_info[0].name[..8].copy_from_slice(b"leonardo");
+    d.participant_info[0].name[..10].copy_from_slice(b"Player One");
     d.car_names[0][..18].copy_from_slice(b"MINI Cooper S 1965");
     d.car_class_names[0][..5].copy_from_slice(b"TC60S");
     if let Some(l) = last_lap_time {
@@ -783,7 +783,7 @@ fn test_rival_rows_flushed_with_player_laps_and_position_event() {
             r.valid,
             r.pit
         ),
-        ("leonardo", 1, Some(90.5), true, Some(2), true, false)
+        ("Player One", 1, Some(90.5), true, Some(2), true, false)
     );
     assert_eq!(r.car_id.as_deref(), Some("MINI Cooper S 1965"));
     let s: Vec<f64> = r.sectors.iter().map(|s| s.unwrap()).collect();

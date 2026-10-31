@@ -40,7 +40,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-connector-ui"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "ams2-i18n",
  "ams2-platform",
@@ -58,7 +58,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-connector-window"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "ams2-connector-ui",
  "ams2-i18n",
@@ -73,7 +73,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-core"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "ams2-shm",
  "criterion",
@@ -88,7 +88,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-golden"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "ams2-core",
  "ams2-platform",
@@ -102,7 +102,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-i18n"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "hex",
  "serde_json",
@@ -113,7 +113,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-measure"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "ams2-core",
  "ams2-platform",
@@ -126,7 +126,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-platform"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "serde",
  "serde_json",
@@ -141,7 +141,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-recorder"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "ams2-core",
  "ams2-platform",
@@ -157,7 +157,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-replay"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "ams2-core",
  "ams2-platform",
@@ -166,7 +166,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-shm"
-version = "3.2.2"
+version = "3.2.3"
 dependencies = [
  "proptest",
  "serde_json",
@@ -2479,8 +2479,8 @@ checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
 name = "stintmate-ipc"
-version = "0.3.0"
-source = "git+https://github.com/Stintmate-App/stintmate-ipc?tag=v0.3.0#8daded4aaaf521e44686f44804db09243dd0c845"
+version = "0.3.1"
+source = "git+https://github.com/Stintmate-App/stintmate-ipc?tag=v0.3.1#c3660ac8dae1172a7c7a536daabf033baa0036e8"
 dependencies = [
  "bytes",
  "crossbeam-channel",
@@ -2498,8 +2498,8 @@ dependencies = [
 
 [[package]]
 name = "stintmate-ipc-check"
-version = "0.3.0"
-source = "git+https://github.com/Stintmate-App/stintmate-ipc?tag=v0.3.0#8daded4aaaf521e44686f44804db09243dd0c845"
+version = "0.3.1"
+source = "git+https://github.com/Stintmate-App/stintmate-ipc?tag=v0.3.1#c3660ac8dae1172a7c7a536daabf033baa0036e8"
 dependencies = [
  "bytes",
  "serde_json",

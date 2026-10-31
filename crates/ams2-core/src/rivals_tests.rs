@@ -295,7 +295,7 @@ const TRACK: f64 = 3000.0;
 /// through the pit lane at the end of lap 2; car 3 is the safety car.
 fn race_frames(duration: f64, hz: f64) -> Vec<Box<SharedMemory>> {
     let cars = [
-        ("leonardo", "MINI Cooper S 1965", "TC60S2", 60.0),
+        ("Player One", "MINI Cooper S 1965", "TC60S2", 60.0),
         ("Rival One", "Lotus 23", "TC60S2", 61.0),
         ("Rival Two", "Lotus 23", "TC60S2", 63.0),
         ("Safety Car", "Camaro SafetyCar", "SafetyCar", 999.0),

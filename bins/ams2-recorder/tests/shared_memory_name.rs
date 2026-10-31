@@ -26,6 +26,19 @@ fn the_game_s_own_mapping_name_is_refused() {
 }
 
 #[test]
+fn a_rate_that_is_not_a_positive_number_is_a_usage_error() {
+    for hz in ["0", "-5", "abc", "inf", "NaN", ""] {
+        let o = recorder().args(["--hz", hz]).output().unwrap();
+        assert_eq!(o.status.code(), Some(2), "{hz}");
+        assert!(String::from_utf8_lossy(&o.stderr).contains("--hz needs a positive number"));
+    }
+    let o = recorder().arg("--hz").output().unwrap();
+    assert_eq!(o.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&o.stderr).contains("--hz needs a value"));
+    assert_eq!(ams2_recorder::cli::parse_hz(Some("200")), Ok(200.0));
+}
+
+#[test]
 fn a_replayed_session_drives_the_real_recorder() {
     let dir = tempfile::tempdir().unwrap();
     let ws = workspace(&dir.path().join("ws"), &KEY);

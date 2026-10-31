@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.2.3 (2026-10-31)
+
+- Built on stintmate-ipc v0.3.1, which is stricter on malformed messages; the connector already sent valid ones.
+- **`ams2-recorder --hz` checks its value.** `0`, a negative number, a word or a missing value is now a usage
+  error (a message on stderr, exit code 2) instead of a crash or a silent fallback to 50 Hz.
+- Test fixtures and test names no longer carry a personal name or internal task numbers; comments and
+  scripts that pointed at documents outside this repository were reworded. No change in behaviour.
+- The unused UI spike (`spikes/ui`) was removed.
+
 ## 3.2.2+docs.1 (2026-10-31)
 
 - Documentation corrected against the code. The behaviour and the protocol are unchanged.

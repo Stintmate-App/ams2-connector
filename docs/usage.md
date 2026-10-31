@@ -138,7 +138,7 @@ registration).
 | `--quit` | asks the running control app to exit and waits up to 10 s until nothing of the connector runs | 0 stopped (or nothing ran), 1 still running or the app does not answer, 4 the app is managed |
 | `--stintmate-hold` | for a setup: asks Stintmate (hub method `hub.connector.hold`, id `ams2`, 5 minutes) to stop the connector and not start it until released; calls again every 0.5 s while it answers `stopping`, then waits until the connector's mutexes are free; `--wait` (default 25 s) bounds both; `--purpose` is `update` (default) or `uninstall`. Takes no `--workspace`: the user's pointer and key | 0 held and stopped, 1 held but something still runs, 2 bad arguments, 5 no Stintmate to ask (no pointer, workspace or key, no hub endpoint and no hub mutex, or the hub does not know the connector), 6 Stintmate runs but did not answer (3 s for the endpoint, 5 s per call, busy, an older hub), 7 a driving session is being recorded |
 | `--stintmate-release` | for a setup: `hub.connector.release`; Stintmate starts the connector again unless `--no-start` | 0 released (or nothing was held), 2 bad arguments, 5 no Stintmate, 6 not answering |
-| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.2.2`) | 0 |
+| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.2.3`) | 0 |
 
 `--quit` finds the instance by the single-instance mutex `Local\Ams2Connector.UI` and sends
 `control.quit` to its endpoint `connector-ams2` with the workspace's key (the same call the
@@ -160,7 +160,7 @@ All of them take `--workspace <dir>` and `--allow-synced` (accept a workspace in
 refused by default) where a workspace matters. The control app passes its resolved workspace to
 every process it starts.
 
-`--hz` takes a rate in Hz. The control app only passes values from 1 to 200 (its `recorder_hz` is checked against that range); the recorder does not check the value itself, so give it a positive number. `--pitwall-pipe` and `--control-pipe` replace the two pipe paths the recorder dials (tests only; the control app never passes them).
+`--hz` takes a rate in Hz. The control app only passes values from 1 to 200 (its `recorder_hz` is checked against that range); the recorder itself accepts any positive, finite number; `0`, a negative value, a word or a missing value is a usage error (message on stderr, exit code 2). `--pitwall-pipe` and `--control-pipe` replace the two pipe paths the recorder dials (tests only; the control app never passes them).
 
 `ams2-recorder.exe --shared-memory-name NAME` (development and tests only; the control app never passes it) opens the named test mapping instead of the game's `$pcars2$` and counts the game as running, so a replayed session (`ams2-replay`, which writes into such a mapping) drives the real recorder end to end. The game's own name (or any name containing `pcars2`) is refused with exit 2. Without the option nothing changes: the game's mapping, opened only while its process exists. Start the replay first: the mapping must exist, with a first frame, when the recorder opens it.
 

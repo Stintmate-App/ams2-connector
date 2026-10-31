@@ -139,7 +139,7 @@ fn shm(session: u32) -> Box<SharedMemory> {
 }
 
 /// Removes the tracker-view fields; returns what was taken as `"group.field"`.
-fn without_pry037(frame: &mut Value) -> Map<String, Value> {
+fn without_tracker_view_fields(frame: &mut Value) -> Map<String, Value> {
     let mut taken = Map::new();
     for (group, fields) in [
         ("session", &["started"][..]),
@@ -186,7 +186,7 @@ fn live_frame_conversion_equals_the_fixture() {
         let mut mine = live_frame(&d, &FrameOptions::default());
         schema_check::definition(&schema, "live_frame", &mine)
             .unwrap_or_else(|e| panic!("frame {i}: {e}"));
-        let new = without_pry037(&mut mine);
+        let new = without_tracker_view_fields(&mut mine);
         assert_eq!(&mine, want, "frame {i} differs");
         assert!(mine.get("labels").is_none());
         // no tracker view here, no pit schedule and no race state in the cases; only

@@ -497,7 +497,7 @@ impl Script {
         d.gear = 0;
         d.rpm = 900.0;
         let names: [(&str, f64); 3] = [
-            ("leonardo", 150.0),
+            ("Player One", 150.0),
             (RIVALS[0].0, RIVALS[0].2),
             (RIVALS[1].0, RIVALS[1].2),
         ];

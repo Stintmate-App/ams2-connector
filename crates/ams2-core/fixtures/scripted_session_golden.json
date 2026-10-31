@@ -1259,7 +1259,7 @@ null
 {
 "participant": 0,
 "lap": 1,
-"name": "leonardo",
+"name": "Player One",
 "car_id": "Ginetta G40 Cup",
 "class_id": "G40Cup",
 "is_player": true,
@@ -1845,7 +1845,7 @@ null
 {
 "participant": 0,
 "lap": 2,
-"name": "leonardo",
+"name": "Player One",
 "car_id": "Ginetta G40 Cup",
 "class_id": "G40Cup",
 "is_player": true,
@@ -2431,7 +2431,7 @@ null
 {
 "participant": 0,
 "lap": 3,
-"name": "leonardo",
+"name": "Player One",
 "car_id": "Ginetta G40 Cup",
 "class_id": "G40Cup",
 "is_player": true,
@@ -3609,7 +3609,7 @@ null
 {
 "participant": 0,
 "lap": 4,
-"name": "leonardo",
+"name": "Player One",
 "car_id": "Ginetta G40 Cup",
 "class_id": "G40Cup",
 "is_player": true,
@@ -4186,7 +4186,7 @@ null
 {
 "participant": 0,
 "lap": 5,
-"name": "leonardo",
+"name": "Player One",
 "car_id": "Ginetta G40 Cup",
 "class_id": "G40Cup",
 "is_player": true,

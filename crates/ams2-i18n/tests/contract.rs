@@ -1,5 +1,5 @@
-//! The contract's test vectors (`fixtures/catalogs.vectors.json`, a copy of the monorepo's
-//! `docs/catalogs.vectors.json`) and the embedded English catalog.
+//! The contract's test vectors (`fixtures/catalogs.vectors.json`, a copy of the Stintmate contract's
+//! `catalogs.vectors.json`) and the embedded English catalog.
 
 use std::fs;
 use std::path::{Path, PathBuf};

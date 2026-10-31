@@ -1,5 +1,5 @@
-//! The Stintmate workspace resolver: workspace contract v1 (`docs/workspace.md` in the
-//! Stintmate monorepo), tested against the contract's vectors
+//! The Stintmate workspace resolver: workspace contract v1 (the Stintmate
+//! workspace folder contract), tested against the contract's vectors
 //! (`tests/fixtures/workspace.vectors.json`).
 //!
 //! This is the connector's own implementation for now; it may move

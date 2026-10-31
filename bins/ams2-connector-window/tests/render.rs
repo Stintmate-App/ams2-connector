@@ -285,7 +285,8 @@ fn render(page: Page, managed: bool, name: &str, dir: &Path) -> PathBuf {
             *px = [bg[0], bg[1], bg[2]];
         }
     }
-    let path = PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("pry087-{name}.png"));
+    let path =
+        PathBuf::from(env!("CARGO_TARGET_TMPDIR")).join(format!("connector-window-{name}.png"));
     std::fs::write(&path, png(w, h, &fb)).unwrap();
     // The page must have painted its accent (a switch) or its text, not only the background.
     let distinct: std::collections::HashSet<[u8; 3]> = fb

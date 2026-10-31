@@ -1,7 +1,7 @@
 """Generates the A4 parity fixtures of ams2-core from the read-only Python connector.
 
 Run: uv run --no-project crates/ams2-core/scripts/gen_announce_fixtures.py [PYTHON_APP_DIR]
-(PYTHON_APP_DIR defaults to the monorepo's apps/connectors/ams2). Needs nothing installed:
+(PYTHON_APP_DIR is the folder of the Python connector it ports). Needs nothing installed:
 the Python modules are imported with stubs for stintmate_ipc and connector_messages.
 
 Writes, next to this script's crate:

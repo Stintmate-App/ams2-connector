@@ -1,4 +1,4 @@
-//! The contract's resolver vectors (a copy of the monorepo's `docs/workspace.vectors.json`),
+//! The contract's resolver vectors (a copy of the contract's `workspace.vectors.json`),
 //! fed through injected probes, plus the data folder and the real file system in temp folders.
 //! Port of the Python connector's `test_workspace.py` (resolver and data-folder parts).
 

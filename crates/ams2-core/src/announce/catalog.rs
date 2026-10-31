@@ -111,7 +111,7 @@ pub fn variant_count(code: &str) -> u8 {
     u8::try_from(1 + n).unwrap_or(u8::MAX)
 }
 
-/// What has been checked for a code (docs/test.md runs fill this in); `None`: not a code.
+/// What has been checked for a code (desk test runs fill this in); `None`: not a code.
 pub fn validation(code: &str) -> Option<&'static str> {
     match code {
         "radio_check" | "engineer_test" => Some(DESK_TESTED),

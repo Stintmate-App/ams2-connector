@@ -1,9 +1,9 @@
 # The installer
 
 `AMS2-Connector-<version>[-dev]-setup.exe` installs the connector for the current user (Inno
-Setup 6; no administrator rights, no UAC, English only, unsigned for now). This page is the
+Setup 6; no administrator rights, no UAC, English only, unsigned). This page is the
 contract for whoever installs it without a person in front of it: Stintmate downloads the
-connector and runs this setup in the background (PRY-043). Fetching the setup and verifying it
+connector and runs this setup in the background. Fetching the setup and verifying it
 (the `.sha256` file beside it, the signed release manifest) is the caller's job; the setup
 itself checks nothing about where it came from.
 
@@ -17,7 +17,7 @@ itself checks nothing about where it came from.
   run it unmanaged next to Stintmate's own instance. (`ams2-connector-ui.exe` still works when
   started by hand.)
 - **Needs no workspace.** It registers the connector in the per-user machine file
-  `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (PRY-088), which is how Stintmate finds it:
+  `%LOCALAPPDATA%\Stintmate\connectors\ams2.json`, which is how Stintmate finds it:
   `ams2-connector-ui.exe --register --uninstall "<unins000.exe>" [--flavour dev]` writes it
   atomically, with the path of this install's launcher and the command that removes this
   install. The file is the connector descriptor of the workspace contract (section 5.5). It
@@ -27,7 +27,7 @@ itself checks nothing about where it came from.
   settings). Uninstalling removes the programs and the descriptor, never the data.
 - A **development build** (`scripts\build-installer.ps1 -Dev`, file name `...-dev-setup.exe`)
   has its own identity (AppId, name `Stintmate AMS2 Connector (dev)`, folder) and writes
-  `"flavour": "dev"` into the file; Stintmate shows `3.0.0 (dev)`. See "One flavour at a time".
+  `"flavour": "dev"` into the file; Stintmate shows the version with "(dev)" after it. See "One flavour at a time".
 
 ## One flavour at a time
 
@@ -45,7 +45,7 @@ looks at the file:
      progress line `{"stage":"replace"}`) and waits up to 30 s for the other install's launcher
      to disappear. Inno's uninstaller hands over to a copy of itself, hence the wait. If it is
      still there, the run fails with `replace_failed`;
-   - a file with no `uninstall` (a development checkout, the Python connector) removes nothing:
+   - a file with no `uninstall` (a development checkout, or the earlier Python connector) removes nothing:
      the setup takes the registration over (`--register` overwrites the file).
 3. The setup copies the files and runs `--register`.
 
@@ -137,7 +137,7 @@ carries `"installed":true`: the caller may run `ams2-connector-ui.exe --register
 | unattended without `/MANAGED` | `ams2-connector-ui.exe --quit`; an unmanaged connector is closed. When Stintmate manages it (`--quit` exits 4) the setup fails with `connector_running`: **it never closes Stintmate** |
 | interactive | the same, but for a managed connector it **asks** to close the installed Stintmate (`stintmate.exe --running` / `--quit-all`) and, while a session is recorded, offers Retry or Cancel |
 
-### The hold: updating without closing Stintmate (PRY-089)
+### The hold: updating without closing Stintmate
 
 Unless it runs with `/MANAGED`, the setup first asks Stintmate (the hub) to stop **only the
 connector** and keep it stopped, so the question above rarely comes up. During `prepare`, after
@@ -162,7 +162,7 @@ removal of `ams2.json` ends the hold. The progress file has no new stage (`prepa
 hold).
 
 Only processes that run from the install folder count; another copy of the connector, or the
-older Python one, is never counted nor stopped, except the one the registration names when it
+earlier Python one, is never counted nor stopped, except the one the registration names when it
 is being replaced.
 
 ## What Stintmate does around it

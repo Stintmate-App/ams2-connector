@@ -1,2 +1,4 @@
 crates/ams2-i18n/locales/*.json -text
 crates/ams2-i18n/fixtures/*.json -text
+# Release scripts run under bash on Windows runners: LF only
+scripts/*.sh text eol=lf

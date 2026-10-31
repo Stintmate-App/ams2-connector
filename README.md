@@ -47,6 +47,35 @@ cargo test --workspace
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
+## Releases
+
+A release of tag `vX.Y.Z` carries two files:
+
+| Asset | What it is |
+|---|---|
+| `AMS2-Connector-X.Y.Z-setup.exe` | the installer ([installer](docs/installer.md)) |
+| `AMS2-Connector-X.Y.Z-setup.exe.sha256` | its SHA-256 in `sha256sum` format; check with `sha256sum --check AMS2-Connector-X.Y.Z-setup.exe.sha256` |
+
+The release notes are the version's section of [`CHANGELOG.md`](CHANGELOG.md). Tags with a
+`+` suffix (`v3.2.3+docs.1`) mark documentation-only changes: they have no release and no assets.
+
+To publish one, a maintainer runs the `release` workflow by hand (Actions, `release`, Run
+workflow) from `main`, with the `tag` to release:
+
+- The tag must exist, be an ancestor of `main`, equal `v` + the workspace version in
+  `Cargo.toml`, and have its `## <version>` section in `CHANGELOG.md`. A tag with `+` is refused.
+- The workflow builds the tag's tree (not `main`'s), runs the same checks as `ci` (fmt, clippy,
+  test, cargo-deny), builds the installer of the release flavour (`scripts/build-installer.ps1`),
+  uploads the assets to a draft release, downloads them again and compares them with what it built.
+- With `dry_run` (the default) it stops there: the draft is named `dry-run-<tag>` under the tag
+  `dry-run-<version>`, the hashes are printed (next to those of the tag's published release, when
+  there is one; a rebuilt installer need not be byte-identical), and the draft is deleted.
+  Without it, the draft is published as the release of the tag. A tag that already has a published
+  release is refused.
+
+The logic that can run on its own is in `scripts/` (`release-check.sh`, `release-notes.sh`,
+`release-report.sh`; bash, git and the GitHub CLI).
+
 ## Licence and name
 
 Apache License 2.0 ([`LICENSE`](LICENSE), [`NOTICE`](NOTICE)). Every dependency compiled into

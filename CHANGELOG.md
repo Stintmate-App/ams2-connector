@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.3.0+docs.1 (2026-11-01)
+
+- Releases are published by the `release` workflow (`.github/workflows/release.yml`, run by hand):
+  it checks the tag, runs the CI checks, builds the installer and uploads it with its `.sha256`
+  file. README, "Releases". The code is unchanged.
+
 ## 3.3.0 (2026-10-31)
 
 - **The installer adds a Start menu shortcut** named like the connector (not on the desktop; the

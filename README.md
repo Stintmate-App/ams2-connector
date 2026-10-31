@@ -5,8 +5,8 @@ shared memory and records sessions and laps through Pitwall, Stintmate's telemet
 over [Stintmate IPC](https://github.com/Stintmate-App/stintmate-ipc). It is also the reference
 connector for authors who want to bring another simulator to Stintmate.
 
-**Status:** released (version 3.2.3). It replaces the earlier Python connector (2.0.0) entirely. It is installed by its own setup, per user, and Stintmate starts and
-supervises it ([installer](docs/installer.md)).
+**Status:** released (version 3.3.0). It replaces the earlier Python connector (2.0.0) entirely. It is installed by its own setup, per user, and Stintmate starts and
+supervises it ([installer](docs/installer.md)). Its Start menu shortcut opens Stintmate, or tells you where to get it; it never starts a connector alone.
 
 | Path | What |
 |---|---|

@@ -117,6 +117,7 @@ ams2-connector-ui.exe --read-registration OUT-FILE
 ams2-connector-ui.exe --quit [--workspace DIR] [--allow-synced]
 ams2-connector-ui.exe --stintmate-hold [--purpose update|uninstall] [--wait SECONDS]
 ams2-connector-ui.exe --stintmate-release [--no-start]
+ams2-connector-ui.exe --from-shortcut
 ams2-connector-ui.exe --version
 ams2-recorder.exe [--hz 50] [--shared-memory-name NAME] [--pitwall-pipe PATH] [--control-pipe PATH]   (one instance; Ctrl+C stops it)
 ams2-recorder.exe --version
@@ -124,8 +125,8 @@ ams2-connector-window.exe --version
 ```
 
 `--register`, `--unregister`, `--read-registration`, `--quit`, `--stintmate-hold`,
-`--stintmate-release` and `--version` start nothing and cannot be combined with each other or with `--managed` / `--tray`. `--register`, `--unregister`
-and `--read-registration` take no `--workspace`. A bad command line prints the usage (every
+`--stintmate-release`, `--from-shortcut` and `--version` start nothing and cannot be combined with each other or with `--managed` / `--tray`. `--register`, `--unregister`,
+`--read-registration` and `--from-shortcut` take no `--workspace`. A bad command line prints the usage (every
 option) and exits 2. `STINTMATE_CONNECTORS_DIR` replaces the connectors folder (tests and
 development: set it before running `--register` from a checkout, or you take over the real
 registration).
@@ -138,7 +139,14 @@ registration).
 | `--quit` | asks the running control app to exit and waits up to 10 s until nothing of the connector runs | 0 stopped (or nothing ran), 1 still running or the app does not answer, 4 the app is managed |
 | `--stintmate-hold` | for a setup: asks Stintmate (hub method `hub.connector.hold`, id `ams2`, 5 minutes) to stop the connector and not start it until released; calls again every 0.5 s while it answers `stopping`, then waits until the connector's mutexes are free; `--wait` (default 25 s) bounds both; `--purpose` is `update` (default) or `uninstall`. Takes no `--workspace`: the user's pointer and key | 0 held and stopped, 1 held but something still runs, 2 bad arguments, 5 no Stintmate to ask (no pointer, workspace or key, no hub endpoint and no hub mutex, or the hub does not know the connector), 6 Stintmate runs but did not answer (3 s for the endpoint, 5 s per call, busy, an older hub), 7 a driving session is being recorded |
 | `--stintmate-release` | for a setup: `hub.connector.release`; Stintmate starts the connector again unless `--no-start` | 0 released (or nothing was held), 2 bad arguments, 5 no Stintmate, 6 not answering |
-| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.2.3`) | 0 |
+| `--from-shortcut` | what the installer's Start menu shortcut runs; it never starts a connector. Stintmate installed: opens Stintmate and exits (also when a connector already runs). Not installed, or its launcher is gone: a Yes/No message says the connector needs Stintmate and offers https://stintmate.app (Yes opens it in the default browser, No exits). The message is in the language of the user's workspace when there is one, English otherwise | 0 done, 1 Stintmate could not be started |
+| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.3.0`) | 0 |
+
+`--from-shortcut` finds Stintmate through the uninstall entry its installer writes
+(`HKCU`, then `HKLM`, `Software\Microsoft\Windows\CurrentVersion\Uninstall\{B5E7C0D2-4A1F-4E8B-9C36-5D2F7A91E4C8}_is1`):
+its `InstallLocation` plus `hub\.venv\Scripts\stintmate.exe` is the program it opens. An entry whose
+program is missing counts as not installed. Started by hand without this option, the control app
+starts the connector as described above.
 
 `--quit` finds the instance by the single-instance mutex `Local\Ams2Connector.UI` and sends
 `control.quit` to its endpoint `connector-ams2` with the workspace's key (the same call the

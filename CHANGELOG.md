@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.3.0 (2026-10-31)
+
+- **The installer adds a Start menu shortcut** named like the connector (not on the desktop; the
+  uninstaller removes it). It never starts a connector of its own: with Stintmate installed it opens
+  Stintmate, which starts and supervises the connector; without Stintmate, a message says the
+  connector needs it and offers https://stintmate.app.
+- New option `ams2-connector-ui.exe --from-shortcut` does this. Started by hand without it, the
+  control app behaves as before. Stintmate is found through the uninstall entry of its installer; an
+  entry whose program is gone counts as not installed.
+- The message is part of the connector's language catalog and translates like the other texts.
+
 ## 3.2.3+docs.1 (2026-10-31)
 
 - The documents link to the public connector kit. The behaviour is unchanged.

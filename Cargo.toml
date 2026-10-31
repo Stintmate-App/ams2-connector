@@ -30,8 +30,8 @@ ams2-i18n = { path = "crates/ams2-i18n" }
 ams2-connector-ui = { path = "bins/ams2-connector-ui" }
 # The IPC library, pinned to a release tag like any dependency (CI reads the private repository
 # with a read-only deploy key: .github/workflows/ci.yml).
-stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.0" }
-stintmate-ipc-check = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.0" }
+stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.1" }
+stintmate-ipc-check = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.1" }
 windows-sys = "0.61"
 zerocopy = { version = "0.8", features = ["derive", "alloc"] }
 thiserror = "2"

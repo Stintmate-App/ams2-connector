@@ -8,7 +8,7 @@ how to study a simulator's data is shown by [FINDINGS.md](FINDINGS.md).
 
 ## What the protocols are
 
-- **The connector protocol** (the Stintmate repository, `connector-protocol.md`): what a
+- **The connector protocol** (`connector-protocol.md`, in Pitwall's documentation in the Stintmate repository): what a
   connector declares and writes: the live frame, the write messages, the telemetry stream, the
   capture target, announcements. It is language-neutral and is the document to build against.
 - **Stintmate IPC v2**, the transport (named pipes, MessagePack, requests, state channels,
@@ -67,8 +67,8 @@ stored twice if an answer is lost; and the real-time loop never waits for a pipe
 
 A connector's setup that replaces a running connector should hold it through the hub instead of
 asking the person to close Stintmate: see "Updating your connector while Stintmate runs"
-(section 1.2) of Pitwall's `docs/connector-protocol.md` in the Stintmate repository, and
-`docs/installer.md` here for how this connector's setup does it.
+in the connector protocol (above), and
+[installer.md](installer.md) here for how this connector's setup does it.
 
 To be managed by the Stintmate hub (start, stop, show, quit), a connector also serves a small
 control endpoint and, when it is installed, writes a descriptor (`<id>.json`) in the per-user
@@ -81,6 +81,6 @@ still works when started by hand.
 
 - Run `stintmate-ipc-check` against your endpoint.
 - Replay a recorded or scripted session through your reader into a fake Pitwall and compare the
-  stored laps with the simulator's official times (the AMS2 connector matches them within 18 ms).
+  stored laps with the simulator's official times (on the first recordings of the AMS2 connector the lap times matched the game's within 18 ms, see [FINDINGS.md](FINDINGS.md#lap-time-accuracy)).
 - Measure your loop's cost: a recorder should stay well under 1 percent of a core and never
   allocate or wait on the sampling thread ([performance](ARCHITECTURE.md#performance)).

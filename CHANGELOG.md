@@ -2,29 +2,29 @@
 
 ## 3.2.2 (2026-10-29)
 
-- **A lap waited in the pit box mid race is no longer a formation lap (BUG-140).** `formation` applies only
+- **A lap waited in the pit box mid race is no longer a formation lap.** `formation` applies only
   before the first timed lap of the race session; an untimed, non-out lap after it (the box has no lap clock) is
   stored as `in`, in the live frame too.
 
 ## 3.2.1 (2026-10-29)
 
-- **The blue flag train survives a short drop of the flag and names each car once (BUG-161).** A train ends only
+- **The blue flag train survives a short drop of the flag and names each car once.** A train ends only
   after the flag has been off for 20 s; a flag back within it continues with `flag_blue_next`; a car already
   named in the train is not named again.
 
 ## 3.2.0 (2026-10-28)
 
-- **Message variants (PRY-100).** A catalog message may declare `variants` (1 to 8 other wordings of the same
+- **Message variants.** A catalog message may declare `variants` (1 to 8 other wordings of the same
   message); `pitwall.announce` carries `variant` (omitted for 0, the `text`). `spotter_still_there` is replaced by
   `spotter_still_right`, `spotter_still_left` and `spotter_still_middle`, each with variants chosen at random
   and never the one before it. `test.announce` and `ams2-recorder announce` accept `variant`.
-- **A held blue flag follows the train of lapping cars (BUG-139).** The first car is called `flag_blue`, each
+- **A held blue flag follows the train of lapping cars.** The first car is called `flag_blue`, each
   new car of the train `flag_blue_next` (new code, "Let {driver} through.") at least 4 s later; cooldown (20 s)
   and limit (3) are per car; a blue flag already up when the car leaves the pit lane is called then.
 
 ## 3.1.0 (2026-10-27)
 
-- **Spotter calls (PRY-098).** "Car left", "Car right", "In the middle", "Still there", "Clear left / right"
+- **Spotter calls.** "Car left", "Car right", "In the middle", "Still there", "Clear left / right"
   and "All clear" (seven codes, group `spotter`, level `spotter`, one slot) from the other cars' world
   positions in every frame (`announce/spotter.rs`, CrewChief's geometry). Only in practice, qualifying and
   race (from 20 s after the green), on track at 10 m/s or more, not under a full-course yellow, not in a
@@ -33,7 +33,7 @@
 
 ## 3.0.3 (2026-10-27)
 
-- **Radio priority levels, maximum waits and slots (PRY-099).** Every catalog message declares one of five
+- **Radio priority levels, maximum waits and slots.** Every catalog message declares one of five
   levels (`critical` for yellows, red, FCY start/restart/halt and black-orange; `high` for blue and slow-car
   flags, own yellow, penalties; `low` for rival messages), a `max_wait_s` where the message goes stale (none for
   red, black-orange, FCY start/halt, penalties, disqualified, retired) and a `slot` (`local_flag`, `blue_flag`)
@@ -43,7 +43,7 @@
 
 - `ams2-recorder.exe --shared-memory-name NAME` (development and tests): opens a named test mapping
   instead of the game's and counts the game as running, so `ams2-replay` can drive the real
-  recorder (PRY-097). The game's own mapping name is refused. Default behaviour unchanged.
+  recorder. The game's own mapping name is refused. Default behaviour unchanged.
 
 ## 3.0.1 (2026-10-26)
 
@@ -53,7 +53,7 @@
 
 ## 3.0.0 (2026-10-25)
 
-- **Flag calls know whose flag it is (PRY-090).** The game shows a yellow to the car that caused
+- **Flag calls know whose flag it is.** The game shows a yellow to the car that caused
   it too, so the radio no longer calls the player's own stop a yellow for "a car blocking the
   track". New catalog codes: `flag_yellow_self` (the player's own yellow: "You're off..." /
   "You're stopped on track..."; the incident is closed silently, no `flag_clear` after it),
@@ -61,7 +61,7 @@
   that car's sector, then "{driver} is stopped on track."), `flag_yellow_ahead` /
   `flag_double_yellow_ahead` (the cause is unknown: no made-up sector), `flag_track_limits` (the
   black and white right after the game invalidated the lap) and `flag_slow_car_driver`. The
-  deferred standstill yellow (BUG-130) now carries only the self note. The announcement notes
+  deferred standstill yellow now carries only the self note. The announcement notes
   of the replaced meanings are in the catalog; `catalog.json` has 34 codes.
 
 - **`capture-raw` is usable on a real session (dev builds only).** It waits for the game's
@@ -70,7 +70,7 @@
   at below-normal priority, and the reader keeps the whole records of a truncated file.
   `scripts/capture/` has the start, stop and status scripts for the engineer.
 
-- **A recorder restart keeps the game session (BUG-128).** A recorder stopped while the game
+- **A recorder restart keeps the game session.** A recorder stopped while the game
   runs no longer sends `session_end`: it leaves `session-resume.json` (key, write sequences,
   game pid, session clock) in the data folder, and the next recorder continues the same session
   key when the pid, car, track, layout and session type match and the game's own clock
@@ -81,7 +81,7 @@
   when the game goes to its menus or exits, the session type, car or track changes, or the clock
   contradicts the stored one.
 
-- **Updating without closing Stintmate (PRY-089).** Two new subcommands of
+- **Updating without closing Stintmate.** Two new subcommands of
   `ams2-connector-ui`, `--stintmate-hold [--purpose update|uninstall] [--wait N]` and
   `--stintmate-release [--no-start]`, call the Stintmate hub (`hub.connector.hold` and
   `hub.connector.release`, id `ams2`) to stop only the connector while a setup replaces its
@@ -90,7 +90,7 @@
   `/MANAGED`): "close Stintmate" stays only as the fallback when the hub cannot be asked;
   documented in `docs/installer.md` and `docs/usage.md`.
 
-- **Breaking (PRY-088, nothing released): the connector descriptor moves to the per-user machine
+- **The connector descriptor moves to the per-user machine
   folder** `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (`STINTMATE_CONNECTORS_DIR`
   replaces the folder in tests). `<workspace>\connectors\ams2\connector.json` is gone; the logs
   stay in `<workspace>\connectors\ams2\`. Schema 1 with two new optional keys, `flavour` and

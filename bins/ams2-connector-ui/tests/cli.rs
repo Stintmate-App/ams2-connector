@@ -2,7 +2,7 @@
 //! `--unregister`, `--read-registration`, the usage message and the exit statuses. The
 //! descriptor always goes to a temporary connectors folder (`STINTMATE_CONNECTORS_DIR`), never
 //! to the real one; the options that start or stop the app (`--quit`) are tested through
-//! `cli::quit` with unique names in `endpoint.rs`, never against the driver's real instance.
+//! `cli::quit` with unique names in `endpoint.rs`, never against a real running instance.
 
 use serde_json::Value;
 use std::path::{Path, PathBuf};

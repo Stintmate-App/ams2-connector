@@ -1,4 +1,4 @@
-//! The connector's guidance for the engineer (PRY-083, contract 4.4), as data.
+//! The connector's guidance for the engineer (contract 4.4), as data.
 //!
 //! Rules about this simulator that the engineer's agent cannot know. The connector declares
 //! them with `pitwall.guidance.declare` at every connection (idempotent, `ik`

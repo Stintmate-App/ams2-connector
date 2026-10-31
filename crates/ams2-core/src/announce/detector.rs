@@ -1,4 +1,4 @@
-//! Live race events from AMS2's shared memory, as edges (PRY-052).
+//! Live race events from AMS2's shared memory, as edges.
 //!
 //! [`EventDetector`] is fed every snapshot the recorder takes (50 Hz) and returns the
 //! announcements that fired on it, as codes of the catalog with their params; most ticks it
@@ -6,7 +6,7 @@
 //! threads, no clock of its own (injected through [`Clock`]). Sending, rate limits and
 //! Pitwall's absence are the caller's.
 //!
-//! The rules are those of the research (`PRY-052`, section 2); none has been seen firing in a
+//! The rules are those of the research behind this module; none has been seen firing in a
 //! real AMS2 race yet (`catalog::validation`).
 //!
 //! 1. **Gate.** Only while the game state is playing (never in replays, the front end,
@@ -28,7 +28,7 @@
 //! 7. **The player's own fields** (flag, race state, pit schedule) only while the viewed car is
 //!    the player (its name is kept); viewing another car freezes them, and coming back re-takes
 //!    their current values silently.
-//! 8. **Whose flag** (PRY-090). A yellow is attributed at its edge: the player's own (slow on
+//! 8. **Whose flag**. A yellow is attributed at its edge: the player's own (slow on
 //!    track in the last [`SELF_WINDOW_S`]: a short note, then silence), another car (the slow
 //!    one near him, named with its sector), or unknown (`_ahead` codes); the black and white
 //!    after a lap invalidation is the track-limits call; the white flag names the slow car.
@@ -148,11 +148,11 @@ pub const CLEAR_HOLD_S: f64 = 3.0;
 pub const FCY_JUMP_DELAY_S: f64 = 8.0;
 /// Blue flags for the same lapping car per session.
 pub const BLUE_MAX_PER_CAR: u32 = 3;
-/// The same lapping car is not called again within this long (BUG-139).
+/// The same lapping car is not called again within this long.
 pub const BLUE_CAR_COOLDOWN_S: f64 = 20.0;
 /// A blue flag train (episode) survives the flag being off this long; a flag back within it
 /// continues the train (`flag_blue_next`, no new opener, cars already named stay named). Run 53
-/// (BUG-161) showed the game dropping the flag for 9 to 18 s between the cars of one train, so 20 s
+/// showed the game dropping the flag for 9 to 18 s between the cars of one train, so 20 s
 /// covers them while a flag off longer is a different train.
 pub const BLUE_TRAIN_GRACE_S: f64 = 20.0;
 /// Two blue calls (of different cars) are at least this far apart.
@@ -161,7 +161,7 @@ pub const BLUE_NEXT_GAP_S: f64 = 4.0;
 pub const STANDSTILL_MS: f32 = 1.0;
 /// The lapping car is looked for this far behind on track.
 pub const BLUE_RANGE_M: f64 = 500.0;
-/// The player counts as slow (m/s, on track) below this: his own yellow is about him (PRY-090).
+/// The player counts as slow (m/s, on track) below this: his own yellow is about him.
 pub const SELF_SLOW_MS: f32 = 5.0;
 /// A yellow edge within this many seconds of the player being slow is the player's own.
 pub const SELF_WINDOW_S: f64 = 5.0;
@@ -333,7 +333,7 @@ fn is_safety_car(name: &str, car_class: &str) -> bool {
 
 type Ident = (String, String);
 
-/// Whose a yellow flag is (PRY-090).
+/// Whose a yellow flag is.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum Attribution {
     /// The player ran off and is slow or off the surface.
@@ -366,9 +366,9 @@ pub struct EventDetector {
     /// moves, if the yellow still holds.
     /// The attribution is made at the edge and carried with it (always the player's own).
     yellow_deferred: Option<(i64, i64, Attribution)>,
-    /// Off in the parity replay against the Python detector, which never defers (BUG-130).
+    /// Off in the parity replay against the Python detector, which never defers.
     defer_yellow: bool,
-    /// Off in the parity replay: the Python detector knew nothing of whose a flag is (PRY-090).
+    /// Off in the parity replay: the Python detector knew nothing of whose a flag is.
     attribute_flags: bool,
     /// The last time the player was on track below [`SELF_SLOW_MS`].
     player_slow_at: f64,
@@ -393,7 +393,7 @@ pub struct EventDetector {
     blue_episode: bool,
     /// When the flag went off during the episode (the grace of [`BLUE_TRAIN_GRACE_S`] runs from it).
     blue_off_since: Option<f64>,
-    /// The cars already named in the current train: none is named twice in it (BUG-161).
+    /// The cars already named in the current train: none is named twice in it.
     blue_named: HashSet<Ident>,
     /// The blue flag is not looked at again before this time (the rival period).
     blue_next_at: f64,
@@ -407,7 +407,7 @@ pub struct EventDetector {
     view_index: Option<i32>,
     view_ok: bool,
     rebaseline: bool,
-    /// The spotter (PRY-098): sees every frame, not only the 2 Hz scan.
+    /// The spotter: sees every frame, not only the 2 Hz scan.
     spotter: Spotter,
     /// Off in the parity replay against the Python detector, which had no spotter.
     spotter_on: bool,
@@ -711,7 +711,7 @@ impl EventDetector {
                 self.blue(d, now, out);
             }
         } else if self.blue_episode {
-            // The train survives a short drop of the flag (BUG-161).
+            // The train survives a short drop of the flag.
             let since = *self.blue_off_since.get_or_insert(now);
             if now - since >= BLUE_TRAIN_GRACE_S {
                 self.blue_episode = false;
@@ -781,7 +781,7 @@ impl EventDetector {
         let standstill_muted = new == flag::BLUE || new == flag::WHITE_SLOW_CAR;
         if (is_yellow(new) || standstill_muted) && d.speed < STANDSTILL_MS {
             // A contact stops the car right as the game raises the yellow: say it once the car
-            // moves, if the yellow still holds (BUG-130).
+            // moves, if the yellow still holds.
             if is_yellow(new) && self.defer_yellow {
                 let att = self.attribute(d, now);
                 self.yellow_deferred = Some((old, new, att));
@@ -1096,9 +1096,9 @@ impl EventDetector {
     /// The blue flag holds: calls the nearest car behind on track that is ahead in the race (lapping
     /// us). The first call of an episode is `flag_blue`, each new car of the train `flag_blue_next`
     /// at least [`BLUE_NEXT_GAP_S`] later; a car is not called again within [`BLUE_CAR_COOLDOWN_S`]
-    /// and at most [`BLUE_MAX_PER_CAR`] times a session (BUG-139). Runs at the rival period, not
+    /// and at most [`BLUE_MAX_PER_CAR`] times a session. Runs at the rival period, not
     /// every frame. A car is named once per train, and the train outlives a drop of the flag of up
-    /// to [`BLUE_TRAIN_GRACE_S`] (BUG-161).
+    /// to [`BLUE_TRAIN_GRACE_S`].
     fn blue(&mut self, d: &SharedMemory, now: f64, out: &mut Vec<Announcement>) {
         let me = self.view_index.unwrap_or(0);
         let length = f64::from(d.track_length);

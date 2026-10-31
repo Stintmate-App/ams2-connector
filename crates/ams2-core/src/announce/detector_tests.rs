@@ -1,4 +1,4 @@
-//! Edge detection of live race events (PRY-052) on synthetic shared memory snapshots: a port of
+//! Edge detection of live race events on synthetic shared memory snapshots: a port of
 //! the Python connector's `test_announce_detector.py`, plus a replay of a seeded random run
 //! whose announcements the Python detector produced (`fixtures/detector_replay.json.gz`).
 
@@ -857,7 +857,7 @@ fn replay_of_a_seeded_random_run_equals_the_python_detectors_announcements() {
         r.d.sequence_number += 2;
         for a in r.det.update(&r.d) {
             if a.code.starts_with("flag_blue") {
-                continue; // BUG-139: the blue flag is followed now; tested apart
+                continue; // the blue flag is followed now; tested apart
             }
             got.push(json!({
                 "tick": tick, "code": a.code, "params": a.params,
@@ -881,7 +881,7 @@ fn replay_of_a_seeded_random_run_equals_the_python_detectors_announcements() {
 
 #[test]
 fn yellow_raised_while_stopped_is_said_when_the_car_moves() {
-    // BUG-130: a contact stops the car and the game raises the yellow a moment later; the
+    // A contact stops the car and the game raises the yellow a moment later; the
     // yellow still holds when the car rolls on, so it is said then (once).
     let mut r = started();
     r.d.speed = 0.1;
@@ -901,7 +901,7 @@ fn yellow_raised_while_stopped_is_said_when_the_car_moves() {
     assert!(r.codes(6.0).is_empty());
 }
 
-// ------------------------------------------------------------------ PRY-090: whose flag
+// ------------------------------------------------------------------ whose flag
 
 fn params_of(a: &Announcement) -> Value {
     Value::Object(a.params.clone())

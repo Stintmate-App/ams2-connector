@@ -1,4 +1,4 @@
-//! `connector.telemetry` v1 (contract 5.5): the sampling thread (plan 1.3, `telemetry.py`).
+//! `connector.telemetry` v1 (contract 5.5): the sampling thread.
 //!
 //! Produced only while Pitwall subscribes. The thread reads the 4-byte sequence number of its
 //! own read-only view of the mapping once per expected game frame (phase-locked: it sleeps

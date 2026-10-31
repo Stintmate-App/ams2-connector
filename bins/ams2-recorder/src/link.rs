@@ -1,4 +1,4 @@
-//! The recorder's two links on Stintmate IPC's blocking façade (plan 2.1, `ipc.py`).
+//! The recorder's two links on Stintmate IPC's blocking façade.
 //!
 //! * [`PitwallLink`]: a client of `pitwall`. It owns the reconnection (the library's own is off)
 //!   so that `connector_busy` / `unauthorized` wait 10 s and the state is `connected`, `waiting`

@@ -1,5 +1,5 @@
 //! The live frame: a double buffer the loop publishes into and `connector.live_frame` reads
-//! (plan 1.3). Two preallocated snapshots and an atomic index; the loop never takes a lock and
+//!. Two preallocated snapshots and an atomic index; the loop never takes a lock and
 //! never allocates. Each slot is a seqlock (odd while it is written), so a reader that is slow
 //! enough to be lapped by two publishes simply copies again.
 

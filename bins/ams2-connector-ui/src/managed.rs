@@ -1,4 +1,4 @@
-//! Managed mode's parent watch (PRY-047).
+//! Managed mode's parent watch.
 //!
 //! `--managed --parent-pid <pid>` (or `control.managed`): a managing app owns the only tray
 //! icon and runs this app hidden. [`ParentWatch`] tells whether that app is still alive: the

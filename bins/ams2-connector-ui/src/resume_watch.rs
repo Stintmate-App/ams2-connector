@@ -1,4 +1,4 @@
-//! Watches a kept-open session while no recorder runs (BUG-128).
+//! Watches a kept-open session while no recorder runs.
 //!
 //! A recorder stopped while the game runs leaves `session-resume.json` (see the recorder's
 //! `sink` module) so the next one continues the same session. If the game goes to its menus or

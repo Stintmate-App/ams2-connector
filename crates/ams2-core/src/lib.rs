@@ -1,6 +1,6 @@
 //! The connector's logic without Windows or IPC: sessions, laps, announcements, live frame.
 //!
-//! Part I (PRY-057 A3): everything pure and clocked from outside.
+//! Part I: everything pure and clocked from outside.
 //!
 //! * [`tracker`]: the session / lap state machine ([`tracker::SessionTracker`]), fed one
 //!   shared memory frame per call; its records go to a [`tracker::Sink`].
@@ -10,9 +10,9 @@
 //! * [`setup`], [`names`], [`messages`]: the write API messages and how they are built.
 //! * [`testing`]: frame builders and the scripted session (also used by later tasks).
 //!
-//! Part II (PRY-057 A4):
+//! Part II:
 //!
-//! * [`frame`]: the neutral live frame (`connector.live_frame`, with the PRY-037 fields).
+//! * [`frame`]: the neutral live frame (`connector.live_frame`, with the tracker-view fields).
 //! * [`telemetry`]: the 32-byte `connector.telemetry` sample and its flags.
 //! * [`announce`]: the 28-code catalog, the event detector and the rate window.
 //! * [`actions`], [`guidance`]: the declared actions and guidance, as data.

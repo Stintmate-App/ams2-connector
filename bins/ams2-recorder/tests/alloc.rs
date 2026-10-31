@@ -1,4 +1,4 @@
-//! Allocations on the loop per tick in steady state (plan 3: 0, status ticks included, counted with a test
+//! Allocations on the loop per tick in steady state (0 expected, status ticks included, counted with a test
 //! allocator). The global allocator of this test binary counts the allocations made on the
 //! thread that asked for it (the loop's, here the test's own thread); the links' and the
 //! writer's threads are not counted. A test mapping only; Pitwall's pipe is a random one that
@@ -111,7 +111,7 @@ fn the_loop_does_not_allocate_per_tick_in_steady_state() {
         t += 0.02;
         secs.store(t.to_bits(), Ordering::Relaxed);
         // A second car beside the player at a closing speed that makes it a passing car, not an
-        // overlap: the spotter scans it every tick (PRY-098) and calls nothing.
+        // overlap: the spotter scans it every tick and calls nothing.
         let mut f = Box::new(*sim.frame(lap, dist, t));
         f.num_participants = f.num_participants.max(2);
         f.orientation = [0.0; 3];
@@ -135,7 +135,7 @@ fn the_loop_does_not_allocate_per_tick_in_steady_state() {
     let per_tick: Vec<usize> = (20..1400)
         .map(|i| frame(2, f64::from(i) * 2.6, &mut rec))
         .collect();
-    // Plan 3: 0. The status (every 0.5 s, 47 times in this window; its uptime changes every
+    // 0 expected. The status (every 0.5 s, 47 times in this window; its uptime changes every
     // second, so it is also handed to the publisher thread) is a fixed struct filled in place,
     // so it allocates nothing. The one tick that does is a session opening a few ticks after
     // the lap hand-over (`start_session`, an event, not steady state): it is left out.

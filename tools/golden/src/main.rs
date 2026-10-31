@@ -1,4 +1,4 @@
-//! `ams2-golden`: the Rust half of the PRY-057 C2 golden comparison against the Python
+//! `ams2-golden`: the Rust half of the golden comparison against the Python
 //! connector. Not shipped.
 //!
 //! ```text

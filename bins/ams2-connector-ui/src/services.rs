@@ -88,7 +88,7 @@ pub trait Host: Send + Sync {
     fn close_job(&self);
     /// The game's process exists.
     fn game_running(&self) -> bool;
-    /// One cheap look at the game's session clock (BUG-128); hosts that cannot see the game say
+    /// One cheap look at the game's session clock; hosts that cannot see the game say
     /// there is no reading yet.
     fn read_clock(&self) -> crate::resume_watch::Reading {
         crate::resume_watch::Reading::Torn

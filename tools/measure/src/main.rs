@@ -1,5 +1,5 @@
-//! `ams2-measure`: what the recorder costs and how steady it is (plan section 3; port of
-//! `scripts/measure_telemetry.py`). No game needed and nothing of the driver's touched: a unique
+//! `ams2-measure`: what the recorder costs and how steady it is (port of
+//! `scripts/measure_telemetry.py`). No game needed and nothing of a real user's touched: a unique
 //! pipe, a throw-away key and workspace in the temp folder, a test mapping.
 //!
 //! ```text
@@ -502,7 +502,7 @@ fn report(
     }
 }
 
-/// Fills the frame with `cars` participants around the player (PRY-098): one alongside on each
+/// Fills the frame with `cars` participants around the player: one alongside on each
 /// side (the spotter calls them, "In the middle", then "Still there" every 3 s) and the rest
 /// ahead and behind, some within the spotter's 20 m search range but not alongside.
 fn add_traffic(f: &mut SharedMemory, cars: usize) {

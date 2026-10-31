@@ -1,4 +1,4 @@
-//! `capture-raw` (dev builds only, feature `capture-raw`; decision D13): records every changed
+//! `capture-raw` (dev builds only, feature `capture-raw`): records every changed
 //! frame of the game's shared memory to a file, for the offline comparison of the connectors and
 //! for test fixtures. Started by hand or by `scripts/capture/start-capture.ps1`; never by the
 //! control app.

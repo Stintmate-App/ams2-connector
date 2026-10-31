@@ -1,4 +1,4 @@
-//! The actions the engineer can send to this connector (PRY-066, contract 4.8 and 5.1), as data.
+//! The actions the engineer can send to this connector (contract 4.8 and 5.1), as data.
 //!
 //! The connector declares them with `pitwall.actions.declare` at every connection (idempotent,
 //! `ik` `ams2/actions/<sha12 of the actions>`, last declaration wins) and serves them through

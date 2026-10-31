@@ -1,4 +1,4 @@
-//! The AMS2 connector's announcement catalog `connector.ams2` (PRY-052, PRY-041).
+//! The AMS2 connector's announcement catalog `connector.ams2`.
 //!
 //! The connector never composes user text (application contract 4.4): it declares this catalog
 //! with `pitwall.catalog.declare` at every connection and then sends only a code and its
@@ -19,7 +19,7 @@ pub const CATALOG_ID: &str = "connector.ams2";
 pub const SCHEMA: &str = "stintmate-catalog/1";
 /// Valid audiences.
 pub const AUDIENCES: [&str; 2] = ["driver", "agent"];
-/// Valid groups (contract 4.4, PRY-058).
+/// Valid groups (contract 4.4).
 pub const GROUPS: [&str; 12] = [
     "laps",
     "fuel",
@@ -316,7 +316,7 @@ pub fn check_params(code: &str, params: &Value, messages: &Map<String, Value>) -
                     .unwrap_or_default();
                 if !allowed.contains(value) {
                     // The value is never echoed: it may hold what the driver said, and this
-                    // text reaches the log (BUG-093). The allowed values come from the catalog.
+                    // text reaches the log. The allowed values come from the catalog.
                     return Some(format!(
                         "param {name:?} is not one of {}",
                         Value::Array(allowed)
@@ -337,7 +337,7 @@ pub fn check_params(code: &str, params: &Value, messages: &Map<String, Value>) -
 }
 
 /// Every problem of a connector catalog, as English lines (empty: valid): the checks of
-/// catalogs.md sections 2-4 and 9 that apply to a source catalog, plus the PRY-052 fields.
+/// catalogs.md sections 2-4 and 9 that apply to a source catalog, plus the connector's own fields.
 pub fn validate_catalog(catalog: &Value) -> Vec<String> {
     let mut out = Vec::new();
     if catalog.get("schema").and_then(Value::as_str) != Some(SCHEMA) {

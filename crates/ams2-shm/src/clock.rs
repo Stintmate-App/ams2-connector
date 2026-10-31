@@ -1,5 +1,5 @@
 //! The session clock: the few fields of the shared memory that tell whether two moments belong to
-//! the same game session (BUG-128).
+//! the same game session.
 //!
 //! A recorder that stops while the game runs leaves the clock of its last frame in
 //! `session-resume.json`; the next recorder, and the control app while no recorder runs, compare

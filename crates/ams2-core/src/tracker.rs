@@ -21,18 +21,18 @@
 //! counter. A counter jump before the session has saved any lap restarts the lap instead of
 //! opening a new session. A session that ends with no lap is never stored (the write API's rule).
 //!
-//! Garage (BUG-015): AMS2's garage screen is a menu with the pit mode "in the garage", so the
+//! Garage: AMS2's garage screen is a menu with the pit mode "in the garage", so the
 //! session is opened there already, with no lap and no sample; laps still start with the first
 //! frame on track. A session opened in the garage and left with no lap is discarded.
 //!
-//! A lap that never moved (BUG-020) is not a lap: if the session ends before the car moves, the
+//! A lap that never moved is not a lap: if the session ends before the car moves, the
 //! lap's top speed stays under [`MOVING_KMH`] and it is dropped.
 //!
-//! Return to garage from the menu (BUG-013): the tracker takes no samples while the game is paused
+//! Return to garage from the menu: the tracker takes no samples while the game is paused
 //! or in a menu, so in that branch an open lap is marked as an in lap as soon as the pit mode
 //! shows the pits or the garage.
 //!
-//! BUG-021: the frame's `current_lap` is the game's counter (`sim_lap`), never ours.
+//! The frame's `current_lap` is the game's counter (`sim_lap`), never ours.
 //!
 //! Lap time: the game updates `mLastLapTime` around the crossing (not necessarily on the same
 //! frame), so a finished lap waits as "pending" until it changes, or falls back to the lap clock
@@ -229,7 +229,7 @@ pub struct LapEvent {
     pub position: Option<u32>,
 }
 
-/// The open lap for the live frame (PRY-037).
+/// The open lap for the live frame.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct LiveLap {
     /// `formation`, `out`, `in` or `flying` as known so far.
@@ -274,7 +274,7 @@ pub(crate) struct Session {
     key: SessionKey,
     pub(crate) laps_saved: u32,
     /// A timed lap has run in this session: a race has started, so an untimed lap is no longer
-    /// a formation lap (BUG-140).
+    /// a formation lap.
     timed_seen: bool,
     /// The car has been on track since the last pit exit (a cheap flag).
     driven: bool,
@@ -559,8 +559,8 @@ impl SessionTracker {
         }
         self.resolve_pending(d, sink);
         if state != game_state::INGAME_PLAYING {
-            self.mark_in_lap(d.pit_mode); // BUG-013: "return to garage" from the menu
-            self.open_in_garage(d, sink); // BUG-015: the session exists before leaving the garage
+            self.mark_in_lap(d.pit_mode); // "return to garage" from the menu
+            self.open_in_garage(d, sink); // the session exists before leaving the garage
             if self.session.is_some() {
                 self.feed_rivals(d, sink); // AI cars keep lapping while the player is in a menu
             }
@@ -644,7 +644,7 @@ impl SessionTracker {
         self.feed_rivals(d, sink);
     }
 
-    /// BUG-015: in AMS2 the garage is a menu (game state "in menu, time ticking" or paused, pit
+    /// In AMS2 the garage is a menu (game state "in menu, time ticking" or paused, pit
     /// mode "in the garage"), so the playing branch only saw the session when the car left the
     /// garage. Open it here, with no lap and no sample.
     fn open_in_garage(&mut self, d: &SharedMemory, sink: &mut dyn Sink) {
@@ -677,7 +677,7 @@ impl SessionTracker {
         self.start_session(d, key, sink);
     }
 
-    /// The open lap ends in the pits or the garage (BUG-013): an in lap. A lap started in the
+    /// The open lap ends in the pits or the garage: an in lap. A lap started in the
     /// garage stays an out lap (out wins over in, as for every lap).
     fn mark_in_lap(&mut self, pit: u32) {
         let Some(lap) = self.lap.as_mut() else { return };
@@ -896,7 +896,7 @@ impl SessionTracker {
         let current_time = f64::from(d.current_time);
         // On a standing start the game raises mLapInvalidated while the car sits on the grid
         // (lap 1, last sector, lap distance still 0) and clears it when the car crosses the line
-        // (BUG-129): that is not the driver's fault, so it does not latch.
+        //: that is not the driver's fault, so it does not latch.
         let on_grid = p.current_lap <= 1
             && p.current_sector == 2
             && f64::from(p.current_lap_distance) <= GRID_DIST_M;
@@ -950,7 +950,7 @@ impl SessionTracker {
         }
     }
 
-    /// The open lap for the live frame (PRY-037): `lap_type` as known so far and, once the game
+    /// The open lap for the live frame: `lap_type` as known so far and, once the game
     /// flagged it, the cause. `None` with no open lap.
     pub fn live_lap(&self) -> Option<LiveLap> {
         let (lap, s) = (self.lap.as_ref()?, self.session.as_ref()?);
@@ -1064,7 +1064,7 @@ impl SessionTracker {
             .map(|r| r[SPEED])
             .fold(lap.rows[0][SPEED], f64::max);
         if top_speed < MOVING_KMH {
-            return; // BUG-020: the car never moved (sat in the garage): not a lap
+            return; // the car never moved (sat in the garage): not a lap
         }
         let (lap_time, source) = if complete && nonzero(official).is_some() {
             (official, Some("official"))
@@ -1136,7 +1136,7 @@ impl SessionTracker {
 /// Classify an untimed, non-out lap of a race as `(formation, box_lap)`. Before the first timed
 /// lap of the session it is the formation lap; afterwards it is a lap spent waiting in the pit
 /// box (the box has no lap clock), part of the stop that began with the `in` lap, so it is
-/// stored as `in` (BUG-140).
+/// stored as `in`.
 fn untimed_race_lap(s: &Session, lap: &Lap) -> (bool, bool) {
     let untimed_race = is_race_type(&s.session_type) && !lap.timed && !lap.out_lap;
     (untimed_race && !s.timed_seen, untimed_race && s.timed_seen)

@@ -1,6 +1,6 @@
 //! The control app against a fake hub on a random pipe: the control interface, the services'
 //! status, managed mode, the second launch, the window's API and the conformance check.
-//! Nothing here touches the driver's pipes, key, descriptor, registry or Run key.
+//! Nothing here touches a real user's pipes, key, descriptor, registry or Run key.
 
 use ams2_connector_ui::api::{Command, OptionsChange, UiEvent};
 use ams2_connector_ui::app::{ControlApp, Environment};

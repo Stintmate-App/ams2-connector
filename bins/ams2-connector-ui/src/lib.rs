@@ -1,4 +1,4 @@
-//! The AMS2 connector's control app, without a UI (PRY-057 B3).
+//! The AMS2 connector's control app, without a UI.
 //!
 //! * [`app`]: [`app::ControlApp`], the heart: what the tray and the window will show and do,
 //!   behind a small in-process API ([`api`]: commands in, snapshots and events out), so the

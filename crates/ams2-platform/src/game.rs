@@ -2,7 +2,7 @@
 //!
 //! The game's shared memory mapping outlives the game (any process holding a handle keeps it),
 //! so its existence says nothing; the game's process does. [`game_running`] takes a process
-//! snapshot (`CreateToolhelp32Snapshot`, about 1 ms) and looks for `AMS2AVX.exe` or `AMS2.exe`.
+//! snapshot (`CreateToolhelp32Snapshot`, several milliseconds, more on a busy desktop) and looks for `AMS2AVX.exe` or `AMS2.exe`.
 //! [`GameWatch`] rate-limits the check for the loops that ask whenever the frames stop.
 //!
 //! The snapshot costs several milliseconds on a busy desktop, so [`GameProbe`] (the check the

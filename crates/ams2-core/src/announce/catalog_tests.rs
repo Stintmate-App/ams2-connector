@@ -1,4 +1,4 @@
-//! The `connector.ams2` announcement catalog (PRY-052): valid in the team's catalog format,
+//! The `connector.ams2` announcement catalog: valid in the team's catalog format,
 //! params checked as Pitwall checks them, every code with a validation status. A port of the
 //! Python connector's `test_announce_catalog.py`.
 
@@ -31,7 +31,7 @@ fn every_code_has_a_validation_status() {
 
 #[test]
 fn the_first_set_of_the_research_is_there() {
-    // Note: the catalog has 34 codes (28 of the Python catalog plus the six of PRY-090).
+    // Note: the catalog has 34 codes (28 of the Python catalog plus the six flag-attribution codes).
     let expected = [
         "flag_yellow",
         "flag_double_yellow",
@@ -108,7 +108,7 @@ fn source_hashes_are_12_hex_digits_and_follow_the_text() {
     let mut changed = base.clone();
     changed["text"] = json!("Yellow, sector {sector}.");
     assert_ne!(source_hash(&changed), h0);
-    // The PRY-052 fields and the note are not part of the hash.
+    // The connector's own fields and the note are not part of the hash.
     let mut other = base.clone();
     other["max_wait_s"] = json!(99);
     other["note"] = json!("x");
@@ -179,7 +179,7 @@ fn params_refused_name_the_param() {
 
 #[test]
 fn a_refused_enum_value_is_not_echoed() {
-    // BUG-093: the refusal reaches the log; the value may hold what the driver said.
+    // The refusal reaches the log; the value may hold what the driver said.
     let reason = check_params(
         "flag_yellow_cause",
         &json!({"cause": "the driver's own words"}),

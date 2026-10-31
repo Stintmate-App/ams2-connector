@@ -602,7 +602,7 @@ fn test_race_load_formation_and_start_stay_in_one_session() {
 
 #[test]
 fn test_race_lap_waited_in_the_pit_box_is_not_a_formation_lap() {
-    // BUG-140 (session 50): formation lap, lap 1 timed, an in lap, a stay in the box with no lap
+    // formation lap, lap 1 timed, an in lap, a stay in the box with no lap
     // clock, an out lap. The box lap is part of the stop (`in`), never `formation`.
     let mut h = Harness::new();
     h.sim.d.session_state = ss::RACE;
@@ -808,7 +808,7 @@ fn test_discarded_session_drops_rival_rows() {
     assert!(h.sink.laps().is_empty());
 }
 
-// ---- BUG-013: a lap ended by "return to garage" from the menu is an in lap ----------------
+// ---- a lap ended by "return to garage" from the menu is an in lap ----------------
 
 /// Session 28, lap_id 166: a timed lap to the line, then ~35 s of the next lap, then the driver
 /// opens the menu (game paused / in menu) and chooses "return to garage".
@@ -886,7 +886,7 @@ fn test_bug013_quit_from_the_menu_on_track_stays_flying() {
     );
 }
 
-// ---- BUG-015: the session opens in the garage (a menu in AMS2), before the car leaves -----
+// ---- the session opens in the garage (a menu in AMS2), before the car leaves -----
 
 /// A frame of the garage screen: AMS2 shows it as a menu with time ticking.
 fn garage(h: &mut Harness, state: u32) {
@@ -995,7 +995,7 @@ fn test_bug015_session_change_in_the_garage_opens_the_new_one() {
     assert_eq!(h.sink.stored_sessions(), 1); // qualy: no lap yet
 }
 
-// ------------------------------------------------- live view of the open lap (PRY-037)
+// ------------------------------------------------- live view of the open lap
 
 const GRASS: u32 = 7;
 const RUMBLE: u32 = 10;
@@ -1126,7 +1126,7 @@ fn test_live_lap_in_lap_and_formation() {
     assert_eq!((l.lap_type, l.invalid_cause), ("formation", None));
 }
 
-// ---- BUG-020: a lap that never moved is not a lap; in the car in the garage -------------------
+// ---- a lap that never moved is not a lap; in the car in the garage -------------------
 
 /// Sitting in the car in the garage: the game is playing, "driving out of the garage" at 0 km/h,
 /// lap clock -1 (sessions 30 and 31, 2026-10-18).
@@ -1250,7 +1250,7 @@ mod robustness {
     }
 }
 
-/// Standing start (BUG-129): the game holds `mLapInvalidated` on the grid, with the lap clock
+/// Standing start: the game holds `mLapInvalidated` on the grid, with the lap clock
 /// running, the distance at 0 and the sector at the last one, and clears it at the line.
 fn standing_start(h: &mut Harness) {
     h.sim.d.session_state = ss::RACE;

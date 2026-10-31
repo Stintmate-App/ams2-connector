@@ -1,4 +1,4 @@
-//! The window process's life, seen from the control app (decision D11): at most one
+//! The window process's life, seen from the control app: at most one
 //! `ams2-connector-window.exe` at a time, started on demand and gone when its window closes.
 //!
 //! A second "Open" while it runs starts nothing: the control app publishes the request in

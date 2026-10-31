@@ -1,4 +1,4 @@
-//! The UI's API: commands in, snapshots and events out (PRY-057 D11).
+//! The UI's API: commands in, snapshots and events out.
 //!
 //! The tray lives in the control app process and talks to [`crate::app::ControlApp`] directly;
 //! the window is a separate, short-lived process (`ams2-connector-ui.exe --window`) that

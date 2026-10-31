@@ -302,7 +302,7 @@ pub fn quote_arg(arg: &str) -> String {
     out
 }
 
-/// Puts this process at below-normal priority (plan 1.1: the recorder never competes with the
+/// Puts this process at below-normal priority (the recorder never competes with the
 /// game). The control app already starts it so; this covers a recorder started by hand.
 pub fn lower_process_priority() {
     // SAFETY: the pseudo handle of this process; a failure leaves the priority as it was.

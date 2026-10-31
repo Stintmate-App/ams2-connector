@@ -18,7 +18,7 @@ fn parity() -> Value {
     serde_json::from_str(&raw).unwrap()
 }
 
-/// The codes added after the Python connector (PRY-090, PRY-098): its fixture knows none of them, so the
+/// The codes added after the Python connector: its fixture knows none of them, so the
 /// catalog's key and the actions' enum of codes differ from it by exactly these.
 const AFTER_PYTHON: [&str; 16] = [
     "flag_yellow_ahead",
@@ -54,7 +54,7 @@ fn source_hashes_equal_the_pythons() {
 
 #[test]
 fn catalog_idempotency_key_is_the_one_of_this_catalog() {
-    // Pinned: the key changes with the catalog (PRY-090 codes, PRY-099 levels, waits and slots, PRY-098 spotter calls).
+    // Pinned: the key changes with the catalog (flag-attribution codes, levels, waits and slots, spotter calls).
     assert_eq!(catalog_ik(catalog()), "ams2/textcatalog/82af9565d4f5");
 }
 

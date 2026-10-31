@@ -1,8 +1,8 @@
-//! The spotter (PRY-098): "Car left", "Car right", "In the middle", "Still right / left / middle", "Clear left /
+//! The spotter: "Car left", "Car right", "In the middle", "Still right / left / middle", "Clear left /
 //! right", "All clear", from the other cars' world positions in every frame.
 //!
 //! AMS2 has no proximity field: the geometry is CrewChief's, over `mWorldPosition`,
-//! `mOrientation` and `mSpeeds` (research `PRY-098`, section 2: relative positions jitter by
+//! `mOrientation` and `mSpeeds` (research: relative positions jitter by
 //! 7 mm p99, so no onset debounce is needed). Pure logic like the detector: the clock comes from
 //! outside, nothing allocates, [`Spotter::update`] returns the code to send or none.
 //!

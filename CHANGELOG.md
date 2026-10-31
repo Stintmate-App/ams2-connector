@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.2+docs.1 (2026-10-31)
+
+- Documentation corrected against the code. The behaviour and the protocol are unchanged.
+
 ## 3.2.2 (2026-10-29)
 
 - **A lap waited in the pit box mid race is no longer a formation lap.** `formation` applies only

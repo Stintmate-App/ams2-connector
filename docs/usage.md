@@ -138,7 +138,7 @@ registration).
 | `--quit` | asks the running control app to exit and waits up to 10 s until nothing of the connector runs | 0 stopped (or nothing ran), 1 still running or the app does not answer, 4 the app is managed |
 | `--stintmate-hold` | for a setup: asks Stintmate (hub method `hub.connector.hold`, id `ams2`, 5 minutes) to stop the connector and not start it until released; calls again every 0.5 s while it answers `stopping`, then waits until the connector's mutexes are free; `--wait` (default 25 s) bounds both; `--purpose` is `update` (default) or `uninstall`. Takes no `--workspace`: the user's pointer and key | 0 held and stopped, 1 held but something still runs, 2 bad arguments, 5 no Stintmate to ask (no pointer, workspace or key, no hub endpoint and no hub mutex, or the hub does not know the connector), 6 Stintmate runs but did not answer (3 s for the endpoint, 5 s per call, busy, an older hub), 7 a driving session is being recorded |
 | `--stintmate-release` | for a setup: `hub.connector.release`; Stintmate starts the connector again unless `--no-start` | 0 released (or nothing was held), 2 bad arguments, 5 no Stintmate, 6 not answering |
-| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.2.2`) | 0 |
+| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.2.3`) | 0 |
 
 `--quit` finds the instance by the single-instance mutex `Local\Ams2Connector.UI` and sends
 `control.quit` to its endpoint `connector-ams2` with the workspace's key (the same call the

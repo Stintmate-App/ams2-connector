@@ -1,6 +1,6 @@
 """Byte-level lap fixture from the Python connector (read only use of its classes).
 
-Usage: uv run --directory <monorepo>/apps/connectors/ams2 --no-sync python gen_lap_fixture.py <out_dir> [rows]
+Usage: uv run --directory <python connector folder> --no-sync python gen_lap_fixture.py <out_dir> [rows]
 
 Writes <out_dir>/lap_params_<rows>.msgpack: msgpack.packb(to_params(lap_message(record, rows)),
 use_bin_type=True) for a deterministic record and rows, exactly the `p` of the outbox file.

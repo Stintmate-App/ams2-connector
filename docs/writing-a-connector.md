@@ -8,7 +8,7 @@ how to study a simulator's data is shown by [FINDINGS.md](FINDINGS.md).
 
 ## What the protocols are
 
-- **The connector protocol** (`connector-protocol.md`, in Pitwall's documentation in the Stintmate repository): what a
+- **[The connector protocol](https://github.com/Stintmate-App/connector-kit/blob/main/docs/connector-protocol.md)**, in the connector kit: what a
   connector declares and writes: the live frame, the write messages, the telemetry stream, the
   capture target, announcements. It is language-neutral and is the document to build against.
 - **Stintmate IPC v2**, the transport (named pipes, MessagePack, requests, state channels,

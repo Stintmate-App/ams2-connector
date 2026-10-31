@@ -15,7 +15,7 @@ to Stintmate.
 | [writing-a-connector.md](writing-a-connector.md) | A short guide for authors of other connectors, using this one as the map. |
 | [../BENCHMARKS.md](../BENCHMARKS.md) | What the connector costs while it runs, with the method. |
 
-The protocols: the connector protocol (`connector-protocol.md`, in Pitwall's documentation in the Stintmate repository)
+The protocols: [the connector protocol](https://github.com/Stintmate-App/connector-kit/blob/main/docs/connector-protocol.md), in the connector kit,
 says what a connector declares and writes; Stintmate IPC v2 is the transport
 ([specification, vectors and conformance tool](https://github.com/Stintmate-App/stintmate-ipc)).
 

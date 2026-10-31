@@ -49,6 +49,8 @@ pub struct Args {
     pub stintmate_release: bool,
     /// `--no-start` (with `--stintmate-release`): end the hold without starting the connector.
     pub no_start: bool,
+    /// `--from-shortcut`: what the Start menu shortcut runs: open Stintmate, or say it is needed.
+    pub from_shortcut: bool,
     /// `--version`: print the version and exit.
     pub version: bool,
     /// `--workspace`.
@@ -99,6 +101,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
                 let v = it.next().ok_or("--wait needs a number of seconds")?;
                 a.wait = Some(v.parse().map_err(|_| "--wait needs a number of seconds")?);
             }
+            "--from-shortcut" => a.from_shortcut = true,
             "--version" => a.version = true,
             "--parent-pid" => {
                 let v = it.next().ok_or("--parent-pid needs a value")?;
@@ -123,6 +126,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
         ("--quit", a.quit),
         ("--stintmate-hold", a.stintmate_hold),
         ("--stintmate-release", a.stintmate_release),
+        ("--from-shortcut", a.from_shortcut),
         ("--version", a.version),
     ];
     let asked: Vec<&str> = commands
@@ -140,11 +144,11 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
             "{which} starts nothing: not with --managed or --tray"
         ));
     }
-    if (a.register || a.unregister || a.read_registration.is_some())
+    if (a.register || a.unregister || a.read_registration.is_some() || a.from_shortcut)
         && (a.workspace.is_some() || a.allow_synced)
     {
         return Err(
-            "--register, --unregister and --read-registration use no workspace: the descriptor is in the machine's connectors folder"
+            "--register, --unregister, --read-registration and --from-shortcut use no workspace: they act on the machine, not on a workspace"
                 .into(),
         );
     }
@@ -171,6 +175,7 @@ pub const USAGE: &str = "usage: ams2-connector-ui [--tray] [--managed --parent-p
        ams2-connector-ui --quit [--workspace <dir>] [--allow-synced]
        ams2-connector-ui --stintmate-hold [--purpose update|uninstall] [--wait <seconds>]
        ams2-connector-ui --stintmate-release [--no-start]
+       ams2-connector-ui --from-shortcut
        ams2-connector-ui --version
   --tray            start hidden in the tray
   --managed         run for a managing app (no tray icon); needs --parent-pid <pid>
@@ -187,6 +192,8 @@ pub const USAGE: &str = "usage: ams2-connector-ui [--tray] [--managed --parent-p
   --stintmate-release
                     for a setup: ask Stintmate to end the hold and start the connector again
                     (--no-start: only end the hold)
+  --from-shortcut   what the Start menu shortcut runs: open Stintmate and exit, or, when Stintmate
+                    is not installed, offer its website; never starts a connector
   --version         print the version and exit
   --workspace <dir> the Stintmate workspace; --allow-synced accepts one inside OneDrive
   STINTMATE_CONNECTORS_DIR replaces the connectors folder (tests)
@@ -345,6 +352,7 @@ pub fn main(argv: Vec<String>) -> i32 {
         || args.quit
         || args.stintmate_hold
         || args.stintmate_release
+        || args.from_shortcut
         || args.read_registration.is_some()
     {
         attach_console();
@@ -361,6 +369,9 @@ pub fn main(argv: Vec<String>) -> i32 {
     }
     if args.quit {
         return run_quit(&args, &names);
+    }
+    if args.from_shortcut {
+        return run_from_shortcut();
     }
     if args.stintmate_hold || args.stintmate_release {
         return run_stintmate(&args, &names);
@@ -467,6 +478,25 @@ pub fn main(argv: Vec<String>) -> i32 {
 fn attach_console() {
     #[cfg(windows)]
     ams2_platform::console::attach_parent_output();
+}
+
+/// `--from-shortcut` on this machine: the texts come from the user's workspace language when
+/// the pointer names a workspace, English otherwise.
+#[cfg(windows)]
+fn run_from_shortcut() -> i32 {
+    let workspace = location::resolve(None, false, &SystemProbes)
+        .ok()
+        .map(|l| l.workspace);
+    crate::shortcut::run(
+        &crate::shortcut::StintmateProbe,
+        &Texts::load(workspace.as_deref()),
+    )
+}
+
+/// `--from-shortcut` needs Windows.
+#[cfg(not(windows))]
+fn run_from_shortcut() -> i32 {
+    1
 }
 
 /// `--quit` against the real names, the endpoint and the workspace's key.

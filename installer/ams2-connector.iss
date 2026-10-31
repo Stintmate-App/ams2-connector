@@ -89,8 +89,10 @@ Source: "{#Stage}\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversi
 Source: "{#Stage}\README.txt"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
-; Only the uninstall entry: Stintmate starts and supervises the connector, and a shortcut that
-; started it alone would run it unmanaged next to Stintmate's own instance.
+; The connector's shortcut never starts a connector of its own (it would run unmanaged next to
+; Stintmate's instance): --from-shortcut opens Stintmate, or, when Stintmate is not installed,
+; says it is needed. Start menu only, no desktop icon. Both entries are removed on uninstall.
+Name: "{autoprograms}\{#AppName}"; Filename: "{app}\ams2-connector-ui.exe"; Parameters: "--from-shortcut"; WorkingDir: "{app}"
 Name: "{autoprograms}\Uninstall {#AppName}"; Filename: "{uninstallexe}"
 
 [Code]

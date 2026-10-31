@@ -27,6 +27,7 @@ pub mod logtail;
 pub mod managed;
 pub mod resume_watch;
 pub mod services;
+pub mod shortcut;
 pub mod status;
 pub mod texts;
 pub mod timefmt;

@@ -12,10 +12,14 @@ itself checks nothing about where it came from.
 - Installs into `%LOCALAPPDATA%\Programs\Stintmate AMS2 Connector\` (the folder is fixed; for
   tests, `/DIR="<folder>"` overrides it): the three programs, `LICENSE`, `NOTICE`,
   `THIRD-PARTY-NOTICES.txt` and a short `README.txt`. It has its own entry in Windows' Installed
-  apps and an uninstall entry in the Start menu.
-- **No shortcut to start the connector.** Stintmate starts and supervises it; a shortcut would
-  run it unmanaged next to Stintmate's own instance. (`ams2-connector-ui.exe` still works when
-  started by hand.)
+  apps, a Start menu shortcut named like the connector (no desktop icon) and an uninstall entry
+  in the Start menu; the uninstaller removes both.
+- **The shortcut never starts a connector.** Stintmate starts and supervises it; a connector
+  started alone would run unmanaged next to Stintmate's own instance. The shortcut runs
+  `ams2-connector-ui.exe --from-shortcut` ([usage](usage.md#command-lines)): with Stintmate
+  installed it opens Stintmate and exits; without it, a message says the connector needs
+  Stintmate and offers https://stintmate.app. (`ams2-connector-ui.exe` started by hand without
+  that option still behaves as before.)
 - **Needs no workspace.** It registers the connector in the per-user machine file
   `%LOCALAPPDATA%\Stintmate\connectors\ams2.json`, which is how Stintmate finds it:
   `ams2-connector-ui.exe --register --uninstall "<unins000.exe>" [--flavour dev]` writes it

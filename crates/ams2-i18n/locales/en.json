@@ -219,6 +219,10 @@
     "services.stopping": {
       "text": "Stopping services…"
     },
+    "shortcut.needs_stintmate.text": {
+      "text": "The AMS2 connector runs under Stintmate, which starts it and keeps it running. Stintmate is not installed on this PC, so the connector was not started. Open stintmate.app to get Stintmate?",
+      "note": "A Yes/No question under the title \"AMS2 connector\". Yes opens the Stintmate website, No closes it."
+    },
     "startup.error.detail": {
       "text": "workspace error {code}: {message}",
       "params": {

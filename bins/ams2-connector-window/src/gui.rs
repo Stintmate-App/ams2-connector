@@ -1,5 +1,5 @@
 //! The window: Services, Options and Logs pages over the control app's snapshot, in the dark
-//! look of PRY-087 ([`crate::theme`]); the scale follows the monitor's DPI and every text comes
+//! look of the window ([`crate::theme`]); the scale follows the monitor's DPI and every text comes
 //! from the catalog.
 
 use crate::link::Link;

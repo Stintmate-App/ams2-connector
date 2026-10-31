@@ -39,7 +39,7 @@ pub struct Args {
     pub read_registration: Option<String>,
     /// `--quit`: ask the running instance to exit.
     pub quit: bool,
-    /// `--stintmate-hold`: ask the Stintmate hub to stop and hold this connector (PRY-089).
+    /// `--stintmate-hold`: ask the Stintmate hub to stop and hold this connector.
     pub stintmate_hold: bool,
     /// `--purpose update|uninstall` (with `--stintmate-hold`).
     pub purpose: Option<String>,

@@ -1,4 +1,4 @@
-//! The window's look (PRY-087): the dark palette of the approved mockups, the bundled fonts
+//! The window's look: the dark palette of the approved mockups, the bundled fonts
 //! (Barlow for the interface, Barlow Condensed for the page titles, JetBrains Mono for the
 //! logs and figures; all SIL OFL 1.1, see `assets/fonts`) and the few painted widgets egui
 //! lacks (switch, status pill, side menu icons). Nothing here touches the GPU beyond egui's own

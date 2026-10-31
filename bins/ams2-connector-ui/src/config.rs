@@ -1,7 +1,7 @@
 //! The control app's own options, `<data>\ui_config.json` (machine-local).
 //!
 //! `start_with_app`: which services the app starts when it runs alone, one switch per service.
-//! The app keeps it as the driver left the services (a hand switch remembers it; Exit and
+//! The app keeps it as the user left the services (a hand switch remembers it; Exit and
 //! logoff do not); with no setting the Recorder starts. A missing or corrupt file, or a bad
 //! value, falls back to the defaults (per key; per service for `start_with_app`).
 

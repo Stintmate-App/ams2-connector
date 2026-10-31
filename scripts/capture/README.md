@@ -1,7 +1,7 @@
-# Raw capture of a real session (for the engineer)
+# Raw capture of a real session
 
-These three scripts record every frame the game writes to its shared memory, so the Rust and
-the Python connectors can later be compared offline on the same real data (PRY-057 step C2).
+These three scripts record every frame the game writes to its shared memory, so that
+the same real data can be replayed offline (test fixtures, comparisons between implementations).
 Run them from PowerShell 5.1 or 7, no admin. They never touch the game or its folder: the
 capture only reads the shared memory.
 
@@ -24,14 +24,15 @@ Run them from this folder (`scripts\capture\`):
 * `<file>.a2raw.log`: what the tool printed. `current.json` in the same folder records the
   running capture (pid, stop file); the scripts delete it when the capture is stopped.
 
-The exe is the development build of the recorder (`ams2-recorder.exe` made with
-`--features capture-raw`). The scripts look for it in `%LOCALAPPDATA%\Stintmate\dev-captures\`
-and then in the repository's `target\release\`; `-Exe <path>` names another.
+The exe is a development build of the recorder: `cargo build --release -p ams2-recorder --features capture-raw`
+(this replaces `target\release\ams2-recorder.exe` with a build that has the `capture-raw` subcommand;
+the plain release build does not have it). The scripts look for the exe in `%LOCALAPPDATA%\Stintmate\dev-captures\`
+(`STINTMATE_CAPTURE_DIR`, when set, replaces that folder for the exe and the files) and then in the repository's `target\release\`; `-Exe <path>` names another.
 
 ## A session
 
-1. Before the driver starts the game (or at any time): `.\start-capture.ps1 -Name <car>-<track>`.
-2. The driver drives. `.\status-capture.ps1` shows that frames grow (about 90 to 144 per second
+1. Before you start the game (or at any time): `.\start-capture.ps1 -Name <car>-<track>`.
+2. You drive. `.\status-capture.ps1` shows that frames grow (about 90 to 144 per second
    in VR, 1.8 to 2.8 MB/s, 100 to 170 MB per minute: a long race is several GB, so check the
    free disk space before a long session).
 3. When the session is over: `.\stop-capture.ps1`. If the game is closed first, the capture ends
@@ -39,7 +40,7 @@ and then in the repository's `target\release\`; `-Exe <path>` names another.
 
 The capture costs well under 1 % of one core; it runs at below-normal priority.
 
-## What to report
+## What to note
 
 * The file path and the summary that `stop-capture.ps1` printed (frames, capture seconds, cars,
   tracks, session types, stop reason).
@@ -48,5 +49,5 @@ The capture costs well under 1 % of one core; it runs at below-normal priority.
 * A file cut short (the PC crashed, the process was killed) is still usable: the reader keeps
   every whole frame and warns about the last, partial one.
 
-Do not copy the files anywhere or attach them: they hold only what the game frames hold
-(car, track, session state, telemetry), but they are large. The architect fetches them.
+The files hold only what the game frames hold
+(car, track, session state, telemetry), but they are large: do not attach them to a report.

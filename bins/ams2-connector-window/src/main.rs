@@ -12,7 +12,7 @@ use eframe::egui;
 use stintmate_ipc::keyfile::{KeyFile, KeySource, default_key_path};
 
 /// `--page logs`, and the test overrides `--pipe <path>`, `--key-file <path>` and
-/// `--mutex <name>` (a test never touches the driver's endpoint or mutex).
+/// `--mutex <name>` (a test never touches a running connector's endpoint or mutex).
 #[derive(Default)]
 struct Args {
     page: Option<String>,

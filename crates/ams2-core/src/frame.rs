@@ -1,4 +1,4 @@
-//! AMS2 shared memory snapshot to the neutral live frame (PRY-036, PRY-037).
+//! AMS2 shared memory snapshot to the neutral live frame.
 //!
 //! The `connector.live_frame` answer of the recorder (application contract 5.3: the live frame
 //! of Pitwall's connector protocol, schema `$defs/live_frame`). Built only when Pitwall asks,
@@ -20,7 +20,7 @@
 //!   position 0, a sector < 0, a lap count 0, a session duration 0, an empty compound;
 //! * the safety car is flagged (`is_safety_car`): named "Safety Car" or of class "SafetyCar".
 //!
-//! Why the lap is not timed or not valid (PRY-037): `session.started` (races only),
+//! Why the lap is not timed or not valid: `session.started` (races only),
 //! `car.penalty` (drive-through and stop-and-go from the pit schedule) and the tracker's view
 //! of the open lap ([`LiveLap`]: `lap_type`, `invalid_cause`, `invalid_cause_certain`,
 //! `invalid_at_m`).

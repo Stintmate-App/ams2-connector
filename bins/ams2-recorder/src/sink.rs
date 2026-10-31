@@ -7,7 +7,7 @@
 //! [`Outbox`]. The 50 Hz loop never waits for any of it.
 //!
 //! Sessions are named by the connector's own **session key** (16 random hex digits chosen when
-//! the tracker opens the session). A recorder stopped while the game runs (BUG-128) does not end
+//! the tracker opens the session). A recorder stopped while the game runs does not end
 //! its session: it keeps the key and the write sequences in `session-resume.json` (next to the
 //! outbox folder), and a recorder started later in the same game process, whose first session has
 //! the same car, track, layout and session type and whose game clock continued (`ams2_shm::clock`:

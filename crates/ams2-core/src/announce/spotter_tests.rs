@@ -1,4 +1,4 @@
-//! The spotter on synthetic frames (PRY-098): the player is car 0 at the origin heading along
+//! The spotter on synthetic frames: the player is car 0 at the origin heading along
 //! -z at yaw 0 (`x'` = world x to the left, `z'` = world z behind), at 50 m/s.
 
 use super::catalog::{check_params, is_spotter, messages};

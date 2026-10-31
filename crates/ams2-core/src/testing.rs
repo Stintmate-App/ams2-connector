@@ -809,7 +809,7 @@ pub fn scripted_session() -> Vec<ScriptedFrame> {
     );
     s.go(LENGTH + 1.0); // stint 2 out lap
     s.drive(LENGTH + 1.0, 0.995, pit_mode::NONE, None, None, None, true); // stint 2 flying lap
-    // Mid lap: pause, "return to garage" (BUG-013), then the main menu.
+    // Mid lap: pause, "return to garage", then the main menu.
     s.go(3000.0);
     s.stand(0.5, INGAME_PAUSED, None, true);
     s.stand(1.0, INGAME_PAUSED, Some(pit_mode::IN_GARAGE), true);

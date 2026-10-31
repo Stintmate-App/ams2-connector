@@ -1,6 +1,6 @@
 //! The live frame (`connector.live_frame`, contract 5.3): the conversion of every fixture
 //! snapshot equals Pitwall's fixture, the pit codes, why the lap is not timed or not valid
-//! (PRY-037). Every frame is checked against the protocol schema's `$defs/live_frame`. A port of
+//!. Every frame is checked against the protocol schema's `$defs/live_frame`. A port of
 //! the Python connector's `test_frame.py`; the 307 snapshots come as specs in
 //! `fixtures/live_frame_cases.json.gz` (written by `scripts/gen_announce_fixtures.py` from the
 //! Python `live_cases`), the expected frames are Pitwall's.
@@ -138,7 +138,7 @@ fn shm(session: u32) -> Box<SharedMemory> {
     d
 }
 
-/// Removes the PRY-037 fields; returns what was taken as `"group.field"`.
+/// Removes the tracker-view fields; returns what was taken as `"group.field"`.
 fn without_pry037(frame: &mut Value) -> Map<String, Value> {
     let mut taken = Map::new();
     for (group, fields) in [
@@ -189,7 +189,7 @@ fn live_frame_conversion_equals_the_fixture() {
         let new = without_pry037(&mut mine);
         assert_eq!(&mine, want, "frame {i} differs");
         assert!(mine.get("labels").is_none());
-        // PRY-037: no tracker view here, no pit schedule and no race state in the cases; only
+        // no tracker view here, no pit schedule and no race state in the cases; only
         // the formation lap session state says "not started".
         if mine.get("session").is_some() {
             assert_eq!(new["car.penalty"], Value::Null, "{i}");

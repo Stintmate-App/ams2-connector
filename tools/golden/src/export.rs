@@ -41,7 +41,7 @@ pub struct Summary {
 }
 
 /// The announcement line (`data` is null when the detector gave none; `variant` only when not 0,
-/// so the goldens taken before PRY-100 still compare).
+/// so the goldens taken before the variant field was dropped still compare).
 fn announce_json(t_ms: u64, a: &Announcement) -> Value {
     let mut v = json!({"t_ms": t_ms, "kind": "announce", "code": a.code, "params": a.params,
            "data": a.data});

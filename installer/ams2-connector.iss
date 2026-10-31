@@ -1,10 +1,10 @@
-; Stintmate AMS2 Connector installer (PRY-057 stage P2). Built by scripts/build-installer.ps1:
+; Stintmate AMS2 Connector installer . Built by scripts/build-installer.ps1:
 ;   ISCC /DVersion=<x.y.z> /DVersionInfo=<a.b.c.d> /DStage=<dir> /DOutDir=<dir> [/DOutName=<file>]
 ;        [/DDev] [/DSetupIcon=<file.ico>]
 ; Per user (no administrator rights), fixed folder, English only, unsigned. Only code lives in
 ; {app}; the workspace and its data (<workspace>\connectors\ams2\) are never touched, and the
 ; setup needs no workspace: it registers the connector in the per-user machine file
-; %LOCALAPPDATA%\Stintmate\connectors\ams2.json (PRY-088). One flavour (release or dev) is
+; %LOCALAPPDATA%\Stintmate\connectors\ams2.json. One flavour (release or dev) is
 ; installed at a time: a setup removes the other one through the "uninstall" of that file.
 ; The unattended mode is a contract for Stintmate: docs/installer.md.
 
@@ -384,7 +384,7 @@ begin
     Result := 'connector_running';
 end;
 
-{ ---- the hold: Stintmate stops only this connector while the files are replaced (PRY-089) ----
+{ ---- the hold: Stintmate stops only this connector while the files are replaced ----
 
   The control app asks the hub (hub.connector.hold) and waits until the connector is stopped.
   Exit statuses of --stintmate-hold: 0 held and stopped. 1 held but something still runs. 2 bad

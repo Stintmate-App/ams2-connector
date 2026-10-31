@@ -1,4 +1,4 @@
-//! The tray: the control app's only UI in its own process (decision D11). `tray-icon` and its
+//! The tray: the control app's only UI in its own process. `tray-icon` and its
 //! menu on a plain Win32 message loop: no GPU, no egui. The window is another process
 //! ([`crate::window_host`]).
 //!

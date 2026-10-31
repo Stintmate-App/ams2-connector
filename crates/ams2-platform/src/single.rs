@@ -1,7 +1,7 @@
 //! The single-instance named mutex and the named stop event.
 //!
 //! Names are parameters: [`Names::default`] has the production names, tests use
-//! [`Names::unique`] so they never touch the driver's running connector.
+//! [`Names::unique`] so they never touch a running connector.
 
 use crate::win::{OwnedHandle, Win32Error, wide};
 use std::time::Duration;

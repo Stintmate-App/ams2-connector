@@ -8,8 +8,14 @@ their date. If you are bringing another simulator to Stintmate, this file shows 
 questions to ask of a simulator and how to answer them with evidence
 ([writing-a-connector.md](writing-a-connector.md)).
 
-How the connector uses these facts: [ARCHITECTURE.md](ARCHITECTURE.md). Session numbers in the
-older notes were ids in a development database; they are kept only to tell observations apart.
+How the connector uses these facts: [ARCHITECTURE.md](ARCHITECTURE.md).
+
+**How to read the evidence.** Layout, units conversions, sizes and the rules the connector
+applies are backed by its code and tests (the file is named where it matters). Most other
+statements are *observed*: they come from recordings of real sessions (made with the raw capture
+tool, `scripts/capture/`) that are not part of this repository, so they cannot be re-checked
+from a clone; dates and captures are given so a reader can reproduce them. Where a number comes
+from one session it is one observation, not a guarantee.
 
 ## Shared memory
 
@@ -72,7 +78,7 @@ older notes were ids in a development database; they are kept only to tell obser
 
 ### Update behaviour (2026-10-04)
 
-- Works with another reader (Zero to Apex) running at the same time; no conflict.
+- Works with another reader (another program reading the same mapping) running at the same time; no conflict.
 - Update rate while driving: about 90 writes per second (the VR frame rate). One torn read in
   3 minutes, handled by the sequence check.
 - In menus the game does not write per frame and `mSequenceNumber` sits at 0; it starts
@@ -133,7 +139,7 @@ the invalid flag.
 ### In the car in the garage
 
 The garage screen is a menu (paused, or "in menu, time ticking") with the pit mode **in the
-garage** (4). Once the driver presses Drive he sits in the car, still in the garage, and the
+garage** (4). Once the player presses Drive the car is occupied, still in the garage, and the
 game is **playing** with the pit mode **driving out of the garage** (5) and the speed at 0
 (noise up to about 1 km/h), the lap clock at -1 and the gear in neutral, for as long as he
 waits; the car rolling out keeps pit mode 5 (about 7 km/h within the first second, up to about
@@ -145,7 +151,7 @@ Evidence: every garage exit in the recordings of 2026-10-04 to 18 followed `4 st
 to 37 125 samples, max 1.0 km/h), 5 moving, 3, 0`. After a pit-lane stop the car waits in the
 box with pit mode 2 and leaves with 3, never 5. So the rule: pit mode 5 that has not exceeded 3
 km/h since it began = still in the garage; once moving, driving out (latched, also if the car
-stops again before the lane). Without the rule, a driver sitting in the car and leaving
+stops again before the lane). Without the rule, sitting in the car and leaving
 produced a junk session: a single out lap at 0 km/h.
 
 ### Kerbs and track limits
@@ -191,8 +197,8 @@ produced a junk session: a single out lap at 0 km/h.
 
 - Laps 2-5: 1:56.059 / 1:57.492 / 1:57.807 (invalid) / 1:57.997. Official vs measured differ by
   at most 13 ms; S1 + S2 + S3 consistent.
-- CPU: **0.6 % of one core** at 50 Hz (a Python recorder, below the 1 % threshold). No VR
-  stutter noticed.
+- CPU: **0.6 % of one core** at 50 Hz with the earlier Python recorder (the Rust recorder's
+  figures are in [BENCHMARKS.md](../BENCHMARKS.md)). No VR stutter noticed.
 - Effective rate about 47.6 Hz (mean dt 21 ms); the only gaps were the per-lap write stalls
   (110-320 ms at lap start), fixed with a background writer.
 - Storage: **about 1 MB per lap** (twice the estimate; noisy channels like G and suspension
@@ -211,17 +217,6 @@ produced a junk session: a single out lap at 0 km/h.
 - Corner segment times add up to the lap time (116.048 vs 116.059 official on the first
   session).
 
-### Fuel plan calibration
-
-- A 10 min + 1 lap race (2026-10-07): a plan of 7 laps (real: 7) and 28 L; real use to the flag
-  24.74 L of 31 loaded.
-- A long run (2026-10-04/05): front pressures stable at about 2.15 bar.
-
-### Corner auto-detection
-
-- On a 12-corner road course the auto-detection found 12 corners matching the turns, the esses
-  and a chicane. Official maps later fixed the numbering by one.
-
 ### Rival timing
 
 - An offline replay of the 2 Hz capture reproduces the in-game picture (player 2:03.409 P1, AI
@@ -232,18 +227,12 @@ produced a junk session: a single out lap at 0 km/h.
 
 - Stint change after a pit-lane stop with refuelling (in lap closed at pit exit, fuel at lap end
   taken before the box); out lap and first flying lap separate after both the garage and the
-  pit lane (the official time on the first flying lap); the event feed and spoken lap calls
-  working in VR.
+  pit lane (the official time on the first flying lap).
 - The segmentation fix also validated across a race weekend (five sessions, 2026-10-07).
 
-### Lap calls in VR (2026-10-12/13)
+## Proximity for the spotter (2026-10-27)
 
-- 14 of 14 flying laps called; pressing the radio button before a call made the call wait, no
-  overlap.
-
-## Proximity for the spotter (2026-10-27, PRY-098)
-
-Measured on the race capture 20261025-215838 (Oulton Park, 19 cars, 909 s); not committed.
+Observed on the race capture 20261025-215838 (Oulton Park, 19 cars, 909 s); the capture is not in this repository.
 
 - **S1** AMS2 has no proximity field; every car's `mWorldPosition`, `mOrientations` and `mSpeeds` are in every frame.
 - **S2** Every car's position is new in every frame (about 75 frames/s) and relative positions jitter by 7 mm
@@ -251,9 +240,9 @@ Measured on the race capture 20261025-215838 (Oulton Park, 19 cars, 909 s); not 
 - **S3** CrewChief's heading convention (`theta = -yaw`) matches the car's velocity (0.55 degrees median).
 - **S4** On the capture the spotter says 73 calls: 42 side changes (the probe's about 44) and 31 "Still there".
 
-## Flags (2026-10-25, PRY-090)
+## Flags (2026-10-25)
 
-Measured on two real captures (practice 20261025-212520, race 20261025-215838); not committed.
+Observed on two real captures (practice 20261025-212520, race 20261025-215838); the captures are not in this repository.
 
 - **F1** The cause car's own `mHighestFlagColours[me]` carries the yellow (7 or 6): the game
   shows the flag to the car that caused it (practice t=530.71, race t=648.54).
@@ -279,19 +268,14 @@ Measured on two real captures (practice 20261025-212520, race 20261025-215838); 
 - The setup screen is never byte-identical between frames (ticking session clock, animated 3D
   background): near-duplicate detection needs a tolerance.
 - A wheel can show up as **two** devices of the same name with different button counts.
-- By voice there are about 10 s between the request and the capture (speech recognition plus
-  the agent's turn).
-- Validated in VR on 2026-10-13: an agent captured each tab named by the driver and read the
-  setup (a rear differential change 4.5:1, 4.0:1, 3.5:1) from the images.
 
-The connector only names the window ([ARCHITECTURE.md](ARCHITECTURE.md#capture-target)); the
-host application grabs and stores the capture.
+The connector only names the window ([ARCHITECTURE.md](ARCHITECTURE.md#capture-target)); Pitwall
+grabs and stores the capture.
 
 ## VR
 
-- If AMS2 runs in native Oculus mode, third-party overlays are not visible, so voice (a
-  crew-chief program, the engineer by radio, lap calls) is the most practical channel during
-  the session.
+- If AMS2 runs in native Oculus mode, third-party overlays are not visible, so audio is the
+  most practical channel during the session (this is why the connector sends announcement codes).
 - The desktop window mirrors the menus in VR (used by the setup capture); it must not be
   minimized.
 
@@ -299,12 +283,3 @@ host application grabs and stores the capture.
 
 - RangeyRover/Automobilista-2-Auto-Director (`shared_memory_struct.py`, CC0);
   viper4gh/CREST2-AMS2; Domaslau/AMS2SharedMemoryNet (C#); CrewChiefV4 (`ams2APIStruct`).
-- Architecture model: mishan/assetto-mcp (Assetto Corsa: a 25 Hz recorder to SQLite to MCP
-  tools). A similar project: DGBooth/AMS2-Setup-Assistant (Python, uses the Claude API).
-
-## Development gotchas
-
-- On Windows, `Get-ChildItem` can report a stale size (even 0 B) for a file another process
-  still has open. Check a file after the writer closes it, or read its content.
-- Git Bash on Windows may have no time-zone database: `TZ=Europe/Madrid date` can return UTC.
-  Take local time from the Windows API, not from the shell.

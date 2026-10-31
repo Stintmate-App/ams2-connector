@@ -1,5 +1,5 @@
 //! The scripted session through the real recorder, outbox and links into a fake Pitwall
-//! (plan 6.1): the writes equal the Python golden of A3, keys and declarations are the ones the
+//!: the writes equal the Python golden of A3, keys and declarations are the ones the
 //! Python connector sends.
 
 mod common;

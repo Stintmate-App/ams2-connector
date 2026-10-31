@@ -30,6 +30,6 @@ embed-resource = "3"
 tempfile.workspace = true
 
 [features]
-# `capture-raw`: record the game's frames to a file for test fixtures (decision D13: dev builds
+# `capture-raw`: record the game's frames to a file for test fixtures (dev builds
 # only; a user never runs it by accident).
 capture-raw = []

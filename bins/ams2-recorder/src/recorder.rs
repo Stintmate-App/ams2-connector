@@ -1,5 +1,5 @@
 //! The recorder: the 50 Hz loop, the game watch, the tracker, the detector, the sink and the
-//! status (plan 1.3, `recorder/main.py`).
+//! status.
 //!
 //! The game is "running" when its process exists (never trusted to the mapping, which other
 //! programs keep alive). The mapping is opened only then, and again when frames stop for 5 s
@@ -448,7 +448,7 @@ impl Recorder {
         }
         let t1 = probe.map(|_| Instant::now());
         if self.tracker.session_id().is_none() {
-            // where the game's clock stands if this frame opens a session (BUG-128)
+            // where the game's clock stands if this frame opens a session
             self.sink.note_clock(SessionClock::from_frame(&self.frame));
         }
         self.tracker.process(&self.frame, &mut self.sink);
@@ -565,7 +565,7 @@ impl Recorder {
         self.telemetry.close();
         self.status.close();
         if self.game_running && self.source.is_some() && self.have_frame {
-            // BUG-128: the game session goes on (unless the game is in its menus); the next
+            // The game session goes on (unless the game is in its menus); the next
             // recorder resumes it only if the game's clock continued
             let clock = SessionClock::from_frame(&self.frame);
             if !clock.in_menus() {

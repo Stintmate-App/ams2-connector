@@ -1,5 +1,5 @@
 //! Measures the tray process: runs the real tray on a random pipe in a temporary workspace
-//! (never the driver's endpoint, mutex or workspace), idles, then opens the window process and
+//! (never a running connector's endpoint, mutex or workspace), idles, then opens the window process and
 //! measures that too. Prints JSON.
 //!
 //! `tray_probe <idle_secs> <window-exe> [window_secs]`; run it from a release build. Windows only.

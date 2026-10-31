@@ -1,4 +1,4 @@
-//! Which window is the game window (`connector.capture_target`, plan 2.1, `capture_target.py`).
+//! Which window is the game window (`connector.capture_target`).
 //!
 //! Pitwall's core grabs the window this names; the only game-specific part is which window it
 //! is. The AMS2 window is found by process name first (`ams2avx.exe`, `ams2.exe`), else by exact

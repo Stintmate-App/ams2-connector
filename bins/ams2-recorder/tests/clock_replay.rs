@@ -1,4 +1,4 @@
-//! BUG-128: the session clock across the scripted session (menus, garage as a menu, out lap,
+//! The session clock across the scripted session (menus, garage as a menu, out lap,
 //! flying laps, a pit stop, a return to the garage mid lap). The script is the replay fixture of
 //! the Python golden, not a recording of the game: it shows the rules agree with a session that
 //! is stopped and resumed at any two frames, and refuse one whose clock restarts.

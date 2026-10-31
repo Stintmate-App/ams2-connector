@@ -2,8 +2,8 @@
 //! Stintmate monorepo), tested against the contract's vectors
 //! (`tests/fixtures/workspace.vectors.json`).
 //!
-//! Decision D6 of PRY-057: this is the connector's own implementation for now; it may move
-//! to stintmate-ipc's `find_workspace` once PRY-085 ships it passing the same vectors.
+//! This is the connector's own implementation for now; it may move
+//! to stintmate-ipc's `find_workspace` once it ships there passing the same vectors.
 //!
 //! Resolution, once at start: `--workspace` (source `argv`), then `STINTMATE_WORKSPACE`
 //! (`env`), then the pointer file `%APPDATA%\Stintmate\settings.json` (`pointer`), then the

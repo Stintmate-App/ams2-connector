@@ -1,6 +1,6 @@
 [package]
 name = "ams2-golden"
-description = "PRY-057 C2: exports a raw capture through the Rust connector's logic as JSON Lines, compares two exports, and times the hot path on a capture"
+description = "Exports a raw capture through the Rust connector's logic as JSON Lines, compares two exports, and times the hot path on a capture"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

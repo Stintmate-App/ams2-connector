@@ -1,6 +1,6 @@
 """Golden export of the scripted session through the Python tracker (A3 fixture)."""
 import json, sys
-sys.path.insert(0, r"C:\Users\leona\dev\pitwall\apps\connectors\ams2\tests")
+sys.path.insert(0, sys.argv[1] + "/tests")  # argv[1]: the Python connector checkout
 import replay_session as rs
 from ams2_connector.recorder import tracker as T
 from ams2_connector.recorder import sink as K

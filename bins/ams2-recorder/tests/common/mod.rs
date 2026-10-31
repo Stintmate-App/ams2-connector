@@ -13,7 +13,7 @@ use stintmate_ipc::handshake::PeerInfo;
 use stintmate_ipc::keyfile::{Key, KeySource, format_key};
 use stintmate_ipc::{MethodOpts, naming};
 
-/// The key of the tests (never the driver's).
+/// The key of the tests (never a real user's).
 pub const KEY: Key = [7u8; 32];
 
 /// One call the fake received.

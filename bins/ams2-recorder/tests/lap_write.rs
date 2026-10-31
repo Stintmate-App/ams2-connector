@@ -1,4 +1,4 @@
-//! Plan 3: a 90 s lap encoded and stored by the writer thread (target 5 ms). Timing, so it
+//! A 90 s lap encoded and stored by the writer thread (target 5 ms). Timing, so it
 //! is ignored by default; run it from a release build:
 //! `cargo test --release -p ams2-recorder --test lap_write -- --ignored --nocapture`.
 //! A test mapping and a temporary workspace; Pitwall's pipe is a random one nobody serves, so

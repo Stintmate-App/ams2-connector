@@ -1,4 +1,4 @@
-//! Offscreen renders of the three pages (PRY-087): egui lays each page out on a headless
+//! Offscreen renders of the three pages: egui lays each page out on a headless
 //! context and a small CPU rasteriser draws the tessellated meshes into a PNG under
 //! `target/tmp/`, so the layout can be looked at without a window, a GPU or a screenshot.
 

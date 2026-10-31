@@ -16,6 +16,7 @@ from __future__ import annotations
 import gzip
 import json
 import random
+import os
 import shutil
 import sys
 import types
@@ -23,7 +24,7 @@ from pathlib import Path
 
 CRATE = Path(__file__).resolve().parent.parent
 APP = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(
-    r"C:\Users\leona\dev\pitwall\apps\connectors\ams2")
+    os.environ.get("PYTHON_CONNECTOR_DIR", "."))  # the Python connector checkout
 sys.path[:0] = [str(APP / "src"), str(APP / "tests")]
 
 ipc = types.ModuleType("stintmate_ipc")

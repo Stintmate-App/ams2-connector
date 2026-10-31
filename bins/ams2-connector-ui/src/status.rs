@@ -208,7 +208,7 @@ fn recorder_label(
     let garage =
         flag(status, "in_garage") || status.get("phase").and_then(Value::as_str) == Some("garage");
     if !flag(status, "session_open") {
-        // A recorder started with the car already in the garage has no session yet (BUG-027).
+        // A recorder started with the car already in the garage has no session yet.
         if garage {
             return ("garage", with_link(texts.s("status.garage")), level);
         }
@@ -254,7 +254,7 @@ fn num_text(v: &Value) -> String {
 }
 
 /// The Recorder is off (not crashed, not stopping) while the game runs: say so loudly (amber);
-/// laps driven now are lost (PRY-040).
+/// laps driven now are lost.
 pub fn recorder_off_while_game_runs(texts: &Texts, st: &mut ServiceState) {
     if st.service == RECORDER && st.state == "off" && !st.running {
         st.set(

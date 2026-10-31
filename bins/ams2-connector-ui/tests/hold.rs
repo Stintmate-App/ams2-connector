@@ -1,7 +1,7 @@
 //! `--stintmate-hold` and `--stintmate-release` (`hold::hold` / `hold::release`) against a fake
 //! hub endpoint on a random pipe: the replies the spec defines (section 2) and the exit
 //! statuses it assigns (section 3). Unique mutex names, a temporary registry and a test key:
-//! nothing here touches the driver's hub, pipes, key or workspace.
+//! nothing here touches a real hub, pipes, key or workspace.
 
 use ams2_connector_ui::hold::{self, HubTarget};
 use ams2_connector_ui::instance::{to_json, to_value};

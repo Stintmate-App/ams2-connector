@@ -1,4 +1,4 @@
-//! `--stintmate-hold` and `--stintmate-release` (PRY-089): the connector's setup asks the
+//! `--stintmate-hold` and `--stintmate-release`: the connector's setup asks the
 //! Stintmate hub to stop only this connector and keep it stopped while the files are replaced
 //! (`hub.connector.hold`), and to start it again when the setup ends (`hub.connector.release`).
 //!

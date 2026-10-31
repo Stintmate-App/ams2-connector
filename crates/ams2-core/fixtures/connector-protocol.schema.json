@@ -533,7 +533,7 @@
             "laps_in_event": {"description": "Laps of a lap race; null in a timed session.", "type": ["integer", "null"], "minimum": 1},
             "duration_s": {"description": "Length of a timed session, s; null in a lap race.", "type": ["number", "null"], "exclusiveMinimum": 0},
             "additional_laps": {"description": "Laps to drive after the time runs out in a timed race (0 = none).", "type": ["integer", "null"], "minimum": 0},
-            "started": {"description": "Optional (PRY-037): false before the start of a race (grid, formation lap), true once started; null or absent when not known or not a race.", "type": ["boolean", "null"]}
+            "started": {"description": "Optional: false before the start of a race (grid, formation lap), true once started; null or absent when not known or not a race.", "type": ["boolean", "null"]}
           },
           "required": ["type"],
           "additionalProperties": false
@@ -564,7 +564,7 @@
             "rpm": {"type": ["number", "null"], "minimum": 0},
             "fuel_l": {"description": "Fuel in the tank, L.", "type": ["number", "null"], "minimum": 0},
             "fuel_capacity_l": {"description": "Tank capacity, L.", "type": ["number", "null"], "exclusiveMinimum": 0},
-            "penalty": {"description": "Optional (PRY-037): a penalty the simulator has pending for the player; null = none or not known.", "enum": ["drive_through", "stop_go", "other", null]},
+            "penalty": {"description": "Optional: a penalty the simulator has pending for the player; null = none or not known.", "enum": ["drive_through", "stop_go", "other", null]},
             "wheels": {
               "type": "object",
               "properties": {
@@ -592,8 +592,8 @@
             "sector": {"description": "Current sector, 1-based.", "type": ["integer", "null"], "minimum": 1},
             "last_lap_s": {"type": ["number", "null"], "exclusiveMinimum": 0},
             "best_lap_s": {"description": "The player's best lap of this session, by the simulator.", "type": ["number", "null"], "exclusiveMinimum": 0},
-            "lap_type": {"description": "Optional (PRY-037): the data model's lap type of the lap being driven, as the connector knows it so far (an in lap is known once the car turns into the pits); null = not known.", "enum": ["formation", "out", "in", "flying", null]},
-            "invalid_cause": {"description": "Optional (PRY-037): why valid is false: off_track, track_limits, cut, penalty, or unknown (flagged with no cause the connector can tell); null or absent when valid or not given.", "enum": ["off_track", "track_limits", "cut", "penalty", "unknown", null]},
+            "lap_type": {"description": "Optional: the data model's lap type of the lap being driven, as the connector knows it so far (an in lap is known once the car turns into the pits); null = not known.", "enum": ["formation", "out", "in", "flying", null]},
+            "invalid_cause": {"description": "Optional: why valid is false: off_track, track_limits, cut, penalty, or unknown (flagged with no cause the connector can tell); null or absent when valid or not given.", "enum": ["off_track", "track_limits", "cut", "penalty", "unknown", null]},
             "invalid_cause_certain": {"description": "Optional: false when invalid_cause is only the probable cause (e.g. all four wheels over a kerb just before the flag).", "type": "boolean"},
             "invalid_at_m": {"description": "Optional: lap distance where the simulator flagged the lap invalid, m.", "type": ["number", "null"]}
           },

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://pitwall.local/write-api/v1.schema.json",
   "title": "Pitwall write API v1 messages",
-  "description": "One JSON object per message (one line of pitwall-ingest's stdin). Generated from pitwall/ingest/messages.py; see docs/write-api.md. Rules beyond the schema (order, references, channel lengths) are checked by Pitwall and named in its error replies.",
+  "description": "One JSON object per message (one line of pitwall-ingest's stdin). See docs/write-api.md. Rules beyond the schema (order, references, channel lengths) are checked by Pitwall and named in its error replies.",
   "oneOf": [
     {
       "$ref": "#/$defs/hello"

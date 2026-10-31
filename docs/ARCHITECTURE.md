@@ -4,7 +4,7 @@ How the connector is built and why. How to run it: [usage.md](usage.md). The AMS
 relies on, with their evidence: [FINDINGS.md](FINDINGS.md). What it speaks to Pitwall and to a
 managing app is the Stintmate application contract over
 [Stintmate IPC v2](https://github.com/Stintmate-App/stintmate-ipc) and the connector protocol
-(`connector-protocol.md` in the Stintmate repository); this page names the methods and
+([the connector protocol](https://github.com/Stintmate-App/connector-kit/blob/main/docs/connector-protocol.md) in the connector kit); this page names the methods and
 channels but does not repeat the protocol. For a reader who wants to build another connector:
 [writing-a-connector.md](writing-a-connector.md).
 

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.3+docs.1 (2026-10-31)
+
+- The documents link to the public connector kit. The behaviour is unchanged.
+
 ## 3.2.3 (2026-10-31)
 
 - Built on stintmate-ipc v0.3.1, which is stricter on malformed messages; the connector already sent valid ones.

@@ -40,14 +40,14 @@ its connected processes declare. A method whose process is off answers
 share a process with the 50 Hz loop: a UI crash or hang must not lose a lap, and the recorder
 runs at below-normal priority with no GUI library in its address space. The window is a third
 process, not a part of the tray, because its toolkit always creates a graphics context while it
-exists (measured: `docs/ui-spike.md`: an OpenGL context and about 120 MB for an idle hidden
-window). The tray process, which is always running, therefore has no graphics context at all,
+exists (observed in a throwaway spike, no longer in the repository: an OpenGL context and about 120 MB of
+working set for an idle hidden window). The tray process, which is always running, therefore has no graphics context at all,
 and the window exists only while the user looks at it. The window talks to the control app
 over the same endpoint a managing app uses: it receives a `ui.snapshot` and sends `ui.command`;
 a second "Open" while it runs only publishes a `window_request` in the snapshot, which the
 window watches. A crash of the window loses nothing.
 
-**The window's layout (PRY-087).** It opens at 680x460 logical px (minimum 560x380), resizable,
+**The window's layout.** It opens at 680x460 logical px (minimum 560x380), resizable,
 always dark. A side menu of three items with painted icons (the selected one filled) and "Version
 x.y.z" at the bottom, then one page: **Services** (a card per service: name, a status pill coloured
 by state, the switch with its state in words, tiles for the Pitwall link, the CPU and the sampling
@@ -63,7 +63,7 @@ texts in `bins/ams2-connector-window/assets/fonts/` and in `THIRD-PARTY-NOTICES.
 no GPU or background work: a repaint at most once a second, the log list draws only its visible rows
 (a tail of 500 lines), and the recorder's CPU use is two `GetProcessTimes` readings a second apart,
 taken only while the Services page is open. `tests/render.rs` draws each page offscreen
-(egui's headless context and a small CPU rasteriser) into `target/tmp/pry087-*.png`.
+(egui's headless context and a small CPU rasteriser) as PNG files into the tests' temporary folder (`CARGO_TARGET_TMPDIR`).
 
 ## Crates
 
@@ -87,11 +87,13 @@ bins/
 tools/
   measure/        what the recorder costs (CPU, jitter, working set), see Performance
   replay/         plays a scripted session or a raw capture into a test mapping
+  golden/         exports a raw capture as the records the recorder would send and compares
+                  two exports (development tool, not shipped); also `bench`
 ```
 
 The split follows what must be testable without the game and without a pipe: everything that
 decides what a lap is lives in `ams2-core`, takes frames in and gives records out, and is run
-by unit tests, property tests and golden comparisons against the earlier implementation. The
+by unit tests, property tests and golden comparisons against fixtures made with the earlier Python connector. The
 executables add the clock, the threads, the disk and the pipes.
 
 ## Threads of the recorder
@@ -233,8 +235,8 @@ session. Units, signs and the reasons behind each choice: [FINDINGS.md](FINDINGS
   5 to 10 s. Game still running (menus, pause): the mapping is reopened, since a restarted game
   has a new one. The check is cheap by design: a zero-timeout wait on the game's process handle
   while it runs, otherwise a window lookup by the game's class and title, with a full process
-  snapshot only when such a window appears or every 60 s as a backstop (the full snapshot cost
-  about 6 ms on the development PC).
+  snapshot only when such a window appears or every 60 s as a backstop (the full snapshot is the
+  expensive call, a few milliseconds on the development PC).
 - **Return to the garage from the menu.** The tracker takes no samples while the game is
   paused or in a menu, so a lap ended by "return to garage" never had a sample in the garage
   and would be stored as a flying lap. In the paused or menu branch an open lap is marked as an
@@ -300,7 +302,7 @@ the written and spoken text in the user's language.
   `fcy_pits_open` 8 s later); once per session for final lap, chequered, disqualified, retired;
   rivals by identity (name and class, never the array index; inactive slots, duplicates of the
   player and the safety car ignored).
-- **Whose a flag is** (PRY-090, `detector.rs`: `attribute`, `cause_car`, `rival_ok`). The game
+- **Whose a flag is** (`detector.rs`: `attribute`, `cause_car`, `rival_ok`). The game
   shows a yellow to every car in a zone around an incident, the car that caused it included, so
   at the yellow edge (after the 0.5 s hold) the detector decides: the player was on track below
   5 m/s within the last 5 s: his own (`flag_yellow_self`, `off_track` when `mCrashState` is not
@@ -375,7 +377,7 @@ window is the separate process described above.
 - **Single instance**: a named mutex; a second launch calls `control.show` (or
   `control.managed`) on the running one and exits.
 - **Connector descriptor**, the per-user machine file
-  `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (schema 1; PRY-088): id, name, sim, sim name,
+  `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (schema 1): id, name, sim, sim name,
   version, the absolute path of the control app as `launcher`, `args`,
   `control_protocol: "stintmate-ipc/2"`, `endpoint: "connector-ams2"`, the mutex, the services,
   the `logs` (in `<workspace>\connectors\ams2\`) and two optional keys: `flavour` (`dev` for
@@ -390,16 +392,16 @@ window is the separate process described above.
   `es`, `en`, built in; entries validated one by one; plurals from the pack's number rules).
   Not localised: logs, JSON files, IPC messages and ids, the descriptor.
 
-- **A held blue flag follows the train of lapping cars** (BUG-139). While the game's blue flag holds in a
+- **A held blue flag follows the train of lapping cars.** While the game's blue flag holds in a
   race (not in the pit lane, not below 1 m/s) the detector looks, at the rival period and not every frame,
   for the nearest car behind on track that is a lap or more ahead in the race. The first call of an
   train (the flag up, surviving a drop of up to `BLUE_TRAIN_GRACE_S` = 20 s: the game dropped it for 9 to
-  18 s between the cars of one train in Run 53, BUG-161) is `flag_blue` ("Blue flag, let {driver}
+  18 s between the cars of one train in a recorded race) is `flag_blue` ("Blue flag, let {driver}
   through."); each further car of the train only `flag_blue_next` ("Let {driver} through."), at least 4 s
   after the previous blue call. A car is named once per train, as opener or next. Cooldown and limit are
   per car across trains: the same car is not called again within 20 s, at most 3 times a session. A blue flag already up when the car leaves the pit lane (or starts moving) is called then, as
   the first call of the episode. With nobody to name only the first call (`flag_blue_unknown`) is made.
-- **Spotter** (`ams2-core::announce::spotter`, PRY-098): the one part of the detector that sees every
+- **Spotter** (`ams2-core::announce::spotter`): the one part of the detector that sees every
   frame (the rest reads the participant arrays at 2 Hz). AMS2 has no proximity field, so it works from
   `mWorldPosition`, `mOrientation[1]` and `mSpeeds`: in the player's frame (`theta = -yaw`) a car is
   `x'` to the left and `z'` behind; a new overlap needs `|x'| > 1.8 m` and `|z'| < 4.4 m` ahead / `< 4.8 m`
@@ -408,7 +410,7 @@ window is the separate process described above.
   right 0/1): each change sends one call, all in the slot `spotter` so a newer call replaces a queued
   one; a side must stay empty 150 ms before its clear; an overlap back within 1.5 s of its clear is
   called only if it still holds; a side-specific still call (`spotter_still_right|left|middle`) every 3 s since
-  the last call, in one of its catalog wordings (`variants`, PRY-100) picked by splitmix64 and never the one
+  the last call, in one of its catalog wordings (`variants`) picked by splitmix64 and never the one
   before it; "All clear" after "In the
   middle". Gates: practice, test, qualifying and race (not time attack, formation lap, private
   sessions), the player on track at 10 m/s or more, a race from 20 s after the green, no full-course
@@ -446,9 +448,7 @@ trust. Full tables and method: [`BENCHMARKS.md`](../BENCHMARKS.md).
 | Recorder private working set | <= 15 MB | 7.3 MB | yes |
 | Tray process idle, window hidden | <= 0.05 % | 0.021 % | yes |
 
-For comparison, the earlier Python recorder measured 0.55-0.59 % without the stream and 1.03 %
-with it. The Rust recorder is about four times cheaper without the stream and more than twice
-with it. A target missed by little is reported with its numbers, not traded for robustness.
+A target missed by little is reported with its numbers, not traded for robustness.
 
 What is still open, and why: the 20 kB snapshot copy (2.2 us) and the tracker (4.1 us) dominate
 the tick. The status is now a fixed struct (`status.rs`): the loop fills it in place every 0.5 s,
@@ -461,25 +461,24 @@ mapping reads, the sample); the other 0.27 % is `StreamChannel::send` in `stintm
 `Bytes` copy, the subscriber lock and one `WriteFile` per sample, already written by the
 publishing thread with no pump wake-up). Fewer writes need the library to coalesce the queued
 samples of a subscription into one write (the wire format and the samples stay the same); that
-is a change in `stintmate-ipc`, not here. The lap's encoded bytes equal the earlier
-implementation's (checked by a test), so Pitwall sees no change.
+is a change in `stintmate-ipc`, not here. The lap's encoded bytes equal those of the earlier
+Python connector (a fixture checked by the `lap_bytes` test), so Pitwall sees no change.
 
 ## Decisions and their reasons
 
 | Decision | Why |
 |---|---|
-| Rust, a total replacement of the earlier Python connector | A real-time loop that allocates nothing and cannot be paused by a garbage collector or the interpreter; four times cheaper CPU; one self-contained exe set, no runtime to install; the shared memory layout is checked at compile time |
-| Contract unchanged | The pipes, the descriptor and the protocol are the interface; Pitwall, the hub and Voice needed no change |
+| Rust, a total replacement of the earlier Python connector | A real-time loop that allocates nothing and cannot be paused by a garbage collector or the interpreter; one self-contained exe set, no runtime to install; the shared memory layout is checked at compile time |
+| Contract unchanged | The pipes, the descriptor and the protocol are the interface, as they were for the Python connector |
 | Pure `ams2-core` with an injected clock | The rules that decide what a lap is (the expensive part to get wrong) are tested without a game, a pipe or a clock, and compared against recorded and scripted sessions |
 | Two long-lived processes plus a window on demand | A UI must not share the 50 Hz loop's process; a toolkit's graphics context is paid only while the window is open |
-| eframe/egui with `tray-icon` and `muda` for the UI | Permissive licences, small binary with the OpenGL renderer (about 6 MB, 0.03 % idle in the spike), tray events delivered while the window is hidden; not Slint, whose licence carries attribution terms for every fork; native Win32 stays the fallback |
+| eframe/egui with `tray-icon` and `muda` for the UI | Permissive licences, small binary with the OpenGL renderer (about 6 MB and 0.03 % idle CPU in the spike), tray events delivered while the window is hidden; not Slint, whose licence carries attribution terms for every fork; native Win32 stays the fallback |
 | Disk outbox, one file per write | Laps survive Pitwall being closed and a crash; one disk write per lap keeps VR smooth; the stored idempotency key makes a retry safe |
 | Sessions keyed by the connector, not by Pitwall's id | A session can start and end while Pitwall is closed |
 | The stream has its own thread and its own view of the mapping | Sampling at the game's frame rate must not disturb the 50 Hz loop's buffers; it costs nothing when nobody subscribes |
 | The live frame is converted only when asked | The loop never pays for it; a double buffer, not a lock, hands over the snapshot |
 | The connector sends codes, never text | Pitwall translates and speaks in the user's language; the connector stays free of localisation |
 | Game detection by process, not by mapping | The mapping outlives the game |
-| Dropped on purpose: the schema v5 importer, a JSON channel wire format, batch launchers | Nothing used them; no migration or compatibility code before a release |
 | Apache-2.0, permissive dependencies only (checked by `cargo deny`) | Anyone can fork or learn from it; the trademark notice protects the names |
 
 ## Tests
@@ -497,8 +496,8 @@ endpoint runs on a unique pipe name with a random key and a temporary workspace.
   writer thread.
 - `ams2-core`: the tracker, the garage rule, rivals, the live frame against Pitwall's fixture and
   JSON Schema, the announcement catalog (canonical JSON and hash), the detector (every code's
-  edge, gating, cooldowns, identity, cost), golden comparisons and parity tests against the
-  earlier implementation's outputs.
+  edge, gating, cooldowns, identity, cost), golden comparisons and parity tests against fixtures
+  made with the earlier Python connector.
 - `ams2-recorder`: a fake Pitwall (an endpoint built with `stintmate-ipc`, applying the write
   methods to an in-memory writer that checks each message against the write API's schema, and
   able to lose an answer, refuse a write or restart) running the scripted session (main menu,

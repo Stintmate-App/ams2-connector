@@ -14,7 +14,7 @@ members = [
 ]
 
 [workspace.package]
-version = "3.3.1"
+version = "3.3.2"
 edition = "2024"
 rust-version = "1.88"
 license = "Apache-2.0"
@@ -29,8 +29,8 @@ ams2-platform = { path = "crates/ams2-platform" }
 ams2-i18n = { path = "crates/ams2-i18n" }
 ams2-connector-ui = { path = "bins/ams2-connector-ui" }
 # The IPC library, pinned to a release tag like any dependency.
-stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.2" }
-stintmate-ipc-check = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.2" }
+stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.3" }
+stintmate-ipc-check = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.3" }
 windows-sys = "0.61"
 zerocopy = { version = "0.8", features = ["derive", "alloc"] }
 thiserror = "2"

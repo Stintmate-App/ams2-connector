@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.1+docs.2 (2026-11-01)
+
+- The repository is prepared for being public: the workflows run on GitHub-hosted Windows runners only (the `runner` input is gone), `stintmate-ipc` is fetched over HTTPS (the deploy key and the SSH rewrite are gone), `SECURITY.md` says how to report a vulnerability, and the README has a "Contributing" section. The code is unchanged.
+
 ## 3.3.1+docs.1 (2026-11-01)
 
 - Documentation, doc comments and comments corrected against the code; the code is unchanged. The

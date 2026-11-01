@@ -76,6 +76,12 @@ workflow) from `main`, with the `tag` to release:
 The logic that can run on its own is in `scripts/` (`release-check.sh`, `release-notes.sh`,
 `release-report.sh`; bash, git and the GitHub CLI).
 
+## Contributing
+
+Issues are welcome. Pull requests are welcome too, but there is no promise that they are
+reviewed or merged. For a larger change, open an issue first. Report a security problem
+privately, as described in [`SECURITY.md`](SECURITY.md).
+
 ## Licence and name
 
 Apache License 2.0 ([`LICENSE`](LICENSE), [`NOTICE`](NOTICE)). Every dependency compiled into

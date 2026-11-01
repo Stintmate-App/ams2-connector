@@ -1,6 +1,6 @@
 //! The connector's icons, drawn in code (no image files): an "A" on a disc whose colour is the
 //! level of the connector (off = grey, ok = green, warn = amber, error = red). They are our
-//! own artwork (the Python app drew the same icon with QPainter); nothing is copied from a
+//! own artwork; nothing is copied from a
 //! third party.
 //!
 //! Pure standard library, so `build.rs` includes this file to write the executables' `.ico`.

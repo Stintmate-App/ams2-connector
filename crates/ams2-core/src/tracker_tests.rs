@@ -1,6 +1,6 @@
-//! Port of `tests/test_tracker.py`: the session / lap state machine on synthetic frames, with
+//! The session / lap state machine on synthetic frames, with
 //! a recording sink instead of the Writer (stints are Pitwall's; the sink, the outbox and the
-//! f32 encoding on the wire are tested with the sink in task B1).
+//! f32 encoding on the wire are tested in `bins/ams2-recorder`).
 
 use crate::channels::{CHANNEL_NAMES, LAP_CHANNEL_NAMES, N_CHANNELS, PIT, T};
 use crate::codes::{game_state as gs, pit_mode as pm, session_state as ss};

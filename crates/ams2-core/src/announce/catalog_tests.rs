@@ -1,6 +1,5 @@
 //! The `connector.ams2` announcement catalog: valid in the team's catalog format,
-//! params checked as Pitwall checks them, every code with a validation status. A port of the
-//! Python connector's `test_announce_catalog.py`.
+//! params checked as Pitwall checks them, every code with a validation status.
 
 use super::catalog::*;
 use serde_json::{Value, json};
@@ -31,7 +30,7 @@ fn every_code_has_a_validation_status() {
 
 #[test]
 fn the_first_set_of_the_research_is_there() {
-    // Note: the catalog has 34 codes (28 of the Python catalog plus the six flag-attribution codes).
+    // Note: the catalog has 44 codes.
     let expected = [
         "flag_yellow",
         "flag_double_yellow",

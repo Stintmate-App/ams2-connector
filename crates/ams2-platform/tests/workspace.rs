@@ -1,6 +1,6 @@
 //! The contract's resolver vectors (a copy of the contract's `workspace.vectors.json`),
 //! fed through injected probes, plus the data folder and the real file system in temp folders.
-//! Port of the Python connector's `test_workspace.py` (resolver and data-folder parts).
+//! Resolver and data-folder parts.
 
 use ams2_platform::location::{self, WorkspaceArgs};
 use ams2_platform::workspace::{self, Code, Kind, Probes, Source, SystemProbes};

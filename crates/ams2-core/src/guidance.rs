@@ -3,8 +3,8 @@
 //! Rules about this simulator that the engineer's agent cannot know. The connector declares
 //! them with `pitwall.guidance.declare` at every connection (idempotent, `ik`
 //! `ams2/guidance/<sha12 of the items>`, last declaration wins); Pitwall lists the topics in its
-//! MCP instructions and serves the texts through `get_connector_guidance`. The items equal the
-//! Python connector's (same canonical JSON, same hash).
+//! MCP instructions and serves the texts through `get_connector_guidance`. The items' canonical JSON and hash are
+//! pinned by `fixtures/announce_parity.json`.
 
 use crate::announce::catalog::{canonical, sha12};
 use serde_json::{Value, json};

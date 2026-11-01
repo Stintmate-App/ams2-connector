@@ -13,7 +13,7 @@ Run them from this folder (`scripts\capture\`):
 | `.\status-capture.ps1` | Says whether a capture runs, the file size, the frames so far, the car, track and session types seen. The numbers are refreshed about every 10 s. |
 | `.\stop-capture.ps1` | Stops it cleanly (creates the stop file, waits up to 15 s) and prints the summary. `-Force` ends the process if it does not stop in time. |
 
-`-Name` is a short label for the file name (letters, digits, `-`, `_`).
+`-Name` is a short label for the file name (letters, digits, `-`, `_`; any other character becomes `-`, an empty label becomes `session`). When the development recorder is not found the script exits with code 1 and prints the path it expected.
 
 ## Where the files go
 
@@ -21,6 +21,8 @@ Run them from this folder (`scripts\capture\`):
 
 * `<file>.a2raw.json`: the summary (frames, duration, first and last timestamp, cars, tracks,
   session types, why it stopped, CPU seconds, size).
+* `<file>.a2raw.stop`: the stop file (created by `stop-capture.ps1`; the capture ends when it appears).
+* `<file>.a2raw.err`: the tool's stderr (read when the capture ends at once).
 * `<file>.a2raw.log`: what the tool printed. `current.json` in the same folder records the
   running capture (pid, stop file); the scripts delete it when the capture is stopped.
 
@@ -33,12 +35,12 @@ the plain release build does not have it). The scripts look for the exe in `%LOC
 
 1. Before you start the game (or at any time): `.\start-capture.ps1 -Name <car>-<track>`.
 2. You drive. `.\status-capture.ps1` shows that frames grow (about 90 to 144 per second
-   in VR, 1.8 to 2.8 MB/s, 100 to 170 MB per minute: a long race is several GB, so check the
+   in VR; a frame is 20,700 bytes, so 1.9 to 3.0 MB/s, 110 to 180 MB per minute: a long race is several GB, so check the
    free disk space before a long session).
 3. When the session is over: `.\stop-capture.ps1`. If the game is closed first, the capture ends
    by itself (reason `game-exited`); a safety cap ends it after 3 hours (`time-limit`).
 
-The capture costs well under 1 % of one core; it runs at below-normal priority.
+It runs at below-normal priority and only reads the shared memory.
 
 ## What to note
 

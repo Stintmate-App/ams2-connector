@@ -1,5 +1,5 @@
 //! The golden form of the tracker's sink calls, shared by the golden test and `tools/golden`:
-//! [`call_json`] turns one [`Call`] into the JSON compared against the Python connector, and
+//! [`call_json`] turns one [`Call`] into the JSON compared against the golden file, and
 //! [`same`] compares two such values (numbers within a relative 1e-5, everything else exact).
 
 use crate::messages::{lap_message, session_start_message};

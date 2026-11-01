@@ -1,5 +1,4 @@
-//! `ams2-golden`: the Rust half of the golden comparison against the Python
-//! connector. Not shipped.
+//! `ams2-golden`: the golden comparison of exports of a capture. Not shipped.
 //!
 //! ```text
 //! ams2-golden export <capture.a2raw> [--out DIR]

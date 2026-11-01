@@ -24,7 +24,7 @@ const G: f64 = 9.80665;
 /// Number of channels of a sample.
 pub const N_CHANNELS: usize = 72;
 
-/// One sample, ordered as [`CHANNEL_NAMES`]. Doubles, as the Python recorder computes them;
+/// One sample, ordered as [`CHANNEL_NAMES`]. Doubles;
 /// they become float32 when the lap is encoded.
 pub type Row = [f64; N_CHANNELS];
 
@@ -143,7 +143,7 @@ pub fn lap_channels(rows: &[Row]) -> LapColumns {
             .map(|r| {
                 let v = r[i];
                 if is_terrain {
-                    // a non-integer material is road, as the Python channel mapping (the detector truncates)
+                    // a non-integer material is road (the detector truncates)
                     if v.fract() == 0.0 {
                         f32::from(vocab::surface(v))
                     } else {

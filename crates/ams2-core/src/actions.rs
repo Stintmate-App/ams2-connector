@@ -3,8 +3,8 @@
 //! The connector declares them with `pitwall.actions.declare` at every connection (idempotent,
 //! `ik` `ams2/actions/<sha12 of the actions>`, last declaration wins) and serves them through
 //! `connector.action` off the 50 Hz loop. This module is the constant declaration and its key;
-//! the handler and the calls are the recorder's. The declaration equals the Python connector's
-//! (same canonical JSON, same hash: `fixtures/announce_parity.json`).
+//! the handler and the calls are the recorder's. Its canonical JSON and hash are pinned by
+//! `fixtures/announce_parity.json`.
 
 use crate::announce::catalog::{canonical, codes, sha12};
 use serde_json::{Value, json};

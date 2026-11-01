@@ -6,7 +6,9 @@ How to run the connector. How it works inside: [ARCHITECTURE.md](ARCHITECTURE.md
 
 - Windows 11 (or 10) and Automobilista 2 with Options > System > Shared Memory = "Project
   CARS 2" (once).
-- A Stintmate workspace (the folder Stintmate keeps its data in; its onboarding creates it).
+- A Stintmate workspace (the folder Stintmate keeps its data in; its onboarding creates it). Stintmate comes from
+  https://stintmate.app; installing it creates the workspace and its `ipc\key`, which the connector
+  needs to connect.
   Without one the connector does not start and says so ([the data folder](#the-data-folder)).
 - Pitwall running for laps to be stored. Without it the connector keeps recording: laps wait
   in its outbox and are delivered when Pitwall runs; live tools and announcements need Pitwall.
@@ -78,7 +80,7 @@ after 10 s) and quits. If the app crashes or is killed its services are killed w
 | Recording - session N - stint S - lap L - Connected to Pitwall | Recording through Pitwall. | Nothing. |
 | Off - Automobilista 2 is running: laps are not recorded (amber) | The Recorder is off and the game runs. | Switch the Recorder on. |
 | Pitwall not running (amber) | Pitwall's endpoint is absent. | Start Pitwall; the connector reconnects. |
-| Refused by Pitwall - see logs (amber) | Another connector is connected (`connector_busy`), or the IPC key differs (`unauthorized`); retried every 10 s. | Close the other connector; check the workspace. |
+| Refused by Pitwall - see logs (amber) | Another connector is connected (`connector_busy`), or the IPC key differs (`unauthorized`); retried about every 10 s. | Close the other connector; check the workspace. |
 | Recording - Pitwall not running: the laps wait for it | On track without Pitwall; laps are kept ("N laps waiting for Pitwall"). | Start Pitwall when convenient. |
 | Starting... | The service runs but has not connected to the app yet. | Nothing. |
 

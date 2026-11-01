@@ -1,5 +1,5 @@
 //! Windows helpers: mutex, stop event, game check, processes, job object, timer.
-//! Port of the Python connector's `test_proc.py`. Every object name is unique per test and
+//! Every object name is unique per test and
 //! every child process is killed by a guard, so a test leaves nothing behind.
 #![cfg(windows)]
 

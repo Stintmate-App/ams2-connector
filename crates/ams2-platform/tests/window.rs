@@ -1,4 +1,4 @@
-//! The capture target's window search (port of `test_capture_target.py`). Windows are made by
+//! The capture target's window search. Windows are made by
 //! the test itself, never shown, and the listing is restricted to this process: no other
 //! window is read.
 #![cfg(windows)]

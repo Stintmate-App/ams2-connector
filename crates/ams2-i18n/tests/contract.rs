@@ -244,7 +244,7 @@ fn resolve() {
 
 // ---------------------------------------------------------------- the embedded catalog
 
-/// sha256 of `locales/en.json`: the Python connector's catalog at the port, changed on purpose since
+/// sha256 of `locales/en.json`: the connector's catalog, changed since it was first pinned
 /// (the window's texts are part of it); a change to the catalog updates this pin.
 const EN_JSON_SHA256: &str = "bda8dfd39f71d6189c8c45f93ed6945d3727ee1f87b1a24307b49273ad47ddf1";
 

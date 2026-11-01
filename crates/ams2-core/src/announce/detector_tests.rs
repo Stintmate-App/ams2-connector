@@ -1,6 +1,6 @@
-//! Edge detection of live race events on synthetic shared memory snapshots: a port of
-//! the Python connector's `test_announce_detector.py`, plus a replay of a seeded random run
-//! whose announcements the Python detector produced (`fixtures/detector_replay.json.gz`).
+//! Edge detection of live race events on synthetic shared memory snapshots,
+//! plus a replay of a seeded random run whose announcements are in `fixtures/detector_replay.json.gz`
+//! (made once with an earlier implementation of the detector that is not in this repository).
 
 use super::catalog::{check_params, messages};
 use super::detector::{
@@ -776,7 +776,7 @@ fn every_announced_code_is_in_the_catalog() {
     assert!(used > 20);
 }
 
-// ------------------------------------------------------------------ the Python detector's run
+// ------------------------------------------------------------------ the fixture's run
 
 fn read_gz(path: &str) -> Value {
     use std::io::Read;
@@ -834,7 +834,7 @@ fn apply(d: &mut SharedMemory, name: &str, v: &Value) {
 }
 
 #[test]
-fn replay_of_a_seeded_random_run_equals_the_python_detectors_announcements() {
+fn replay_of_a_seeded_random_run_equals_the_fixtures_announcements() {
     let fx = read_gz("detector_replay.json.gz");
     let ticks = fx["ticks"].as_u64().unwrap();
     let mut steps = std::collections::HashMap::new();

@@ -1,4 +1,4 @@
-//! In the car, in the garage: what AMS2's pit mode alone does not say (FINDINGS "Garage").
+//! In the car, in the garage: what AMS2's pit mode alone does not say (FINDINGS "In the car in the garage").
 //!
 //! The garage screen is a menu with the pit mode "in the garage". Once the driver presses
 //! Drive he sits in the car, still in the garage, and the game is "playing" with the pit mode

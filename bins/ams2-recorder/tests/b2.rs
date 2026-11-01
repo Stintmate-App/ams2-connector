@@ -1,6 +1,5 @@
-//! B2 through real links into a fake Pitwall: the telemetry stream (ports of `test_telemetry.py`),
-//! `connector.live_frame` (`test_frame.py`, server parts), `connector.action` (`test_actions.py`)
-//! and the test hook (`test_connector_messages.py`). Random pipes, a temp workspace and key,
+//! The recorder through real links into a fake Pitwall: the telemetry stream,
+//! `connector.live_frame` (server parts), `connector.action` and the test hook. Random pipes, a temp workspace and key,
 //! test mappings only: nothing of the game or other running apps is touched.
 
 mod common;

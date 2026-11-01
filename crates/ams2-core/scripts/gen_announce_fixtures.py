@@ -1,7 +1,9 @@
-"""Generates the A4 parity fixtures of ams2-core from the read-only Python connector.
+"""Generates the parity fixtures of ams2-core from an earlier Python implementation of the connector.
+That implementation is not in this repository: this script is the record of how the fixtures were
+made and cannot be run from a clean clone.
 
 Run: uv run --no-project crates/ams2-core/scripts/gen_announce_fixtures.py [PYTHON_APP_DIR]
-(PYTHON_APP_DIR is the folder of the Python connector it ports). Needs nothing installed:
+(PYTHON_APP_DIR is the folder of that implementation). Needs nothing installed:
 the Python modules are imported with stubs for stintmate_ipc and connector_messages.
 
 Writes, next to this script's crate:
@@ -9,7 +11,7 @@ Writes, next to this script's crate:
   fixtures/announce_parity.json          sha256-12 keys and hashes, actions, guidance
   fixtures/live_frame_cases.json.gz      307 snapshot specs + Pitwall's expected frames
   fixtures/*.schema.json                 copies of the protocol and write API schemas
-  fixtures/detector_replay.json.gz       a seeded random replay and what Python announced
+  fixtures/detector_replay.json.gz       a seeded random replay and what the earlier implementation announced
 """
 from __future__ import annotations
 
@@ -24,7 +26,7 @@ from pathlib import Path
 
 CRATE = Path(__file__).resolve().parent.parent
 APP = Path(sys.argv[1]) if len(sys.argv) > 1 else Path(
-    os.environ.get("PYTHON_CONNECTOR_DIR", "."))  # the Python connector checkout
+    os.environ.get("PYTHON_CONNECTOR_DIR", "."))  # the earlier implementation's checkout
 sys.path[:0] = [str(APP / "src"), str(APP / "tests")]
 
 ipc = types.ModuleType("stintmate_ipc")

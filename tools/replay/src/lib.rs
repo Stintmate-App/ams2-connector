@@ -14,7 +14,7 @@ use std::time::Duration;
 /// One frame to write and, for captures, the microsecond it was recorded at.
 pub type Timed = (Option<u64>, Box<SharedMemory>);
 
-/// The scripted session of `replay_session.py` (no timestamps: played at a fixed rate).
+/// The scripted session (no timestamps: played at a fixed rate).
 pub fn scripted() -> Vec<Timed> {
     scripted_session()
         .into_iter()

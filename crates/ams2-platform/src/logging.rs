@@ -1,11 +1,11 @@
 //! Logging: `tracing` to `<data dir>\<name>.log`, non-blocking, with a size cap.
 //!
-//! The line format is the Python connector's
+//! The line format is
 //! (`%(asctime)s %(levelname)s %(name)s: %(message)s`):
 //! `2026-10-23 14:05:09,123 INFO ams2_core::tracker: message key=value`.
 //! The name is the event's target (the module path). Time is local, to the millisecond.
 //!
-//! The Python logs were never capped. Here the file is capped ([`DEFAULT_MAX_BYTES`]): when a
+//! The file is capped ([`DEFAULT_MAX_BYTES`]): when a
 //! line would pass the cap, `<name>.log` becomes `<name>.log.1` (replacing the older one) and a
 //! new file starts, so the logs take at most twice the cap.
 
@@ -93,7 +93,7 @@ pub fn now_local() -> Stamp {
     }
 }
 
-/// Python's level names.
+/// The level names written in the log lines.
 pub fn level_name(level: Level) -> &'static str {
     match level {
         Level::ERROR => "ERROR",
@@ -103,7 +103,7 @@ pub fn level_name(level: Level) -> &'static str {
     }
 }
 
-/// Formats an event as one Python-style line.
+/// Formats an event as one line in the format above.
 #[derive(Debug, Clone, Copy)]
 pub struct LineFormat {
     /// The clock (a function so tests can fix it).
@@ -207,7 +207,7 @@ impl Write for CappedFile {
     }
 }
 
-/// File and, optionally, stderr (like Python's `StreamHandler`). Stderr errors are ignored: a
+/// File and, optionally, stderr. Stderr errors are ignored: a
 /// windowless process has no valid stderr.
 struct Tee {
     file: Option<CappedFile>,
@@ -279,7 +279,7 @@ pub fn writer(config: &LogConfig) -> (NonBlocking, WorkerGuard) {
     })
 }
 
-/// A subscriber writing Python-style lines to `make_writer`.
+/// A subscriber writing lines in the format above to `make_writer`.
 pub fn subscriber<W>(
     make_writer: W,
     level: Level,

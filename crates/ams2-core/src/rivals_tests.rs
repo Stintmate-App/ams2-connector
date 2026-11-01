@@ -1,4 +1,4 @@
-//! Port of `tests/test_rivals.py`: the rival tracker on real capture frames (Oulton Park
+//! The rival tracker on real capture frames (Oulton Park
 //! practice, 2 Hz, gzip JSON Lines in `fixtures/`) and on a synthetic race.
 
 use crate::codes::{game_state, pit_mode, race_state, session_state};

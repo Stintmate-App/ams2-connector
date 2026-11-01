@@ -5,7 +5,7 @@
 //! own `session_key`, which the sink adds), `None` fields left out. A lap's channels are
 //! `{"encoding": "f32", "data": <bin: little-endian float32>}`; serializing them uses
 //! `serialize_bytes`, so a msgpack serializer writes `bin` (the JSON form is only a debugging
-//! aid). Encoding to the wire is the IPC layer's job (task B1).
+//! aid). Encoding to the wire is the IPC layer's job.
 //!
 //! Also here: the records the tracker hands to its sink ([`LapRecord`], [`SessionInfo`]) and the
 //! functions that map them to messages ([`lap_message`], [`session_start_message`]).

@@ -273,7 +273,7 @@ mod tests {
     use super::*;
     use ams2_shm::new_frame;
 
-    /// The Python test's `snap()`.
+    /// A frame filled in by `f`.
     fn snap(f: impl FnOnce(&mut SharedMemory)) -> Box<SharedMemory> {
         let mut d = new_frame();
         d.version = 14;
@@ -314,7 +314,7 @@ mod tests {
             reserved: 0,
         };
         let b = s.to_bytes();
-        // Python: struct.unpack("<5fIH2B2H", body)
+        // Layout: `<5fIH2B2H`, little-endian
         assert_eq!(&b[0..4], &1.0f32.to_le_bytes());
         assert_eq!(&b[16..20], &5.0f32.to_le_bytes());
         assert_eq!(&b[20..24], &6u32.to_le_bytes());

@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.3.1 (2026-11-01)
+
+- Uses `stintmate-ipc` v0.3.2. The installer is built on GitHub-hosted runners. Behaviour unchanged.
+
 ## 3.3.0+docs.1 (2026-11-01)
 
 - Releases are published by the `release` workflow (`.github/workflows/release.yml`, run by hand):

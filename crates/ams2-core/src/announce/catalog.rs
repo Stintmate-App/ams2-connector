@@ -2,12 +2,11 @@
 //!
 //! The connector never composes user text (application contract 4.4): it declares this catalog
 //! with `pitwall.catalog.declare` at every connection and then sends only a code and its
-//! params (`pitwall.announce`). The catalog is data (`data/catalog.json`, written from the
-//! Python connector's by `scripts/gen_announce_fixtures.py`) in the team's catalog format:
+//! params (`pitwall.announce`). The catalog is data (`data/catalog.json`) in the catalog format of the connector-kit:
 //! `text` with `{name}` placeholders, `params`, `values` for `enum` params, a `note`, and per
 //! message `audience`, `priority`, `max_wait_s`, `slot`, `kind` and `group`. The source hash of a message and
-//! the idempotency key of the whole catalog are the Python connector's, byte for byte (canonical
-//! JSON: sorted keys, no spaces, no ASCII escaping).
+//! the idempotency key of the whole catalog are computed over canonical
+//! JSON: sorted keys, no spaces, no ASCII escaping.
 
 use serde_json::{Map, Value};
 use sha2::{Digest, Sha256};

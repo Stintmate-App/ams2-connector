@@ -1,5 +1,6 @@
-//! Byte-level golden: the `p` of one lap equals what the Python connector wrote for the same
-//! record and rows (`scripts/gen_lap_fixture.py` -> `tests/fixtures/lap_params_300.msgpack`).
+//! Byte-level golden: the `p` of one lap equals the fixture for the same record and
+//! rows (`tests/fixtures/lap_params_300.msgpack`, made once by `scripts/gen_lap_fixture.py` with an
+//! earlier implementation of the connector that is not in this repository).
 //! The channels are `bin` of little-endian float32 (4 bytes a sample), never f64 or arrays.
 
 use ams2_core::channels::{N_CHANNELS, Row};
@@ -61,12 +62,12 @@ fn params(n: usize) -> Value {
 }
 
 #[test]
-fn a_lap_params_are_byte_equal_to_the_python_connectors() {
+fn a_lap_params_are_byte_equal_to_the_fixture() {
     let bytes = codec::encode(&params(ROWS)).unwrap();
     if bytes != GOLDEN {
         let at = bytes.iter().zip(GOLDEN).position(|(a, b)| a != b);
         panic!(
-            "lap params differ from the Python fixture: {} vs {} bytes, first difference at {at:?}",
+            "lap params differ from the fixture: {} vs {} bytes, first difference at {at:?}",
             bytes.len(),
             GOLDEN.len()
         );
@@ -76,7 +77,7 @@ fn a_lap_params_are_byte_equal_to_the_python_connectors() {
 #[test]
 fn a_90_s_lap_is_about_1_3_mb() {
     let bytes = codec::encode(&params(4500)).unwrap();
-    // Python wrote 1,298,649 bytes with the envelope; the envelope adds ~60 bytes.
+    // About 1,298,649 bytes with the envelope; the envelope adds ~60 bytes.
     assert!(
         (1_298_000..1_299_000).contains(&bytes.len()),
         "{}",

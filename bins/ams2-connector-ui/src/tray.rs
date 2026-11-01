@@ -49,7 +49,7 @@ pub struct TrayRun {
     pub show_at_start: bool,
 }
 
-/// Whether the shell has a notification area (the Python app's `isSystemTrayAvailable`).
+/// Whether the shell has a notification area.
 pub fn tray_available() -> bool {
     let class: Vec<u16> = "Shell_TrayWnd\0".encode_utf16().collect();
     // SAFETY: NUL-terminated class name; a null title matches any.

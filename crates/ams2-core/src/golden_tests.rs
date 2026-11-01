@@ -1,7 +1,7 @@
-//! Golden check: the scripted session through the Rust tracker equals the Python tracker's
-//! output (`fixtures/scripted_session_golden.json`, written by running the Python
-//! `SessionTracker` on `replay_session.session_script()` with a recording sink, the game clock
-//! of the replay reader and `now_iso` fixed to `ISO`).
+//! Golden check: the scripted session through the Rust tracker equals the recorded
+//! output (`fixtures/scripted_session_golden.json`, made once by an earlier implementation of the
+//! tracker that is not in this repository, run on the same scripted session with a recording sink,
+//! the game clock of the replay reader and `now_iso` fixed to `ISO`).
 //!
 //! Compared field by field: the session start (catalogue and params), setups (snapshot and
 //! params), pit exits, every lap's params (channels summarised by length, first, last and sum),
@@ -28,7 +28,7 @@ fn play() -> RecordingSink {
 }
 
 #[test]
-fn scripted_session_matches_the_python_golden() {
+fn scripted_session_matches_the_golden() {
     let golden: Vec<Value> = serde_json::from_str(GOLDEN).unwrap();
     let sink = play();
     let got: Vec<Value> = sink.calls.iter().map(as_json).collect();
@@ -61,7 +61,7 @@ fn scripted_session_matches_the_python_golden() {
 
 #[test]
 fn scripted_session_shape() {
-    // The shape described in replay_session.py's docstring: the session opens in the garage
+    // The shape of the scripted session in `testing.rs`: the session opens in the garage
     // (setup first), 8 laps are stored, two pit exits... (one at the garage exit, one at the
     // pit exit), and the session ends once.
     let sink = play();

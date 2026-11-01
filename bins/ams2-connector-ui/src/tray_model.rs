@@ -74,7 +74,7 @@ fn service_of<'a>(snapshot: &'a Snapshot, id: &str) -> Option<&'a serde_json::Va
         .and_then(|a| a.iter().find(|s| s["id"] == id))
 }
 
-/// The menu for `snapshot`, in the Python app's order: Open, the services' switches, Logs and
+/// The menu for `snapshot`, in the order of the tray menu: Open, the services' switches, Logs and
 /// Open data folder, Exit. While exiting everything is disabled.
 pub fn menu(snapshot: &Snapshot, texts: &Texts) -> Vec<Entry> {
     let exiting = exiting(snapshot);
@@ -166,7 +166,7 @@ mod tests {
     }
 
     #[test]
-    fn the_menu_has_the_python_order_and_the_switch_follows_the_state() {
+    fn the_menu_has_the_documented_order_and_the_switch_follows_the_state() {
         let t = Texts::english();
         assert_eq!(
             labels(&menu(&snap(false, false), &t)),

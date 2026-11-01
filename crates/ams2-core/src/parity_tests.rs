@@ -1,7 +1,8 @@
-//! Parity with the Python connector: the catalog's source hashes and idempotency key, the
-//! actions' and the guidance's declarations and keys equal what the Python modules produced
-//! (`fixtures/announce_parity.json`, written by `scripts/gen_announce_fixtures.py`), and the
-//! rules of `test_actions.py` / `test_guidance.py` that need no link.
+//! Parity with the fixture `fixtures/announce_parity.json` (made once from an earlier implementation
+//! that is not in this repository): the catalog's source hashes and idempotency key, the
+//! actions' and the guidance's declarations and keys equal the fixture's
+//! (written by `scripts/gen_announce_fixtures.py`), and the rules of the actions and the guidance
+//! that need no link.
 
 use crate::actions::{actions, actions_ik};
 use crate::announce::catalog::{canonical, catalog, catalog_ik, codes, messages, source_hash};
@@ -18,9 +19,9 @@ fn parity() -> Value {
     serde_json::from_str(&raw).unwrap()
 }
 
-/// The codes added after the Python connector: its fixture knows none of them, so the
+/// The codes added after the fixture was made: it knows none of them, so the
 /// catalog's key and the actions' enum of codes differ from it by exactly these.
-const AFTER_PYTHON: [&str; 16] = [
+const AFTER_FIXTURE: [&str; 16] = [
     "flag_yellow_ahead",
     "flag_double_yellow_ahead",
     "flag_yellow_driver",
@@ -40,11 +41,11 @@ const AFTER_PYTHON: [&str; 16] = [
 ];
 
 #[test]
-fn source_hashes_equal_the_pythons() {
+fn source_hashes_equal_the_fixtures() {
     let want = parity()["source_hashes"].as_object().unwrap().clone();
-    assert_eq!(want.len() + AFTER_PYTHON.len(), messages().len());
+    assert_eq!(want.len() + AFTER_FIXTURE.len(), messages().len());
     for (code, msg) in messages() {
-        if AFTER_PYTHON.contains(&code.as_str()) {
+        if AFTER_FIXTURE.contains(&code.as_str()) {
             assert!(!want.contains_key(code), "{code}");
             continue;
         }
@@ -59,7 +60,7 @@ fn catalog_idempotency_key_is_the_one_of_this_catalog() {
 }
 
 #[test]
-fn actions_equal_the_pythons_but_for_the_new_codes() {
+fn actions_equal_the_fixtures_but_for_the_new_codes() {
     let p = parity();
     // Compared as canonical JSON: a build that turns on `preserve_order` (the conformance
     // check) does not change what is declared.
@@ -67,23 +68,23 @@ fn actions_equal_the_pythons_but_for_the_new_codes() {
     let list = ours[1]["params"]["properties"]["code"]["enum"]
         .as_array_mut()
         .unwrap();
-    list.retain(|c| !AFTER_PYTHON.contains(&c.as_str().unwrap()));
+    list.retain(|c| !AFTER_FIXTURE.contains(&c.as_str().unwrap()));
     ours[1]["params"]["properties"]
         .as_object_mut()
         .unwrap()
-        .remove("variant"); // the Python catalog has no such option
+        .remove("variant"); // the fixture has no such option
     assert_eq!(canonical(&ours), canonical(&p["actions"]));
     assert_eq!(actions_ik(actions()), "ams2/actions/4d18f44c98bf");
 }
 
 #[test]
-fn guidance_equals_the_pythons_and_so_does_its_key() {
+fn guidance_equals_the_fixtures_and_so_does_its_key() {
     let p = parity();
     assert_eq!(items(), &p["guidance"]);
     assert_eq!(items_ik(items()), p["guidance_ik"].as_str().unwrap());
 }
 
-// ---- test_actions.py
+// ---- actions
 
 #[test]
 fn the_actions_declaration_obeys_the_rules() {
@@ -140,7 +141,7 @@ fn the_actions_idempotency_key_follows_the_actions() {
     assert_ne!(actions_ik(&first), a);
 }
 
-// ---- test_guidance.py
+// ---- guidance
 
 #[test]
 fn the_guidance_items_follow_the_declare_rules() {

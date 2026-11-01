@@ -2,7 +2,7 @@
 
 How the connector is built and why. How to run it: [usage.md](usage.md). The AMS2 facts it
 relies on, with their evidence: [FINDINGS.md](FINDINGS.md). What it speaks to Pitwall and to a
-managing app is the Stintmate application contract over
+managing app is the control interface of the connector-kit's [`contract.md`](https://github.com/Stintmate-App/connector-kit/blob/main/docs/contract.md) over
 [Stintmate IPC v2](https://github.com/Stintmate-App/stintmate-ipc) and the connector protocol
 ([the connector protocol](https://github.com/Stintmate-App/connector-kit/blob/main/docs/connector-protocol.md) in the connector kit); this page names the methods and
 channels but does not repeat the protocol. For a reader who wants to build another connector:
@@ -40,8 +40,8 @@ its connected processes declare. A method whose process is off answers
 share a process with the 50 Hz loop: a UI crash or hang must not lose a lap, and the recorder
 runs at below-normal priority with no GUI library in its address space. The window is a third
 process, not a part of the tray, because its toolkit always creates a graphics context while it
-exists (observed in a throwaway spike, no longer in the repository: an OpenGL context and about 120 MB of
-working set for an idle hidden window). The tray process, which is always running, therefore has no graphics context at all,
+exists (observed once in a throwaway test, not reproducible from this repository: an OpenGL context
+for an idle hidden window). The tray process, which is always running, therefore has no graphics context at all,
 and the window exists only while the user looks at it. The window talks to the control app
 over the same endpoint a managing app uses: it receives a `ui.snapshot` and sends `ui.command`;
 a second "Open" while it runs only publishes a `window_request` in the snapshot, which the
@@ -79,7 +79,7 @@ crates/
   ams2-platform/  Windows helpers shared by the executables: workspace resolver, data folder,
                   logging, named mutex and stop event, process helpers (game check, job
                   object, spawn suspended), high-resolution timer
-  ams2-i18n/      the text catalogs contract loader (chain, validation, plurals)
+  ams2-i18n/      the text catalogs loader (chain, validation, plurals; the connector-kit's `catalogs.md`)
 bins/
   ams2-recorder/            the recorder, its links, outbox and subcommands
   ams2-connector-ui/        the control app: endpoint, ServiceManager, tray, config, descriptor
@@ -93,7 +93,7 @@ tools/
 
 The split follows what must be testable without the game and without a pipe: everything that
 decides what a lap is lives in `ams2-core`, takes frames in and gives records out, and is run
-by unit tests, property tests and golden comparisons against fixtures made with the earlier Python connector. The
+by unit tests, property tests and golden comparisons against fixtures (recorded or scripted sessions, made once with an earlier Python implementation of the connector that is not in this repository). The
 executables add the clock, the threads, the disk and the pipes.
 
 ## Threads of the recorder
@@ -111,9 +111,9 @@ double buffer (two preallocated snapshots and an atomic index), so the loop take
 
 ## Data folder and the workspace
 
-`ams2-platform` implements the Stintmate workspace contract's resolution (`--workspace`,
+`ams2-platform` implements the resolution of the Stintmate workspace (`--workspace`,
 `STINTMATE_WORKSPACE`, the pointer file `%APPDATA%\Stintmate\settings.json`) and checks it
-against the contract's test vectors. The result is the data folder
+against the test vectors in `crates/ams2-platform/tests/fixtures/workspace.vectors.json`. The result is the data folder
 `<workspace>\connectors\ams2\` (`ams2` is the connector id), resolved once per process. A
 workspace error never falls back to anything and nothing is written: command lines print
 `workspace error <code>: <message>` and exit with status 3; the control app shows a dialog and
@@ -129,14 +129,14 @@ connector's own endpoint.
   methods and channels before it connects, connects, runs its per-connection hooks (the
   catalog, guidance and actions declarations), and reconnects with the protocol's backoff
   (0.25, 0.5, 1, 2 s, then every 2 s with 20 % jitter). Refused with `connector_busy` (another
-  connector id is connected) or `unauthorized` (another key): state `refused`, wait 10 s.
+  connector id is connected) or `unauthorized` (another key): state `refused`, wait about 10 s (10 s with the same 20 % jitter).
   Pitwall absent: `waiting`.
 - **The control link**: the recorder's connection to the control app's endpoint, declaring the
   state channel `service.status`. A recorder started by hand without the control app just keeps
   trying.
 - **The key** is the workspace's `ipc\key`, only read, never created by a connector; while it
   is missing the links say so and retry, and it is re-read when it changes.
-- **Status**: one record per service goes to Pitwall as `connector.status` (the contract's
+- **Status**: one record per service goes to Pitwall as `connector.status` (the protocol's
   fields only) and to the control app as `service.status` (the same plus the pid, the Pitwall
   link state, counters and CPU), each set only when its value changed. The connection is the
   liveness; there is no status file.
@@ -318,7 +318,7 @@ the written and spoken text in the user's language.
   500 m (`flag_slow_car_driver`) and is silent when the player is the slow one. Cost: two
   comparisons per tick on the player's fields; one pass over at most 64 participants without
   allocation at a flag edge (bench: median unchanged within noise, 1.4-1.6 us).
-- **Sending**: params checked against the catalog, at most 10 per 60 s (the contract's limit,
+- **Sending**: params checked against the catalog, at most 10 per 60 s (the protocol's limit,
   kept by the connector), without waiting (`call_async`: the loop never blocks); dropped and
   logged while Pitwall is not connected or before the catalog was declared, since an
   announcement is worth something only now.
@@ -388,7 +388,7 @@ window is the separate process described above.
   knowing the simulator and before any workspace exists. `STINTMATE_CONNECTORS_DIR` replaces
   the folder in tests.
 - **Texts**: every UI text is a key of the built-in English catalog `ams2-connector`; the
-  language and packs follow the Stintmate text catalogs contract (a chain such as `es-CL`,
+  language and packs follow the connector-kit's text catalogs rules (`catalogs.md`; a chain such as `es-CL`,
   `es`, `en`, built in; entries validated one by one; plurals from the pack's number rules).
   Not localised: logs, JSON files, IPC messages and ids, the descriptor.
 
@@ -436,7 +436,7 @@ trust. Full tables and method: [`BENCHMARKS.md`](../BENCHMARKS.md).
 
 | Metric | Target | Measured | Met |
 |---|---|---|---|
-| Recorder CPU at 50 Hz, no subscription | <= 0.2 % | 0.127 % | yes |
+| Recorder CPU at 50 Hz, no subscription | <= 0.2 % | 0.123 % | yes |
 | Recorder CPU with the stream at 90 frames/s | <= 0.4 % | 0.490 % (2026-10-25) | no |
 | What the stream adds | <= 0.2 % | 0.363 % (2026-10-25; about 0.09 % is the sampling thread, about 0.27 % the IPC send) | no |
 | Allocations on the loop per tick, steady state (status ticks included) | 0 | 0 | yes |
@@ -461,18 +461,18 @@ mapping reads, the sample); the other 0.27 % is `StreamChannel::send` in `stintm
 `Bytes` copy, the subscriber lock and one `WriteFile` per sample, already written by the
 publishing thread with no pump wake-up). Fewer writes need the library to coalesce the queued
 samples of a subscription into one write (the wire format and the samples stay the same); that
-is a change in `stintmate-ipc`, not here. The lap's encoded bytes equal those of the earlier
-Python connector (a fixture checked by the `lap_bytes` test), so Pitwall sees no change.
+is a change in `stintmate-ipc`, not here. The lap's encoded bytes equal a fixture
+(`bins/ams2-recorder/tests/fixtures/lap_params_300.msgpack`, checked by the `lap_bytes` test).
 
 ## Decisions and their reasons
 
 | Decision | Why |
 |---|---|
-| Rust, a total replacement of the earlier Python connector | A real-time loop that allocates nothing and cannot be paused by a garbage collector or the interpreter; one self-contained exe set, no runtime to install; the shared memory layout is checked at compile time |
-| Contract unchanged | The pipes, the descriptor and the protocol are the interface, as they were for the Python connector |
+| Rust, a total replacement of an earlier Python implementation (history; not in this repository) | A real-time loop that allocates nothing and cannot be paused by a garbage collector or the interpreter; one self-contained exe set, no runtime to install; the shared memory layout is checked at compile time |
+| Contract unchanged | The pipes, the descriptor and the protocol are the interface, as they were for the implementation it replaced |
 | Pure `ams2-core` with an injected clock | The rules that decide what a lap is (the expensive part to get wrong) are tested without a game, a pipe or a clock, and compared against recorded and scripted sessions |
 | Two long-lived processes plus a window on demand | A UI must not share the 50 Hz loop's process; a toolkit's graphics context is paid only while the window is open |
-| eframe/egui with `tray-icon` and `muda` for the UI | Permissive licences, small binary with the OpenGL renderer (about 6 MB and 0.03 % idle CPU in the spike), tray events delivered while the window is hidden; not Slint, whose licence carries attribution terms for every fork; native Win32 stays the fallback |
+| eframe/egui with `tray-icon` and `muda` for the UI | Permissive licences, small binary with the OpenGL renderer, tray events delivered while the window is hidden; not Slint, whose licence carries attribution terms for every fork; native Win32 stays the fallback |
 | Disk outbox, one file per write | Laps survive Pitwall being closed and a crash; one disk write per lap keeps VR smooth; the stored idempotency key makes a retry safe |
 | Sessions keyed by the connector, not by Pitwall's id | A session can start and end while Pitwall is closed |
 | The stream has its own thread and its own view of the mapping | Sampling at the game's frame rate must not disturb the 50 Hz loop's buffers; it costs nothing when nobody subscribes |
@@ -494,10 +494,13 @@ endpoint runs on a unique pipe name with a random key and a temporary workspace.
 
 - `ams2-shm`: the layout against generated offsets, property tests of the seqlock against a
   writer thread.
+- `ams2-i18n`: the catalog loader against its contract fixtures (`tests/contract.rs`).
+- `ams2-platform`: the development instance tag, logging, the Windows helpers, the window
+  search and the workspace resolver (`tests/{dev_env,logging,win,window,workspace}.rs`).
 - `ams2-core`: the tracker, the garage rule, rivals, the live frame against Pitwall's fixture and
   JSON Schema, the announcement catalog (canonical JSON and hash), the detector (every code's
   edge, gating, cooldowns, identity, cost), golden comparisons and parity tests against fixtures
-  made with the earlier Python connector.
+  made once with an earlier implementation (see Decisions).
 - `ams2-recorder`: a fake Pitwall (an endpoint built with `stintmate-ipc`, applying the write
   methods to an in-memory writer that checks each message against the write API's schema, and
   able to lose an answer, refuse a write or restart) running the scripted session (main menu,
@@ -506,8 +509,12 @@ endpoint runs on a unique pipe name with a random key and a temporary workspace.
   whole session and opened afterwards, the outbox of a stopped recorder, a rejected write and
   its split rival batch, `connector_busy`, a wrong key; an allocation-counting test; the
   `lap_bytes` test; `lap_write` (timing, ignored by default).
-- `ams2-connector-ui`: the endpoint over a real pipe, the services, managed mode, the
+- `ams2-connector-ui`: the command line (`tests/cli.rs`), the hold flow of
+  [installer.md](installer.md) against a fake hub (`tests/hold.rs`), the endpoint over a real
+  pipe, the services (`tests/services.rs`), managed mode, the
   descriptor, and the conformance tool `stintmate-ipc-check server` against the endpoint.
+- `tools/golden`, `tools/measure` and `tools/replay` are separate crates of the workspace with
+  their own tests.
 - `ams2-connector-window`: the window's lifecycle, and the offscreen renders of its pages
   (`tests/render.rs`).
 

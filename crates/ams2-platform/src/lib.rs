@@ -2,7 +2,7 @@
 //!
 //! - [`workspace`]: the Stintmate workspace resolver (contract v1) and [`location`], the
 //!   connector's data folder;
-//! - [`logging`]: `tracing` to `<data>\<name>.log`, the Python connector's line format,
+//! - [`logging`]: `tracing` to `<data>\<name>.log`, the line format `date time LEVEL target: message`,
 //!   non-blocking, with a size cap;
 //! - [`dev`]: the development-only instance tag (`AMS2_CONNECTOR_DEV_INSTANCE`): names and pipes;
 //! - [`single`]: the named mutex (single instance) and the named stop event;

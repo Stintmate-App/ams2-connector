@@ -4,7 +4,7 @@
 Setup 6; no administrator rights, no UAC, English only, unsigned). This page is the
 contract for whoever installs it without a person in front of it: Stintmate downloads the
 connector and runs this setup in the background. Fetching the setup and verifying it
-(the `.sha256` file beside it, the signed release manifest) is the caller's job; the setup
+(the `.sha256` file beside it, or the caller's own verification) is the caller's job; the setup
 itself checks nothing about where it came from.
 
 ## What it does
@@ -24,7 +24,8 @@ itself checks nothing about where it came from.
   `%LOCALAPPDATA%\Stintmate\connectors\ams2.json`, which is how Stintmate finds it:
   `ams2-connector-ui.exe --register --uninstall "<unins000.exe>" [--flavour dev]` writes it
   atomically, with the path of this install's launcher and the command that removes this
-  install. The file is the connector descriptor of the workspace contract (section 5.5). It
+  install. The file is the connector descriptor described in the connector-kit's
+  [`descriptor.md`](https://github.com/Stintmate-App/connector-kit/blob/main/docs/descriptor.md). It
   does not depend on a workspace, so the connector can be installed before Stintmate, and
   Stintmate lists it as soon as it starts. `STINTMATE_CONNECTORS_DIR` replaces the folder (tests).
 - **Never starts the connector** and never touches the workspace's data (logs, outbox,
@@ -49,7 +50,7 @@ looks at the file:
      progress line `{"stage":"replace"}`) and waits up to 30 s for the other install's launcher
      to disappear. Inno's uninstaller hands over to a copy of itself, hence the wait. If it is
      still there, the run fails with `replace_failed`;
-   - a file with no `uninstall` (a development checkout, or the earlier Python connector) removes nothing:
+   - a file with no `uninstall` (a development checkout, or any other registration without one) removes nothing:
      the setup takes the registration over (`--register` overwrites the file).
 3. The setup copies the files and runs `--register`.
 
@@ -65,7 +66,7 @@ AMS2-Connector-<version>-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART ^
 ```
 
 `/VERYSILENT` (or `/SILENT`) is what makes a run **unattended**; Inno Setup's other parameters
-(`/DIR`, `/LOG`, ...) work as documented by Inno Setup. The two below are the connector's.
+(`/DIR`, `/LOG`, ...) work as documented by Inno Setup. The first two below are the connector's; `/LOG` is Inno Setup's own.
 
 | Parameter | Meaning |
 |---|---|
@@ -153,9 +154,9 @@ waits up to 25 s until the connector's programs are gone. Its exit status decide
 |---|---|
 | 0 held and stopped | goes on; Stintmate does not start the connector until it is released |
 | 1 held, something still runs; 2 bad arguments; 5 no Stintmate to ask (no pointer, key or hub); 6 Stintmate runs but did not answer (an older Stintmate, busy, timeout) | the older rules above (a managed connector: silent fails with `connector_running`, interactive asks to close Stintmate) |
-| 7 a driving session is being recorded | interactive: "Finish it, then choose Retry" (Retry holds again); unattended: fails with `connector_running` |
+| 7 a driving session is being recorded | interactive: "Finish it, then choose Retry" (Retry holds again); unattended: fails with `connector_running`; declining the prompt also ends the run with `connector_running` |
 
-The hold is released with `--stintmate-release` after `--register` (also when registering
+The hold is released with `--stintmate-release` (with `--no-start` it ends the hold without starting the connector) after `--register` (also when registering
 failed), and in `DeinitializeSetup` when the run ends any other way (a failure after the hold, a
 cancel, a copy error): Stintmate then starts the connector the registration names, the new build
 after an update, the old one otherwise. A release that fails is only logged in the setup's log.
@@ -165,8 +166,8 @@ person declines before any file is removed, it releases at once; once files are 
 removal of `ams2.json` ends the hold. The progress file has no new stage (`prepare` covers the
 hold).
 
-Only processes that run from the install folder count; another copy of the connector, or the
-earlier Python one, is never counted nor stopped, except the one the registration names when it
+Only processes that run from the install folder count; another copy of the connector, or any other program, is never counted nor stopped, except the one
+the registration names when it
 is being replaced.
 
 ## What Stintmate does around it

@@ -366,9 +366,9 @@ pub struct EventDetector {
     /// moves, if the yellow still holds.
     /// The attribution is made at the edge and carried with it (always the player's own).
     yellow_deferred: Option<(i64, i64, Attribution)>,
-    /// Off in the parity replay against the Python detector, which never defers.
+    /// Off in the parity replay, whose fixture never defers.
     defer_yellow: bool,
-    /// Off in the parity replay: the Python detector knew nothing of whose a flag is.
+    /// Off in the parity replay: its fixture knows nothing of whose a flag is.
     attribute_flags: bool,
     /// The last time the player was on track below [`SELF_SLOW_MS`].
     player_slow_at: f64,
@@ -409,12 +409,12 @@ pub struct EventDetector {
     rebaseline: bool,
     /// The spotter: sees every frame, not only the 2 Hz scan.
     spotter: Spotter,
-    /// Off in the parity replay against the Python detector, which had no spotter.
+    /// Off in the parity replay, whose fixture has no spotter.
     spotter_on: bool,
 }
 
 impl EventDetector {
-    /// The Python detector never deferred a standstill yellow: the parity replay turns it off.
+    /// The parity replay's fixture never defers a standstill yellow: the replay turns it off.
     #[cfg(test)]
     pub(crate) fn without_deferred_yellow(mut self) -> Self {
         self.defer_yellow = false;

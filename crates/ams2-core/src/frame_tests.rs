@@ -1,9 +1,8 @@
 //! The live frame (`connector.live_frame`, contract 5.3): the conversion of every fixture
 //! snapshot equals Pitwall's fixture, the pit codes, why the lap is not timed or not valid
-//!. Every frame is checked against the protocol schema's `$defs/live_frame`. A port of
-//! the Python connector's `test_frame.py`; the 307 snapshots come as specs in
-//! `fixtures/live_frame_cases.json.gz` (written by `scripts/gen_announce_fixtures.py` from the
-//! Python `live_cases`), the expected frames are Pitwall's.
+//!. Every frame is checked against the protocol schema's `$defs/live_frame`. The 307 snapshots come as specs in
+//! `fixtures/live_frame_cases.json.gz` (made once by `scripts/gen_announce_fixtures.py`, which needs the earlier
+//! implementation it ported and is kept as a record), the expected frames are Pitwall's.
 
 use crate::codes::{game_state, pit_mode, session_state};
 use crate::frame::{FrameOptions, live_frame};
@@ -130,7 +129,7 @@ fn build(spec: &Value) -> Box<SharedMemory> {
     d
 }
 
-/// Python's `live_cases.shm(session)`: the first spec with another session state.
+/// The first spec with another session state.
 fn shm(session: u32) -> Box<SharedMemory> {
     let fx = read_gz("live_frame_cases.json.gz");
     let mut d = build(&fx["cases"][0]);

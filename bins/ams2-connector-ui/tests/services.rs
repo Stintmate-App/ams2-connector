@@ -1,4 +1,4 @@
-//! ServiceManager against a fake operating system (port of `test_ui_services.py`).
+//! ServiceManager against a fake operating system.
 
 use ams2_connector_ui::services::{
     Child, Host, ManagerConfig, ServiceManager, SpawnError, Started,

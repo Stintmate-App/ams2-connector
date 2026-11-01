@@ -1,5 +1,14 @@
 # Changelog
 
+## 3.3.1+docs.1 (2026-11-01)
+
+- Documentation, doc comments and comments corrected against the code; the code is unchanged. The
+  documents point at the connector-kit instead of contracts a reader cannot open, say what the
+  fixtures and their generator scripts are (made once with an earlier implementation that is not in
+  this repository), and drop figures that cannot be reproduced. Corrected: the refused-connection
+  wait ("about 10 s"), the CPU figure, the installer's parameter and hold descriptions, the tests
+  list, the kerb-cause rule and the capture scripts' README. No release is cut for this section.
+
 ## 3.3.1 (2026-11-01)
 
 - Uses `stintmate-ipc` v0.3.2. The installer is built on GitHub-hosted runners. Behaviour unchanged.

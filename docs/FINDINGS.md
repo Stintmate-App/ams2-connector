@@ -170,8 +170,11 @@ produced a junk session: a single out lap at 0 km/h.
   and white" warnings in a usable way (not checked). The flag is also set on every lap that is
   not timed: on 2026-10-18 an out lap after a pit stop read `valid: false` with no lap clock.
   The connector therefore sends the lap type (out, in, formation, flying) and a cause it
-  **infers** from the terrain before the flag (off track: reliable; kerbs only: probable; else
-  unknown).
+  **infers** from the terrain before the flag (rule as the code applies it, `invalid_cause` in `crates/ams2-core/src/tracker.rs`, over the
+  samples within `CAUSE_WINDOW_S` before the flag, pit samples skipped: two or more wheels on an
+  off-track surface: `off_track`, certain; the strip as the only non-asphalt surface:
+  `track_limits`, certain; a run of at least `MIN_KERB_SAMPLES` kerb samples: `track_limits`,
+  probable; else `unknown`. The "all four wheels" case quoted above is the observation, not the rule).
 - The pit lane surface reads as run-off (2026-10-08, 0-33 km/h): pit lane, pits and garage
   samples must not count as off-track.
 - On flat kinks the minimum speed sits at the turn-in (the car accelerates through); throttle
@@ -197,7 +200,7 @@ produced a junk session: a single out lap at 0 km/h.
 
 - Laps 2-5: 1:56.059 / 1:57.492 / 1:57.807 (invalid) / 1:57.997. Official vs measured differ by
   at most 13 ms; S1 + S2 + S3 consistent.
-- CPU: **0.6 % of one core** at 50 Hz with the earlier Python recorder (the Rust recorder's
+- CPU: **0.6 % of one core** at 50 Hz with an earlier Python recorder, measured once and not reproducible from this repository (the Rust recorder's
   figures are in [BENCHMARKS.md](../BENCHMARKS.md)). No VR stutter noticed.
 - Effective rate about 47.6 Hz (mean dt 21 ms); the only gaps were the per-lap write stalls
   (110-320 ms at lap start), fixed with a background writer.

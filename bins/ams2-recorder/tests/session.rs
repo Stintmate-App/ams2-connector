@@ -1,6 +1,5 @@
 //! The scripted session through the real recorder, outbox and links into a fake Pitwall
-//!: the writes equal the Python golden of A3, keys and declarations are the ones the
-//! Python connector sends.
+//!: the writes equal the golden of the scripted session, keys and declarations are the fixed ones.
 
 mod common;
 
@@ -269,7 +268,7 @@ fn scripted_session_with_pitwall_up_matches_the_golden() {
     assert_golden(&calls);
     check_keys(&calls);
 
-    // Hello and the per-connection declarations, with the Python connector's idempotency keys.
+    // Hello and the per-connection declarations, with their idempotency keys.
     let info = fake.peers.lock().unwrap()[0].clone();
     assert_eq!(info.app, "connector-ams2");
     assert_eq!(info.process.as_deref(), Some("recorder"));

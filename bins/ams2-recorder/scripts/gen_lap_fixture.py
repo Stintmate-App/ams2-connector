@@ -1,6 +1,8 @@
-"""Byte-level lap fixture from the Python connector (read only use of its classes).
+"""Byte-level lap fixture, made once with an earlier Python implementation of the connector that is
+not in this repository (this script is kept as the record of how `tests/fixtures/lap_params_300.msgpack`
+was made; it needs that implementation's classes and cannot be run from a clean clone).
 
-Usage: uv run --directory <python connector folder> --no-sync python gen_lap_fixture.py <out_dir> [rows]
+Usage: uv run --directory <folder of that implementation> --no-sync python gen_lap_fixture.py <out_dir> [rows]
 
 Writes <out_dir>/lap_params_<rows>.msgpack: msgpack.packb(to_params(lap_message(record, rows)),
 use_bin_type=True) for a deterministic record and rows, exactly the `p` of the outbox file.

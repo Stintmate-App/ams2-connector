@@ -1,7 +1,7 @@
 //! AMS2 setup snapshot to a `setup` message (`source: telemetry`).
 //!
 //! The recorder takes a snapshot of what AMS2's shared memory shows of the setup at the session
-//! start and at every pit exit ([`SetupSnapshot`]; the keys are those of the Python dict).
+//! start and at every pit exit ([`SetupSnapshot`]).
 //! Only what the driver sets becomes the setup:
 //!
 //! * brake bias to `brake_bias_front_pct`;

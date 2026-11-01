@@ -5,7 +5,7 @@ shared memory and records sessions and laps through Pitwall, Stintmate's telemet
 over [Stintmate IPC](https://github.com/Stintmate-App/stintmate-ipc). It is also the reference
 connector for authors who want to bring another simulator to Stintmate.
 
-**Status:** released (version 3.3.1). It replaces the earlier Python connector (2.0.0) entirely. It is installed by its own setup, per user, and Stintmate starts and
+**Status:** released (version 3.3.1). It is a rewrite in Rust of an earlier Python connector (2.0.0), which it replaces entirely (that program is not in this repository). It is installed by its own setup, per user, and Stintmate starts and
 supervises it ([installer](docs/installer.md)). Its Start menu shortcut opens Stintmate, or tells you where to get it; it never starts a connector alone.
 
 | Path | What |
@@ -13,7 +13,7 @@ supervises it ([installer](docs/installer.md)). Its Start menu shortcut opens St
 | `crates/ams2-shm/` | the game's shared memory (version 14): layout, mapping, consistent snapshots |
 | `crates/ams2-core/` | the logic without Windows or IPC: sessions, laps, announcements, live frame |
 | `crates/ams2-platform/` | Windows helpers: workspace, logging, processes, timers |
-| `crates/ams2-i18n/` | the connector's texts and the catalogs contract loader |
+| `crates/ams2-i18n/` | the connector's texts and the catalogs loader |
 | `bins/ams2-recorder/` | the recorder process (50 Hz, no window, below-normal priority) |
 | `bins/ams2-connector-ui/` | the control app (tray, supervision of the recorder, the endpoint a managing app uses) |
 | `bins/ams2-connector-window/` | the window (Services, Options, Logs), started by the control app on demand |

@@ -33,7 +33,7 @@ fn fixed_clock() -> Stamp {
 }
 
 #[test]
-fn the_line_format_is_the_python_one() {
+fn the_line_format_is_the_documented_one() {
     let buf = Buf::default();
     let b2 = buf.clone();
     let sub = logging::subscriber(

@@ -1,5 +1,5 @@
-//! Frame builders, a clock and a recording sink for tests, and the scripted session (the port
-//! of `replay_session.py`'s `session_script`, frames built in memory).
+//! Frame builders, a clock and a recording sink for tests, and the scripted session (frames built
+//! in memory).
 //!
 //! Nothing here touches the game's mapping; later tasks (replay tool, integration tests) play
 //! [`scripted_session`] into a test mapping.
@@ -357,7 +357,7 @@ impl Harness {
         self.clock.advance(secs);
     }
 
-    /// `drive_lap` of the Python tests: one frame per `step` s of the lap clock from `start_t`
+    /// `drive_lap`: one frame per `step` s of the lap clock from `start_t`
     /// to `end_t`, the distance running from `start_dist` to the end of the track; the clock
     /// advances `step` after each frame.
     pub fn drive(&mut self, lap: u32, start_t: f64, end_t: f64, start_dist: f64) {
@@ -726,7 +726,7 @@ impl Script {
     }
 }
 
-/// The scripted session of `replay_session.py` (menus, garage as a menu, out lap, three flying
+/// The scripted session (menus, garage as a menu, out lap, three flying
 /// laps with one off track and invalid, a pit stop, a lap after it, return to garage mid lap,
 /// menus), as the frames the replay reader would hand out, with the game clock of each.
 pub fn scripted_session() -> Vec<ScriptedFrame> {

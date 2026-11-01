@@ -201,7 +201,8 @@ pub fn jitter(d: Duration) -> Duration {
 }
 
 /// The delay before attempt number `attempt` (0-based failures in a row): 0.25, 0.5, 1, 2 s,
-/// then 2 s; a refusal waits [`REFUSED_RETRY`]. No jitter.
+/// then 2 s; a refusal waits [`REFUSED_RETRY`]. This function adds no jitter; the caller does
+/// (about +-20 %, [`jitter`]).
 pub fn backoff(attempt: u32, refused: bool) -> Duration {
     if refused {
         return REFUSED_RETRY;

@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.4.0 (2026-11-03)
+
+- **The connector has a product key**, a UUID that is its own and never changes. Every hello to
+  Pitwall names it (`product` in the hello metadata) and the descriptor carries it. Pitwall uses
+  it to tell this connector apart from any other program that uses the id `ams2`. The kit's
+  protocol and descriptor documents describe the key. It needs the connector-kit release that
+  introduces it (0.3.0): the version this connector targets moves with it.
+- `ams2-connector-ui --register` refuses to overwrite a descriptor holding another `product`
+  (it says so and exits 1, leaving the file as it is). A descriptor with no `product`, written by
+  an earlier build, is replaced.
+- `--unregister` and the uninstaller remove the descriptor only when both its `launcher` and its
+  `product` are this connector's.
+- When Pitwall closes the connection with `connector_id_taken` (the id was first seen with another
+  product key), the connector reports `refused` and waits 60 s before the next attempt, instead of
+  the 10 s of the other refusals.
+
 ## 3.3.2 (2026-11-01)
 
 - Uses `stintmate-ipc` v0.3.3. Behaviour unchanged.

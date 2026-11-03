@@ -5,7 +5,9 @@
 //! simulator (workspace contract, section 5.5). Written by this connector only: by its setup
 //! and by `ams2-connector-ui --register`, which writes it atomically and exits. The control app
 //! never rewrites it at start (a stale build started by hand cannot take the registration back).
-//! `--unregister` removes it ([`remove`]), but only when its `launcher` names this install.
+//! `--unregister` removes it ([`remove`]), but only when its `launcher` names this install and its
+//! `product` is this connector's. `--register` refuses to overwrite a descriptor holding another
+//! `product`; one with none (an older build) is replaced.
 //! `--read-registration` reads it for the next setup ([`read_ours`]). Tests and development
 //! runs point `STINTMATE_CONNECTORS_DIR` at a temporary folder.
 
@@ -14,6 +16,9 @@ use crate::texts::Texts;
 use serde_json::{Value, json};
 use std::io;
 use std::path::{Path, PathBuf};
+
+/// This connector's product key (the descriptor's and the hello's `product`).
+pub use ams2_platform::location::PRODUCT;
 
 /// The descriptor's schema version.
 pub const SCHEMA: u64 = 1;
@@ -75,6 +80,7 @@ pub fn build(
     let mut d = json!({
         "schema": SCHEMA,
         "id": crate::CONNECTOR_ID,
+        "product": PRODUCT,
         "name": crate::CONNECTOR_NAME,
         "sim": crate::SIM,
         "sim_name": crate::SIM_NAME,
@@ -132,6 +138,17 @@ pub fn same_path(a: &str, b: &str) -> bool {
     comparable(a) == comparable(b)
 }
 
+/// The `product` of a descriptor when it names one other than this connector's (a missing or
+/// `null` one is an older build's, which is replaced).
+fn other_product(d: &Value) -> Option<String> {
+    match d.get("product") {
+        None | Some(Value::Null) => None,
+        Some(Value::String(p)) if p == PRODUCT => None,
+        Some(Value::String(p)) => Some(p.clone()),
+        Some(other) => Some(other.to_string()),
+    }
+}
+
 fn strip_bom(b: &[u8]) -> &[u8] {
     b.strip_prefix(&[0xEF, 0xBB, 0xBF]).unwrap_or(b)
 }
@@ -150,6 +167,16 @@ pub fn write_in(
     let current = std::fs::read(&target)
         .ok()
         .and_then(|b| serde_json::from_slice::<Value>(strip_bom(&b)).ok());
+    if let Some(other) = current.as_ref().and_then(other_product) {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!(
+                "{} already registers the id \"{}\" with another product ({other}); it is not replaced. Remove that program, or change the connector's id",
+                target.display(),
+                crate::CONNECTOR_ID
+            ),
+        ));
+    }
     if current.as_ref().is_some_and(|c| same(c, &doc)) {
         return Ok(target);
     }
@@ -168,8 +195,9 @@ pub fn write(
     write_in(&connectors_dir()?, launcher, mutex, flavour, uninstall)
 }
 
-/// Removes the descriptor in `dir` when it is this connector's (`id` is ours) and its `launcher`
-/// names `this_exe`. A file of another install, another id or not JSON stays.
+/// Removes the descriptor in `dir` when it is this connector's (`id` is ours and its `product`
+/// is this connector's) and its `launcher` names `this_exe`. A file of another install, another
+/// id or product (none included), or not JSON, stays.
 pub fn remove_in(dir: &Path, this_exe: &Path) -> io::Result<Removed> {
     let target = dir.join(FILE_NAME);
     let bytes = match std::fs::read(&target) {
@@ -181,6 +209,7 @@ pub fn remove_in(dir: &Path, this_exe: &Path) -> io::Result<Removed> {
         .ok()
         .is_some_and(|v| {
             v["id"] == crate::CONNECTOR_ID
+                && v["product"] == PRODUCT
                 && v["launcher"]
                     .as_str()
                     .is_some_and(|l| same_path(l, &this_exe.display().to_string()))
@@ -290,6 +319,7 @@ mod tests {
         for k in [
             "schema",
             "id",
+            "product",
             "name",
             "sim",
             "sim_name",
@@ -309,6 +339,7 @@ mod tests {
             assert!(d.get(k).is_some(), "{k}");
         }
         assert_eq!(d["id"], "ams2");
+        assert_eq!(d["product"], ams2_platform::location::PRODUCT);
         assert_eq!(d["endpoint"], "connector-ams2");
         assert_eq!(d["control_protocol"], "stintmate-ipc/2");
         assert_eq!(
@@ -423,6 +454,68 @@ mod tests {
             Removed::OtherInstall(_)
         ));
         assert!(p.exists(), "left as it was");
+    }
+
+    #[test]
+    fn the_product_key_is_a_lowercase_uuid_v4() {
+        let b = PRODUCT.as_bytes();
+        assert_eq!(b.len(), 36);
+        for (i, c) in PRODUCT.chars().enumerate() {
+            match i {
+                8 | 13 | 18 | 23 => assert_eq!(c, '-'),
+                14 => assert_eq!(c, '4'),
+                19 => assert!("89ab".contains(c)),
+                _ => assert!(c.is_ascii_digit() || ('a'..='f').contains(&c), "{PRODUCT}"),
+            }
+        }
+    }
+
+    #[test]
+    fn register_refuses_another_product_and_replaces_one_with_none() {
+        let dir = tempfile::tempdir().unwrap();
+        let exe = Path::new(EXE);
+        let p = dir.path().join(FILE_NAME);
+        let theirs = r#"{"id":"ams2","product":"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"}"#;
+        std::fs::write(&p, theirs).unwrap();
+        let e = write_in(dir.path(), exe, r"LocalM", None, None).unwrap_err();
+        assert_eq!(e.kind(), io::ErrorKind::AlreadyExists);
+        assert!(e.to_string().contains("another product"), "{e}");
+        assert_eq!(std::fs::read_to_string(&p).unwrap(), theirs);
+        // A product that is not text is not ours either.
+        std::fs::write(&p, r#"{"id":"ams2","product":5}"#).unwrap();
+        assert!(write_in(dir.path(), exe, r"LocalM", None, None).is_err());
+        // None (an older build), null, and our own are replaced.
+        for old in [
+            r#"{"id":"ams2"}"#,
+            r#"{"id":"ams2","product":null}"#,
+            &format!(r#"{{"id":"ams2","product":"{PRODUCT}"}}"#),
+        ] {
+            std::fs::write(&p, old).unwrap();
+            write_in(dir.path(), exe, r"LocalM", None, None).unwrap();
+            let d: Value = serde_json::from_slice(&std::fs::read(&p).unwrap()).unwrap();
+            assert_eq!(d["product"], PRODUCT, "{old}");
+        }
+    }
+
+    #[test]
+    fn remove_needs_our_product_too() {
+        let dir = tempfile::tempdir().unwrap();
+        let exe = Path::new(EXE);
+        let p = dir.path().join(FILE_NAME);
+        for body in [
+            format!(
+                r#"{{"id":"ams2","launcher":{:?},"product":"aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"}}"#,
+                EXE
+            ),
+            format!(r#"{{"id":"ams2","launcher":{:?}}}"#, EXE),
+        ] {
+            std::fs::write(&p, &body).unwrap();
+            assert!(matches!(
+                remove_in(dir.path(), exe).unwrap(),
+                Removed::OtherInstall(_)
+            ));
+            assert_eq!(std::fs::read_to_string(&p).unwrap(), body);
+        }
     }
 
     #[test]

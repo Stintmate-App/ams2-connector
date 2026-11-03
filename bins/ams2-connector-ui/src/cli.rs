@@ -182,7 +182,7 @@ pub const USAGE: &str = "usage: ams2-connector-ui [--tray] [--managed --parent-p
   --register        write %LOCALAPPDATA%\\Stintmate\\connectors\\ams2.json (needs no workspace) and exit
   --flavour <name>  with --register: which build this is, for example dev
   --uninstall <exe> with --register: the uninstaller that removes this install
-  --unregister      remove that file when it names this install (logs, outbox and settings stay) and exit
+  --unregister      remove that file when it names this install and this connector (logs, outbox and settings stay) and exit
   --read-registration <out-file>
                     write the installed registration (launcher, dir, uninstall, uninstall_args,
                     flavour) as key=value lines for a setup; exit 2 when there is none
@@ -319,13 +319,18 @@ pub fn quit(names: &Names, pipe: &str, key: impl Fn() -> KeySource, wait: Durati
 }
 
 /// `--register`: writes the machine descriptor (needs no workspace) and returns the exit
-/// status: 0 written (or already up to date), 1 the file cannot be written.
+/// status: 0 written (or already up to date), 1 the file cannot be written or holds another
+/// product's registration (left as it is).
 pub fn register(args: &Args, ui_exe: &std::path::Path, mutex: &str) -> i32 {
     let uninstall = args.uninstall.as_deref().map(std::path::Path::new);
     match crate::descriptor::write(ui_exe, mutex, args.flavour.as_deref(), uninstall) {
         Ok(p) => {
             say(&format!("registered: {}", p.display()));
             0
+        }
+        Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
+            say(&format!("not registered: {e}"));
+            1
         }
         Err(e) => {
             say(&format!("cannot write the connector descriptor: {e}"));

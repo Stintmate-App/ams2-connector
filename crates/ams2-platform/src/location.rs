@@ -12,6 +12,12 @@ use std::path::PathBuf;
 pub const WORKSPACE_ERROR_EXIT: i32 = 3;
 /// This connector's folder name under `<workspace>\connectors\`.
 pub const CONNECTOR_ID: &str = "ams2";
+/// This connector's product key: a UUID version 4, generated once and never changed. It tells
+/// this connector apart from any other program that registers under the same id: every process
+/// names it in the hello metadata (`product`) and the descriptor carries it. A setup or
+/// `--register` refuses to overwrite a descriptor holding another key, and the uninstaller
+/// removes the descriptor only when the key is this one.
+pub const PRODUCT: &str = "16232189-f230-48f4-a763-ed68f261395b";
 
 /// The resolved data folder.
 #[derive(Debug, Clone, PartialEq, Eq)]

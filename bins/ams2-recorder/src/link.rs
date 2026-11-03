@@ -28,6 +28,9 @@ pub const CONNECTOR_NAME: &str = "AMS2 connector";
 pub const PITWALL_ENDPOINT: &str = "pitwall";
 /// The wait after a refusal (`connector_busy` / `unauthorized`).
 pub const REFUSED_RETRY: Duration = Duration::from_secs(10);
+/// The wait after `connector_id_taken`: the id belongs to another product, which only the user
+/// can change, so the retry is slow. No shorter, and not jittered below this.
+pub const TAKEN_RETRY: Duration = Duration::from_secs(60);
 /// The process of this executable on the links.
 pub const SERVICE: &str = "recorder";
 
@@ -49,6 +52,7 @@ pub fn peer_info(service: &str) -> PeerInfo {
         ("sim", Value::from(ams2_core::SIM)),
         ("sim_name", Value::from(ams2_core::SIM_NAME)),
         ("service", Value::from(service)),
+        ("product", Value::from(ams2_platform::location::PRODUCT)),
     ]);
     PeerInfo {
         app: APP_ID.into(),
@@ -146,7 +150,7 @@ pub enum LinkState {
     Connected,
     /// Pitwall is not running, or the connection dropped.
     Waiting,
-    /// Pitwall refused (`connector_busy`, `unauthorized`).
+    /// Pitwall refused (`connector_busy`, `unauthorized`, `connector_id_taken`).
     Refused,
 }
 
@@ -220,7 +224,8 @@ struct LinkShared {
     on_state: Mutex<Option<Hook>>,
     generation: AtomicU64,
     stop: Stop,
-    last_error: Mutex<Option<(LinkState, String, bool)>>,
+    last_error: Mutex<Option<(LinkState, String, Wait)>>,
+    taken_retry: Mutex<Duration>,
     started: AtomicBool,
 }
 
@@ -245,6 +250,7 @@ impl PitwallLink {
             generation: AtomicU64::new(0),
             stop: Stop::default(),
             last_error: Mutex::default(),
+            taken_retry: Mutex::new(TAKEN_RETRY),
             started: AtomicBool::new(false),
         });
         let s = shared.clone();
@@ -302,6 +308,11 @@ impl PitwallLink {
         *lock(&self.thread) = Some(h);
     }
 
+    /// Replaces the wait after `connector_id_taken` (tests; the default is [`TAKEN_RETRY`]).
+    pub fn set_taken_retry(&self, d: Duration) {
+        *lock(&self.shared.taken_retry) = d;
+    }
+
     /// Stops reconnecting and closes the connection.
     pub fn close(&self) {
         self.shared.stop.set();
@@ -326,6 +337,16 @@ impl PitwallLink {
         }
     }
 
+    /// The wait before the next attempt: the taken-retry wait exactly (never shorter, no jitter)
+    /// after `connector_id_taken`, else the jittered backoff.
+    fn delay(&self, attempt: u32, refused: bool, taken: bool) -> Duration {
+        if taken {
+            *lock(&self.shared.taken_retry)
+        } else {
+            jitter(backoff(attempt, refused))
+        }
+    }
+
     fn run(&self) {
         let sh = &self.shared;
         let mut attempt = 0u32;
@@ -333,6 +354,7 @@ impl PitwallLink {
             *lock(&sh.last_error) = None;
             self.client.start();
             let mut refused = false;
+            let mut taken = false;
             match self.client.wait_connected(Duration::from_secs(8)) {
                 Ok(peer) => {
                     attempt = 0;
@@ -356,18 +378,24 @@ impl PitwallLink {
                     }
                 }
                 Err(_) => {
-                    let (state, text, wait_long) = lock(&sh.last_error)
+                    let (state, text, wait) = lock(&sh.last_error)
                         .take()
                         .unwrap_or_else(|| classify(None));
                     refused = state == LinkState::Refused;
-                    if refused || wait_long {
+                    taken = wait == Wait::Taken;
+                    if taken {
+                        tracing::warn!(
+                            "{text} (the id belongs to another product; retrying in {} s)",
+                            lock(&sh.taken_retry).as_secs()
+                        );
+                    } else if refused || wait == Wait::Long {
                         tracing::warn!("{text} (retrying in 10 s)");
                     }
                     self.set(state, Some(text));
-                    refused |= wait_long;
+                    refused |= wait == Wait::Long;
                 }
             }
-            let d = jitter(backoff(attempt, refused));
+            let d = self.delay(attempt, refused, taken);
             attempt += 1;
             if sh.stop.wait(d) {
                 break;
@@ -376,35 +404,55 @@ impl PitwallLink {
     }
 }
 
-/// State, message and "wait 10 s" for the error of a failed attempt.
-fn classify(e: Option<&Error>) -> (LinkState, String, bool) {
+/// How long to wait before the next attempt, besides the short backoff.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Wait {
+    /// The backoff steps.
+    Short,
+    /// [`REFUSED_RETRY`].
+    Long,
+    /// `connector_id_taken`: the link's taken-retry wait (60 s).
+    Taken,
+}
+
+/// State, message and the wait for the error of a failed attempt.
+fn classify(e: Option<&Error>) -> (LinkState, String, Wait) {
     match e {
         Some(Error::PeerBye { code, message })
-            if code == "connector_busy" || code == "unauthorized" =>
+            if code == "connector_busy"
+                || code == "unauthorized"
+                || code == "connector_id_taken" =>
         {
             let text = if message.is_empty() {
                 format!("Pitwall refused the connection: {code}")
             } else {
                 format!("Pitwall refused the connection: {code}: {message}")
             };
-            (LinkState::Refused, text, true)
+            let wait = if code == "connector_id_taken" {
+                Wait::Taken
+            } else {
+                Wait::Long
+            };
+            (LinkState::Refused, text, wait)
         }
-        Some(Error::KeyFile(k)) => (LinkState::Waiting, k.to_string(), true),
-        Some(Error::PipeNotFound(_)) | None => {
-            (LinkState::Waiting, "Pitwall is not running".into(), false)
-        }
+        Some(Error::KeyFile(k)) => (LinkState::Waiting, k.to_string(), Wait::Long),
+        Some(Error::PipeNotFound(_)) | None => (
+            LinkState::Waiting,
+            "Pitwall is not running".into(),
+            Wait::Short,
+        ),
         Some(Error::Handshake(f)) if matches!(f.code.as_str(), "unauthorized") => (
             LinkState::Refused,
             format!(
                 "Pitwall refused the connection: unauthorized: {}",
                 f.message
             ),
-            true,
+            Wait::Long,
         ),
         Some(other) => (
             LinkState::Waiting,
             format!("cannot reach Pitwall: {other}"),
-            false,
+            Wait::Short,
         ),
     }
 }
@@ -589,6 +637,27 @@ mod tests {
     }
 
     #[test]
+    fn connector_id_taken_waits_a_minute_and_the_wait_is_injectable() {
+        assert!(TAKEN_RETRY >= Duration::from_secs(60));
+        let info = peer_info("recorder");
+        let link =
+            PitwallLink::new("pitwall-test-unused", info, KeySource::Bytes([1u8; 32])).unwrap();
+        for _ in 0..20 {
+            assert_eq!(link.delay(0, true, true), TAKEN_RETRY);
+            assert!(link.delay(0, true, false) <= Duration::from_secs(12));
+        }
+        link.set_taken_retry(Duration::from_millis(30));
+        assert_eq!(link.delay(3, true, true), Duration::from_millis(30));
+    }
+
+    #[test]
+    fn the_hello_names_the_product() {
+        let meta = crate::serve::to_json(peer_info("recorder").meta.as_ref().unwrap());
+        assert_eq!(meta["product"], "16232189-f230-48f4-a763-ed68f261395b");
+        assert_eq!(meta["product"], ams2_platform::location::PRODUCT);
+    }
+
+    #[test]
     fn refusals_are_classified() {
         let busy = Error::PeerBye {
             code: "connector_busy".into(),
@@ -596,7 +665,14 @@ mod tests {
         };
         let (s, text, long) = classify(Some(&busy));
         assert_eq!(s, LinkState::Refused);
-        assert!(long && text.contains("connector_busy: other"));
+        assert!(long == Wait::Long && text.contains("connector_busy: other"));
         assert_eq!(classify(None).0, LinkState::Waiting);
+        let taken = Error::PeerBye {
+            code: "connector_id_taken".into(),
+            message: String::new(),
+        };
+        let (s, text, wait) = classify(Some(&taken));
+        assert_eq!((s, wait), (LinkState::Refused, Wait::Taken));
+        assert!(text.ends_with("connector_id_taken"));
     }
 }

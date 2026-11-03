@@ -73,6 +73,7 @@ fn register_needs_no_workspace_and_writes_every_field() {
     assert_eq!(d["schema"], 1);
     assert_eq!(d["id"], "ams2");
     assert_eq!(d["flavour"], "dev");
+    assert_eq!(d["product"], "16232189-f230-48f4-a763-ed68f261395b");
     assert_eq!(
         d["uninstall"],
         serde_json::json!([
@@ -86,6 +87,7 @@ fn register_needs_no_workspace_and_writes_every_field() {
     for k in [
         "name",
         "sim",
+        "product",
         "sim_name",
         "version",
         "args",
@@ -179,11 +181,51 @@ fn unregister_removes_only_a_file_that_names_this_install() {
 }
 
 #[test]
+fn register_refuses_another_product_and_replaces_a_descriptor_with_none() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path();
+    let theirs = serde_json::json!({"schema": 1, "id": "ams2", "launcher": exe(),
+        "product": "aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"})
+    .to_string();
+    std::fs::write(descriptor(conn), &theirs).unwrap();
+    let o = run_in(conn, &["--register"]);
+    assert_eq!(o.status.code(), Some(1), "{}", text(&o));
+    assert!(text(&o).contains("another product"), "{}", text(&o));
+    assert_eq!(std::fs::read_to_string(descriptor(conn)).unwrap(), theirs);
+    // An older build wrote no product: it is replaced.
+    let old = serde_json::json!({"schema": 1, "id": "ams2", "launcher": exe()}).to_string();
+    std::fs::write(descriptor(conn), old).unwrap();
+    let o = run_in(conn, &["--register"]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    let d: Value = serde_json::from_slice(&std::fs::read(descriptor(conn)).unwrap()).unwrap();
+    assert_eq!(d["product"], "16232189-f230-48f4-a763-ed68f261395b");
+}
+
+#[test]
+fn unregister_leaves_a_descriptor_of_another_or_no_product() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path();
+    for product in [Some("aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee"), None] {
+        let mut d = serde_json::json!({"schema": 1, "id": "ams2", "launcher": exe()});
+        if let Some(p) = product {
+            d["product"] = p.into();
+        }
+        let body = d.to_string();
+        std::fs::write(descriptor(conn), &body).unwrap();
+        let o = run_in(conn, &["--unregister"]);
+        assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+        assert!(text(&o).contains("left as it is"), "{}", text(&o));
+        assert_eq!(std::fs::read_to_string(descriptor(conn)).unwrap(), body);
+    }
+}
+
+#[test]
 fn unregister_takes_the_launcher_written_with_slashes_and_other_case() {
     let dir = tempfile::tempdir().unwrap();
     let conn = dir.path();
     let launcher = exe().replace('\\', "/").to_uppercase();
-    let doc = serde_json::json!({"schema": 1, "id": "ams2", "launcher": launcher});
+    let doc = serde_json::json!({"schema": 1, "id": "ams2", "launcher": launcher,
+        "product": "16232189-f230-48f4-a763-ed68f261395b"});
     std::fs::write(descriptor(conn), doc.to_string()).unwrap();
     let o = run_in(conn, &["--unregister"]);
     assert_eq!(o.status.code(), Some(0), "{}", text(&o));

@@ -276,7 +276,8 @@ fn scripted_session_with_pitwall_up_matches_the_golden() {
     assert_eq!(
         meta,
         json!({"connector_id": "ams2", "connector_name": "AMS2 connector", "sim": "ams2",
-               "sim_name": "Automobilista 2", "service": "recorder"})
+               "sim_name": "Automobilista 2", "service": "recorder",
+               "product": "16232189-f230-48f4-a763-ed68f261395b"})
     );
     let ik = |m: &str| {
         calls

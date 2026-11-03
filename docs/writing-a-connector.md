@@ -36,7 +36,7 @@ read-only. Write down, for your simulator, what [FINDINGS.md](FINDINGS.md) recor
 ## What to declare
 
 A connector connects to Pitwall's endpoint `pitwall` as a client, with a hello that names the
-connector (`connector_id`, `connector_name`, `sim`, `sim_name`), and declares what it offers.
+connector (`connector_id`, `connector_name`, `sim`, `sim_name`, `service`, `product`), and declares what it offers.
 This one does so per process:
 
 | Declaration | Purpose |

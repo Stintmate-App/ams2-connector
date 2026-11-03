@@ -25,6 +25,7 @@ target\release\ams2-connector-ui.exe --register
 `--register` writes the connector descriptor, the per-user machine file
 `%LOCALAPPDATA%\Stintmate\connectors\ams2.json`, which tells a managing app (the Stintmate hub)
 where the connector is and how to start and control it. It needs no workspace. The descriptor
+holds the connector's product key (`product`, the same value as in its hello to Pitwall) and
 stores the absolute path of the exe, so register again after moving it: the control app does
 **not** rewrite it at start. `--unregister` removes it, only when it names this exe (see
 [Command lines](#command-lines)). The three executables must stay in
@@ -80,7 +81,7 @@ after 10 s) and quits. If the app crashes or is killed its services are killed w
 | Recording - session N - stint S - lap L - Connected to Pitwall | Recording through Pitwall. | Nothing. |
 | Off - Automobilista 2 is running: laps are not recorded (amber) | The Recorder is off and the game runs. | Switch the Recorder on. |
 | Pitwall not running (amber) | Pitwall's endpoint is absent. | Start Pitwall; the connector reconnects. |
-| Refused by Pitwall - see logs (amber) | Another connector is connected (`connector_busy`), or the IPC key differs (`unauthorized`); retried about every 10 s. | Close the other connector; check the workspace. |
+| Refused by Pitwall - see logs (amber) | Another connector is connected (`connector_busy`), or the IPC key differs (`unauthorized`); retried about every 10 s. The id `ams2` was first seen with another product key (`connector_id_taken`): retried every 60 s. | Close the other connector; check the workspace. |
 | Recording - Pitwall not running: the laps wait for it | On track without Pitwall; laps are kept ("N laps waiting for Pitwall"). | Start Pitwall when convenient. |
 | Starting... | The service runs but has not connected to the app yet. | Nothing. |
 
@@ -135,14 +136,14 @@ registration).
 
 | Option | What it does | Exit status |
 |---|---|---|
-| `--register` | writes `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (this exe's path, the endpoint, the mutex; no workspace needed) atomically and exits; left alone when it is already up to date. `--flavour NAME` adds `"flavour"` (for example `dev`); `--uninstall EXE` adds `"uninstall"`, the command line that removes this install (`EXE /VERYSILENT /SUPPRESSMSGBOXES /NORESTART`) | 0 done, 1 cannot write |
-| `--unregister` | removes that file only when it is this connector's (`"id": "ams2"`) and its `launcher` names this exe (absolute, case-insensitive, `/` read as `\`); logs, outbox and `ui_config.json` stay. A file of another install or id is left as it is | 0 removed, nothing to remove, or left as it is (one line says which); 1 cannot remove |
+| `--register` | writes `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (this exe's path, the endpoint, the mutex; no workspace needed) atomically and exits; left alone when it is already up to date. `--flavour NAME` adds `"flavour"` (for example `dev`); `--uninstall EXE` adds `"uninstall"`, the command line that removes this install (`EXE /VERYSILENT /SUPPRESSMSGBOXES /NORESTART`) | 0 done, 1 cannot write, or the file holds another `product` (it is not overwritten; a file with no `product`, from an older build, is replaced) |
+| `--unregister` | removes that file only when it is this connector's (`"id": "ams2"`) and its `product` is this connector's and its `launcher` names this exe (absolute, case-insensitive, `/` read as `\`); logs, outbox and `ui_config.json` stay. A file of another install, id or product (none included) is left as it is | 0 removed, nothing to remove, or left as it is (one line says which); 1 cannot remove |
 | `--read-registration OUT-FILE` | for a setup: writes the registration to OUT-FILE as UTF-8 **with a BOM**, `\r\n` line ends, `key=value` lines `launcher`, `dir` (the launcher's folder), `uninstall` (the command), `uninstall_args` (the rest, quoted when they have a space) and `flavour` | 0 written, 2 no valid registration of this connector (nothing written), 1 cannot write OUT-FILE |
 | `--quit` | asks the running control app to exit and waits up to 10 s until nothing of the connector runs | 0 stopped (or nothing ran), 1 still running or the app does not answer, 4 the app is managed |
 | `--stintmate-hold` | for a setup: asks Stintmate (hub method `hub.connector.hold`, id `ams2`, 5 minutes) to stop the connector and not start it until released; calls again every 0.5 s while it answers `stopping`, then waits until the connector's mutexes are free; `--wait` (default 25 s) bounds both; `--purpose` is `update` (default) or `uninstall`. Takes no `--workspace`: the user's pointer and key | 0 held and stopped, 1 held but something still runs, 2 bad arguments, 5 no Stintmate to ask (no pointer, workspace or key, no hub endpoint and no hub mutex, or the hub does not know the connector), 6 Stintmate runs but did not answer (3 s for the endpoint, 5 s per call, busy, an older hub), 7 a driving session is being recorded |
 | `--stintmate-release` | for a setup: `hub.connector.release`; Stintmate starts the connector again unless `--no-start` | 0 released (or nothing was held), 2 bad arguments, 5 no Stintmate, 6 not answering |
 | `--from-shortcut` | what the installer's Start menu shortcut runs; it never starts a connector. Stintmate installed: opens Stintmate and exits (also when a connector already runs). Not installed, or its launcher is gone: a Yes/No message says the connector needs Stintmate and offers https://stintmate.app (Yes opens it in the default browser, No exits). The message is in the language of the user's workspace when there is one, English otherwise | 0 done, 1 Stintmate could not be started |
-| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.3.2`) | 0 |
+| `--version` | prints `<exe name> <version>` (for example `ams2-connector-ui 3.4.0`) | 0 |
 
 `--from-shortcut` finds Stintmate through the uninstall entry its installer writes
 (`HKCU`, then `HKLM`, `Software\Microsoft\Windows\CurrentVersion\Uninstall\{B5E7C0D2-4A1F-4E8B-9C36-5D2F7A91E4C8}_is1`):

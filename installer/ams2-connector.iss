@@ -662,7 +662,7 @@ begin
     Started := True;
     Emit('{"stage":"unregister"}');
     { removes %LOCALAPPDATA%\Stintmate\connectors\ams2.json only when it names this install (a
-      file of another install, or none, is left as it is: exit 0) }
+      file of another install or product, or none, is left as it is: exit 0) }
     if not Exec(ExpandConstant('{app}\' + UiName), '--unregister', '', SW_HIDE, ewWaitUntilTerminated, Code) then
       Code := 1;
     if Code <> 0 then

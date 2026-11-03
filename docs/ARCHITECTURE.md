@@ -32,7 +32,7 @@ ams2-connector-ui.exe (tray, Local\Ams2Connector.UI)        pitwall-core (Pitwal
 | Recorder | `ams2-recorder.exe`, console subsystem, started hidden | shared memory, the 50 Hz loop, the tracker, the outbox, the `pitwall` link | `Ams2Connector.Recorder` (+ `.Stop`) |
 
 Pitwall sees one connector (`peer.app` `connector-ams2`, `peer.meta` with `connector_id`
-`ams2`, `connector_name`, `sim`, `sim_name`, `service`) whose functions are the union of what
+`ams2`, `connector_name`, `sim`, `sim_name`, `service`, `product`) whose functions are the union of what
 its connected processes declare. A method whose process is off answers
 `not_implemented_by_connector`.
 
@@ -129,7 +129,8 @@ connector's own endpoint.
   methods and channels before it connects, connects, runs its per-connection hooks (the
   catalog, guidance and actions declarations), and reconnects with the protocol's backoff
   (0.25, 0.5, 1, 2 s, then every 2 s with 20 % jitter). Refused with `connector_busy` (another
-  connector id is connected) or `unauthorized` (another key): state `refused`, wait about 10 s (10 s with the same 20 % jitter).
+  connector id is connected) or `unauthorized` (another key): state `refused`, wait about 10 s (10 s with the same 20 % jitter). Refused with
+  `connector_id_taken` (the id `ams2` was first seen with another product key): state `refused`, wait 60 s, no jitter below that.
   Pitwall absent: `waiting`.
 - **The control link**: the recorder's connection to the control app's endpoint, declaring the
   state channel `service.status`. A recorder started by hand without the control app just keeps
@@ -377,13 +378,15 @@ window is the separate process described above.
 - **Single instance**: a named mutex; a second launch calls `control.show` (or
   `control.managed`) on the running one and exits.
 - **Connector descriptor**, the per-user machine file
-  `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (schema 1): id, name, sim, sim name,
+  `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (schema 1): id, the product key (`product`), name, sim, sim name,
   version, the absolute path of the control app as `launcher`, `args`,
   `control_protocol: "stintmate-ipc/2"`, `endpoint: "connector-ams2"`, the mutex, the services,
   the `logs` (in `<workspace>\connectors\ams2\`) and two optional keys: `flavour` (`dev` for
   the development build) and `uninstall` (the argv that removes this install). Written
   atomically by the setup, through `--register`, and never by the control app at start; removed
-  by `--unregister` only when `launcher` names this install; read for the next setup by
+  by `--unregister` only when `launcher` names this install and `product` is this connector's;
+  `--register` refuses to overwrite a descriptor holding another `product` (one with none, from an
+  older build, is replaced); read for the next setup by
   `--read-registration`. It needs no workspace, so a managing app finds the connector without
   knowing the simulator and before any workspace exists. `STINTMATE_CONNECTORS_DIR` replaces
   the folder in tests.

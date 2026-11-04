@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Prints the body of the `## <version>` section of a changelog (without the heading).
+# Prints the body of the `## <version>` section of a changelog (without the heading), followed by
+# the link to the code signing policy that every release page carries.
 # Usage: release-notes.sh <CHANGELOG.md> <version>   (version without the leading "v")
 set -euo pipefail
 file=${1:?usage: release-notes.sh <CHANGELOG.md> <version>}
@@ -16,3 +17,4 @@ if [ -z "$notes" ]; then
   exit 1
 fi
 printf '%s\n' "$notes"
+printf '\n---\n\nCode signing policy: https://github.com/Stintmate-App/ams2-connector#code-signing-policy\n'

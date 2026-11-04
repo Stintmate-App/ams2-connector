@@ -56,7 +56,8 @@ A release of tag `vX.Y.Z` carries two files:
 | `AMS2-Connector-X.Y.Z-setup.exe` | the installer ([installer](docs/installer.md)) |
 | `AMS2-Connector-X.Y.Z-setup.exe.sha256` | its SHA-256 in `sha256sum` format; check with `sha256sum --check AMS2-Connector-X.Y.Z-setup.exe.sha256` |
 
-The release notes are the version's section of [`CHANGELOG.md`](CHANGELOG.md). Tags with a
+The release notes are the version's section of [`CHANGELOG.md`](CHANGELOG.md), followed by a
+link to the [code signing policy](#code-signing-policy). Tags with a
 `+` suffix (`v3.2.3+docs.1`) mark documentation-only changes: they have no release and no assets.
 
 To publish one, a maintainer runs the `release` workflow by hand (Actions, `release`, Run
@@ -75,6 +76,29 @@ workflow) from `main`, with the `tag` to release:
 
 The logic that can run on its own is in `scripts/` (`release-check.sh`, `release-notes.sh`,
 `release-report.sh`; bash, git and the GitHub CLI).
+
+## Code signing policy
+
+The Windows binaries of a release (`ams2-recorder.exe`, `ams2-connector-ui.exe`,
+`ams2-connector-window.exe`) and its installer are built from this repository by the `release`
+workflow on a GitHub-hosted runner, from a tag on `main` ([Releases](#releases)). They are not
+signed yet. Once this project is accepted by SignPath Foundation, free code signing is provided
+by [SignPath.io](https://about.signpath.io/), with a certificate by
+[SignPath Foundation](https://signpath.org/), and only files built that way are signed.
+
+Roles, by GitHub account, all members of the
+[Stintmate-App](https://github.com/Stintmate-App) organisation (which requires two-factor
+authentication):
+
+- Committers and reviewers: [devdaamage](https://github.com/devdaamage),
+  [braindaamage](https://github.com/braindaamage). Every change reaches `main` through a pull
+  request; a change from outside the organisation is reviewed by a member before it is merged.
+- Approvers: [braindaamage](https://github.com/braindaamage) approves each signing request.
+
+Privacy: this program will not transfer any information to other networked systems unless
+specifically requested by the user or the person installing or operating it. The connector reads
+the game's shared memory and talks only to Stintmate's Pitwall on the same PC, through a local
+named pipe.
 
 ## Contributing
 

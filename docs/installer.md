@@ -31,7 +31,7 @@ itself checks nothing about where it came from.
 - **Never starts the connector** and never touches the workspace's data (logs, outbox,
   settings). Uninstalling removes the programs and the descriptor, never the data.
 - A **development build** (`scripts\build-installer.ps1 -Dev`, file name `...-dev-setup.exe`)
-  has its own identity (AppId, name `Stintmate AMS2 Connector (dev)`, folder) and writes
+  has its own identity (AppId, name `Stintmate AMS2 connector (dev)`, folder) and writes
   `"flavour": "dev"` into the file; Stintmate shows the version with "(dev)" after it. See "One flavour at a time".
 
 ## One flavour at a time

@@ -1,4 +1,4 @@
-; Stintmate AMS2 Connector installer . Built by scripts/build-installer.ps1:
+; Stintmate AMS2 connector installer . Built by scripts/build-installer.ps1:
 ;   ISCC /DVersion=<x.y.z> /DVersionInfo=<a.b.c.d> /DStage=<dir> /DOutDir=<dir> [/DOutName=<file>]
 ;        [/DDev] [/DSetupIcon=<file.ico>]
 ; Per user (no administrator rights), fixed folder, English only, unsigned. Only code lives in
@@ -24,14 +24,14 @@
 ; A development build has its own identity (AppId, name, folder), so installing it on a test
 ; folder or machine never replaces or removes the real connector's installation.
 #ifdef Dev
-  #define AppName "Stintmate AMS2 Connector (dev)"
+  #define AppName "Stintmate AMS2 connector (dev)"
   #define AppGuid "{{7C1D5E94-3B2A-4F60-A8D7-2E9B0F4C6A15}"
   #define AppDir "Stintmate AMS2 Connector (dev)"
   #ifndef OutName
     #define OutName "AMS2-Connector-" + Version + "-dev-setup"
   #endif
 #else
-  #define AppName "Stintmate AMS2 Connector"
+  #define AppName "Stintmate AMS2 connector"
   #define AppGuid "{{E3A94F7B-5C18-4D2E-9B60-81F5D3C7A204}"
   #define AppDir "Stintmate AMS2 Connector"
   #ifndef OutName

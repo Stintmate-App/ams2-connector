@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+- The README has a code signing policy section: how the release binaries are built, who commits,
+  reviews and approves, and the privacy statement. Each release's notes end with a link to it.
+- The installer's product name is "Stintmate AMS2 connector", the same as in the binaries' version
+  information (it said "Connector"). The install folder does not change. No behaviour or
+  protocol change.
+
 ## 3.4.0 (2026-11-03)
 
 - **The connector has a product key**, a UUID that is its own and never changes. Every hello to

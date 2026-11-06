@@ -31,6 +31,31 @@ pub const ENV_CONNECTORS_DIR: &str = "STINTMATE_CONNECTORS_DIR";
 /// The switches an uninstaller gets so that it runs with no window and no prompts.
 pub const UNINSTALL_SWITCHES: [&str; 3] = ["/VERYSILENT", "/SUPPRESSMSGBOXES", "/NORESTART"];
 
+/// The features the descriptor declares, from the kit's list: what this connector offers.
+/// `remembered_services` is not among them: the services carry `delegable` and `default`, but no
+/// `refusal` on a failed start.
+pub const FEATURES: [&str; 19] = [
+    "live_frame",
+    "lap_status",
+    "capture_target",
+    "brake_cues",
+    "setups",
+    "fuel",
+    "sectors",
+    "conditions",
+    "rivals",
+    "wheel_channels",
+    "off_track",
+    "announcements",
+    "spotter",
+    "guidance",
+    "actions",
+    "window",
+    "notices",
+    "translated_texts",
+    "options",
+];
+
 /// What [`remove`] did.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Removed {
@@ -97,6 +122,9 @@ pub fn build(
         })).collect::<Vec<_>>(),
         // In <workspace>\connectors\ams2\, where the connector writes them.
         "logs": ["recorder.log", "ui.log"],
+        // The control app serves control.show and control.hide.
+        "window": true,
+        "features": FEATURES,
         "written_at": ams2_platform::logging::local_iso(false),
         "written_by": format!("{} {}", crate::APP_ID, crate::VERSION),
     });

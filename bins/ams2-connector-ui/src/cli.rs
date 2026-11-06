@@ -57,6 +57,9 @@ pub struct Args {
     pub workspace: Option<String>,
     /// `--allow-synced`.
     pub allow_synced: bool,
+    /// Arguments this build does not know: ignored (a newer launcher may append options), and
+    /// logged by [`main`].
+    pub ignored: Vec<String>,
 }
 
 /// Parses the arguments (program name excluded); the error is a usage message.
@@ -107,7 +110,7 @@ pub fn parse<I: IntoIterator<Item = String>>(argv: I) -> Result<Args, String> {
                 let v = it.next().ok_or("--parent-pid needs a value")?;
                 a.parent_pid = Some(v.parse().map_err(|_| "--parent-pid needs a number")?);
             }
-            other => return Err(format!("unknown argument {other}")),
+            other => a.ignored.push(other.to_string()),
         }
     }
     if a.managed && a.parent_pid.is_none_or(|p| p == 0) {
@@ -361,6 +364,9 @@ pub fn main(argv: Vec<String>) -> i32 {
         || args.read_registration.is_some()
     {
         attach_console();
+        for arg in &args.ignored {
+            say(&format!("ignoring the unknown argument {arg}"));
+        }
     }
     if args.version {
         say(&version_line());
@@ -410,6 +416,9 @@ pub fn main(argv: Vec<String>) -> i32 {
     let _guard = logging::init(&LogConfig::new(&loc.data_dir, "ui"));
     logging::install_panic_hook();
     loc.log();
+    for arg in &args.ignored {
+        tracing::warn!("Ignoring the unknown argument {arg}");
+    }
     let key_path = default_key_path(Some(&loc.workspace));
     let key =
         || -> KeySource { KeySource::File(KeyFile::open(key_path.clone().unwrap_or_default())) };
@@ -633,8 +642,13 @@ mod tests {
         );
         assert!(p(&["--register", "--managed", "--parent-pid", "5"]).is_err());
         assert!(p(&["--register"]).unwrap().register);
-        assert!(p(&["--register", "--check"]).is_err(), "--check is gone");
-        assert!(p(&["--check"]).is_err());
+        let u = p(&["--register", "--check", "--future", "x"]).unwrap();
+        assert!(u.register);
+        assert_eq!(
+            u.ignored,
+            ["--check", "--future", "x"],
+            "unknown options are kept to be logged"
+        );
         let r = p(&["--register", "--flavour", "dev", "--uninstall", "C:\\u.exe"]).unwrap();
         assert_eq!(
             (r.flavour.as_deref(), r.uninstall.as_deref()),
@@ -652,7 +666,7 @@ mod tests {
         );
         assert!(p(&["--read-registration"]).is_err());
         assert!(p(&["--tray"]).unwrap().tray);
-        assert!(p(&["--bogus"]).is_err());
+        assert_eq!(p(&["--bogus"]).unwrap().ignored, ["--bogus"]);
     }
 
     #[test]

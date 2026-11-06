@@ -1,4 +1,4 @@
-//! `AMS2_CONNECTOR_DEV_INSTANCE` end to end. One test only: it changes the process
+//! `STINTMATE_DEV_INSTANCE` end to end. One test only: it changes the process
 //! environment, so it must not share a process with other tests.
 #![cfg(windows)]
 

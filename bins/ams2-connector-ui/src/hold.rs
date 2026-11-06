@@ -49,7 +49,7 @@ pub struct HubTarget {
 }
 
 impl HubTarget {
-    /// The real hub of this user (or the dev-tagged one when `AMS2_CONNECTOR_DEV_INSTANCE`
+    /// The real hub of this user (or the dev-tagged one when `STINTMATE_DEV_INSTANCE`
     /// is set), with the spec's 3 s and 5 s.
     pub fn production() -> Self {
         Self {

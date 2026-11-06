@@ -57,7 +57,8 @@ pub fn tray_available() -> bool {
 }
 
 fn icon_for(level: &str) -> Icon {
-    Icon::from_rgba(icons::render_rgba(level, 32), 32, 32).expect("a 32x32 RGBA icon")
+    let size = icons::TRAY_SIZE;
+    Icon::from_rgba(icons::render_rgba(level, size), size, size).expect("a square RGBA icon")
 }
 
 struct Menus {

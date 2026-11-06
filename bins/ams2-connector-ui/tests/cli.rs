@@ -101,6 +101,50 @@ fn register_needs_no_workspace_and_writes_every_field() {
     ] {
         assert!(d.get(k).is_some(), "{k}");
     }
+    assert_eq!(
+        d["window"], true,
+        "the control app serves control.show and control.hide"
+    );
+    let features: Vec<&str> = d["features"]
+        .as_array()
+        .expect("features")
+        .iter()
+        .map(|f| f.as_str().unwrap())
+        .collect();
+    // The names of the connector kit's feature list; `remembered_services` is not declared.
+    let known = [
+        "live_frame",
+        "lap_status",
+        "capture_target",
+        "brake_cues",
+        "setups",
+        "fuel",
+        "sectors",
+        "conditions",
+        "rivals",
+        "wheel_channels",
+        "off_track",
+        "announcements",
+        "spotter",
+        "guidance",
+        "actions",
+        "window",
+        "notices",
+        "translated_texts",
+        "remembered_services",
+        "options",
+    ];
+    assert!(features.iter().all(|f| known.contains(f)), "{features:?}");
+    assert!(features.contains(&"window") && features.contains(&"live_frame"));
+    assert!(!features.contains(&"remembered_services"));
+    assert_eq!(
+        features.len(),
+        features
+            .iter()
+            .collect::<std::collections::HashSet<_>>()
+            .len(),
+        "no duplicates"
+    );
     assert!(
         !std::fs::read(descriptor(&conn))
             .unwrap()
@@ -327,10 +371,18 @@ fn read_registration_keeps_non_ascii_paths_as_utf8_with_a_bom() {
 }
 
 #[test]
-fn check_is_a_bad_argument_now() {
-    let o = run(&["--register", "--check"]);
-    assert_eq!(o.status.code(), Some(2), "{}", text(&o));
-    assert!(text(&o).contains("unknown argument --check"));
+fn an_unknown_option_is_ignored_and_reported() {
+    let dir = tempfile::tempdir().unwrap();
+    let conn = dir.path().join("connectors");
+    let o = run_in(&conn, &["--register", "--check", "--future-option"]);
+    assert_eq!(o.status.code(), Some(0), "{}", text(&o));
+    assert!(
+        text(&o).contains("ignoring the unknown argument --check"),
+        "{}",
+        text(&o)
+    );
+    assert!(text(&o).contains("ignoring the unknown argument --future-option"));
+    assert!(descriptor(&conn).exists(), "the known option still ran");
 }
 
 #[test]
@@ -347,8 +399,8 @@ fn register_and_unregister_take_no_workspace() {
 }
 
 #[test]
-fn bad_arguments_print_the_usage_with_every_option() {
-    let o = run(&["--bogus"]);
+fn bad_usage_prints_the_usage_with_every_option() {
+    let o = run(&["--managed"]);
     assert_eq!(o.status.code(), Some(2));
     let t = text(&o);
     for opt in [
@@ -398,7 +450,7 @@ fn the_hub_options_find_no_stintmate_without_a_workspace_or_a_key_and_check_argu
         .args(["--stintmate-hold", "--wait", "1"])
         .env("STINTMATE_WORKSPACE", ws.path())
         .env("STINTMATE_CONNECTORS_DIR", ws.path().join("c"))
-        .env("AMS2_CONNECTOR_DEV_INSTANCE", "clitest-no-key")
+        .env("STINTMATE_DEV_INSTANCE", "clitest-no-key")
         .env(
             "STINTMATE_SETTINGS_FILE",
             std::env::temp_dir().join("ams2-cli-test-no-settings.json"),

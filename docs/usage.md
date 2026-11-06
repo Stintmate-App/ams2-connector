@@ -48,7 +48,7 @@ The control app is a small tray process. It uses almost no CPU and has no window
 context while idle.
 
 Tray menu: **Open** (the window), **Recorder** (start or stop; the label follows the state),
-**Logs**, **Open data folder**, **Exit**. The icon's colour follows the state; amber means
+**Logs**, **Open data folder**, **Exit**. The icon carries a badge in its lower right corner whose colour follows the state (grey off, green ok, amber warn, red error); amber means
 something wants attention, for example "Off - Automobilista 2 is running: laps are not
 recorded".
 
@@ -129,8 +129,11 @@ ams2-connector-window.exe --version
 
 `--register`, `--unregister`, `--read-registration`, `--quit`, `--stintmate-hold`,
 `--stintmate-release`, `--from-shortcut` and `--version` start nothing and cannot be combined with each other or with `--managed` / `--tray`. `--register`, `--unregister`,
-`--read-registration` and `--from-shortcut` take no `--workspace`. A bad command line prints the usage (every
-option) and exits 2. `STINTMATE_CONNECTORS_DIR` replaces the connectors folder (tests and
+`--read-registration` and `--from-shortcut` take no `--workspace`. A known option with a missing or invalid value (for
+example `--managed` without `--parent-pid`) prints the usage (every option) and exits 2. An
+option this build does not know is ignored, so that a newer launcher can append options: the
+console commands print `ignoring the unknown argument <arg>` and the app logs it in `ui.log`
+(`cli::parse`, `Args::ignored`). `STINTMATE_CONNECTORS_DIR` replaces the connectors folder (tests and
 development: set it before running `--register` from a checkout, or you take over the real
 registration).
 
@@ -284,7 +287,7 @@ The connector is installed by its own setup, per user and without administrator 
 unattended mode Stintmate uses, its parameters, progress lines and exit codes are in
 [installer.md](installer.md).
 
-**Development only:** the environment variable `AMS2_CONNECTOR_DEV_INSTANCE=<tag>` (letters
+**Development only:** the environment variable `STINTMATE_DEV_INSTANCE=<tag>` (the connector kit's variable; letters
 and digits; anything else becomes `-`, 24 characters at most) makes a second connector that
 shares nothing with the installed one: the single-instance mutexes become
 `Local\Ams2Connector.Dev-<tag>.*` and every pipe the three programs build uses the pipe user

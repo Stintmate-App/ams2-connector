@@ -381,8 +381,11 @@ window is the separate process described above.
   `%LOCALAPPDATA%\Stintmate\connectors\ams2.json` (schema 1): id, the product key (`product`), name, sim, sim name,
   version, the absolute path of the control app as `launcher`, `args`,
   `control_protocol: "stintmate-ipc/2"`, `endpoint: "connector-ams2"`, the mutex, the services,
-  the `logs` (in `<workspace>\connectors\ams2\`) and two optional keys: `flavour` (`dev` for
-  the development build) and `uninstall` (the argv that removes this install). Written
+  the `logs` (in `<workspace>\connectors\ams2\`), `window: true` (the control app serves
+  `control.show` and `control.hide`), `features` (`descriptor::FEATURES`: the kit's features this
+  connector offers; `remembered_services` is not declared because the services carry no `refusal`)
+  and two optional keys: `flavour` (`dev` for the development build) and `uninstall` (the argv
+  that removes this install). Written
   atomically by the setup, through `--register`, and never by the control app at start; removed
   by `--unregister` only when `launcher` names this install and `product` is this connector's;
   `--register` refuses to overwrite a descriptor holding another `product` (one with none, from an

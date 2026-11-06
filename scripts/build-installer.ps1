@@ -108,10 +108,8 @@ try {
     }
     if (-not (Test-Path (Join-Path $stage 'THIRD-PARTY-NOTICES.txt'))) { Fail 'THIRD-PARTY-NOTICES.txt was not generated' }
 
-    # The control app's icon (drawn by its build script) is the setup's icon.
-    $icon = Get-ChildItem (Join-Path $release 'build') -Filter app.ico -Recurse -ErrorAction SilentlyContinue |
-        Where-Object { $_.FullName -match 'ams2-connector-ui-' } |
-        Sort-Object LastWriteTime -Descending | Select-Object -First 1
+    # The control app's icon is the setup's icon.
+    $icon = Get-Item (Join-Path $root 'bins\ams2-connector-ui\assets\icon.ico')
 
     # ---- 4. Inno Setup ----
     Step 'Inno Setup'

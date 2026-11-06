@@ -1,21 +1,20 @@
-//! Windows resources of `ams2-connector-ui.exe`: the icon (drawn by `src/icons.rs`) and the
+//! Windows resources of `ams2-connector-ui.exe`: the icon (`assets/icon.ico` of the control app) and the
 //! version information.
-
-#[path = "src/icons.rs"]
-#[allow(dead_code)]
-mod icons;
 
 use std::path::PathBuf;
 
+/// The icon, relative to this package.
+const ICO: &str = "assets/icon.ico";
+
 fn main() {
-    println!("cargo:rerun-if-changed=src/icons.rs");
+    println!("cargo:rerun-if-changed={ICO}");
     println!("cargo:rerun-if-changed=build.rs");
     if std::env::var("CARGO_CFG_TARGET_OS").as_deref() != Ok("windows") {
         return;
     }
     let out = PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR"));
-    let ico = out.join("app.ico");
-    std::fs::write(&ico, icons::ico_bytes("ok", &[16, 24, 32, 48, 64])).expect("write app.ico");
+    let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR"));
+    let ico = manifest.join(ICO).canonicalize().expect("the icon");
     let version = std::env::var("CARGO_PKG_VERSION").expect("version");
     let mut n = version
         .split(|c: char| !c.is_ascii_digit())

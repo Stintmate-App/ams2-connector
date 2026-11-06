@@ -1,9 +1,15 @@
-//! The connector's icons, drawn in code (no image files): an "A" on a disc whose colour is the
-//! level of the connector (off = grey, ok = green, warn = amber, error = red). They are our
-//! own artwork; nothing is copied from a
-//! third party.
-//!
-//! Pure standard library, so `build.rs` includes this file to write the executables' `.ico`.
+//! The connector's icon: the Stintmate artwork in `assets/` (`icon_32.png`, `icon_64.png`; the
+//! executables' resource is `assets/icon.ico`, set by each `build.rs`). The tray icon carries the
+//! state of the connector as a badge in the lower right corner, whose colour is the level
+//! (off = grey, ok = green, warn = amber, error = red); the window's icon is the artwork alone.
+
+/// Size of the tray icon, in pixels.
+pub const TRAY_SIZE: u32 = 32;
+/// Size of the window icon, in pixels.
+pub const WINDOW_SIZE: u32 = 64;
+
+static ICON_32: &[u8] = include_bytes!("../assets/icon_32.png");
+static ICON_64: &[u8] = include_bytes!("../assets/icon_64.png");
 
 /// The colour of a level word (`off`, `ok`, `warn`, `error`; anything else is `off`).
 pub fn level_rgb(level: &str) -> [u8; 3] {
@@ -15,105 +21,69 @@ pub fn level_rgb(level: &str) -> [u8; 3] {
     }
 }
 
-/// Distance from `p` to the segment `a`-`b`.
-fn segment_distance(p: (f32, f32), a: (f32, f32), b: (f32, f32)) -> f32 {
-    let (abx, aby) = (b.0 - a.0, b.1 - a.1);
-    let len2 = abx * abx + aby * aby;
-    let t = (((p.0 - a.0) * abx + (p.1 - a.1) * aby) / len2).clamp(0.0, 1.0);
-    let (cx, cy) = (a.0 + t * abx, a.1 + t * aby);
-    ((p.0 - cx).powi(2) + (p.1 - cy).powi(2)).sqrt()
+/// RGBA pixels (row by row) of the artwork, `size` pixels square: [`TRAY_SIZE`] or
+/// [`WINDOW_SIZE`].
+///
+/// # Panics
+/// On any other size, or if the embedded image is not an 8-bit RGBA PNG (a build error).
+pub fn artwork_rgba(size: u32) -> Vec<u8> {
+    let bytes = match size {
+        TRAY_SIZE => ICON_32,
+        WINDOW_SIZE => ICON_64,
+        other => panic!("no artwork of {other} px"),
+    };
+    let mut reader = png::Decoder::new(std::io::Cursor::new(bytes))
+        .read_info()
+        .expect("the embedded icon is a PNG");
+    let mut buf = vec![0; reader.output_buffer_size().expect("the icon's size")];
+    let info = reader
+        .next_frame(&mut buf)
+        .expect("the embedded icon decodes");
+    assert!(
+        info.width == size
+            && info.height == size
+            && info.color_type == png::ColorType::Rgba
+            && info.bit_depth == png::BitDepth::Eight,
+        "the embedded icon is {size}x{size} RGBA8"
+    );
+    buf.truncate(info.buffer_size());
+    buf
 }
 
-/// Whether a point of the unit square is on the glyph, and whether it is on the disc.
-fn shape_at(p: (f32, f32)) -> (bool, bool) {
-    let (dx, dy) = (p.0 - 0.5, p.1 - 0.5);
-    let disc = (dx * dx + dy * dy).sqrt() <= 0.47;
-    let half = 0.07;
-    let apex = (0.5, 0.2);
-    let strokes = [
-        (apex, (0.29, 0.8)),
-        (apex, (0.71, 0.8)),
-        ((0.375, 0.6), (0.625, 0.6)),
-    ];
-    let glyph = strokes
-        .iter()
-        .any(|&(a, b)| segment_distance(p, a, b) <= half);
-    (glyph, disc)
-}
-
-/// RGBA pixels (row by row) of the icon of `level`, `size` pixels square, 4x4 supersampled.
+/// The artwork with the badge of `level` in the lower right corner (a disc of the level's colour
+/// inside a dark ring, anti-aliased), `size` as in [`artwork_rgba`].
 pub fn render_rgba(level: &str, size: u32) -> Vec<u8> {
+    let mut px = artwork_rgba(size);
     let [r, g, b] = level_rgb(level);
-    let n = 4u32;
-    let mut out = Vec::with_capacity((size * size * 4) as usize);
+    let s = size as f32;
+    let (cx, cy) = (0.74 * s, 0.74 * s);
+    let disc = 0.21 * s;
+    let ring = disc + (0.06 * s).max(1.0);
     for y in 0..size {
         for x in 0..size {
-            let (mut disc_sum, mut glyph_sum) = (0.0f32, 0.0f32);
-            for sy in 0..n {
-                for sx in 0..n {
-                    let p = (
-                        (x as f32 + (sx as f32 + 0.5) / n as f32) / size as f32,
-                        (y as f32 + (sy as f32 + 0.5) / n as f32) / size as f32,
-                    );
-                    let (glyph, disc) = shape_at(p);
-                    if disc {
-                        disc_sum += 1.0;
-                        if glyph {
-                            glyph_sum += 1.0;
-                        }
-                    }
-                }
+            let d = ((x as f32 + 0.5 - cx).powi(2) + (y as f32 + 0.5 - cy).powi(2)).sqrt();
+            let ring_a = (ring - d + 0.5).clamp(0.0, 1.0);
+            if ring_a == 0.0 {
+                continue;
             }
-            let alpha = disc_sum / (n * n) as f32;
-            let white = if disc_sum > 0.0 {
-                glyph_sum / disc_sum
-            } else {
-                0.0
+            let disc_a = (disc - d + 0.5).clamp(0.0, 1.0);
+            // The badge's own colour and coverage: ring colour under the disc colour.
+            let ring_rgb = [0x1b_u8, 0x1b, 0x1b];
+            let mix = |i: usize, c: u8| {
+                (f32::from(ring_rgb[i]) * (1.0 - disc_a) + f32::from(c) * disc_a).round()
             };
-            let mix = |c: u8| (f32::from(c) * (1.0 - white) + 255.0 * white).round() as u8;
-            out.extend_from_slice(&[mix(r), mix(g), mix(b), (alpha * 255.0).round() as u8]);
-        }
-    }
-    out
-}
-
-/// A Windows `.ico` file with 32-bit images of `sizes` (each at most 255).
-pub fn ico_bytes(level: &str, sizes: &[u32]) -> Vec<u8> {
-    let mut file = Vec::new();
-    file.extend_from_slice(&[0, 0, 1, 0]);
-    file.extend_from_slice(&(sizes.len() as u16).to_le_bytes());
-    let mut images: Vec<Vec<u8>> = Vec::new();
-    for &s in sizes {
-        let rgba = render_rgba(level, s);
-        let mut dib = Vec::new();
-        // BITMAPINFOHEADER: the height counts the XOR and the AND masks.
-        dib.extend_from_slice(&40u32.to_le_bytes());
-        dib.extend_from_slice(&(s as i32).to_le_bytes());
-        dib.extend_from_slice(&((s * 2) as i32).to_le_bytes());
-        dib.extend_from_slice(&1u16.to_le_bytes());
-        dib.extend_from_slice(&32u16.to_le_bytes());
-        dib.extend_from_slice(&[0u8; 24]);
-        for y in (0..s).rev() {
-            for x in 0..s {
-                let i = ((y * s + x) * 4) as usize;
-                dib.extend_from_slice(&[rgba[i + 2], rgba[i + 1], rgba[i], rgba[i + 3]]);
+            let badge = [mix(0, r), mix(1, g), mix(2, b)];
+            let i = ((y * size + x) * 4) as usize;
+            let under = f32::from(px[i + 3]) / 255.0;
+            let out_a = ring_a + under * (1.0 - ring_a);
+            for k in 0..3 {
+                let c = (badge[k] * ring_a + f32::from(px[i + k]) * under * (1.0 - ring_a)) / out_a;
+                px[i + k] = c.round() as u8;
             }
+            px[i + 3] = (out_a * 255.0).round() as u8;
         }
-        let row = (s.div_ceil(32) * 4) as usize;
-        dib.extend(std::iter::repeat_n(0u8, row * s as usize));
-        images.push(dib);
     }
-    let mut offset = 6 + 16 * sizes.len();
-    for (&s, img) in sizes.iter().zip(&images) {
-        file.extend_from_slice(&[s as u8, s as u8, 0, 0, 1, 0, 32, 0]);
-        file.extend_from_slice(&(img.len() as u32).to_le_bytes());
-        file.extend_from_slice(&(offset as u32).to_le_bytes());
-        offset += img.len();
-    }
-    for img in images {
-        file.extend_from_slice(&img);
-    }
-    file
+    px
 }
 
 #[cfg(test)]
@@ -121,14 +91,34 @@ mod tests {
     use super::*;
 
     #[test]
-    fn the_icon_is_a_disc_with_a_white_glyph() {
-        let px = render_rgba("ok", 32);
-        assert_eq!(px.len(), 32 * 32 * 4);
-        let at = |x: usize, y: usize| &px[(y * 32 + x) * 4..(y * 32 + x) * 4 + 4];
-        assert_eq!(at(0, 0)[3], 0, "outside the disc");
-        assert_eq!(&at(5, 16)[..3], &level_rgb("ok"), "on the disc");
-        assert_eq!(at(5, 16)[3], 255);
-        assert_eq!(&at(16, 19)[..3], &[255, 255, 255], "the crossbar of the A");
+    fn the_artwork_decodes_at_both_sizes() {
+        for size in [TRAY_SIZE, WINDOW_SIZE] {
+            let px = artwork_rgba(size);
+            assert_eq!(px.len(), (size * size * 4) as usize);
+            assert!(px.chunks(4).any(|p| p[3] > 0), "not blank");
+        }
+    }
+
+    #[test]
+    fn the_badge_shows_the_level_and_leaves_the_rest_alone() {
+        let size = TRAY_SIZE;
+        let base = artwork_rgba(size);
+        let at = |px: &[u8], x: u32, y: u32| px[((y * size + x) * 4) as usize..][..4].to_vec();
+        for level in ["off", "ok", "warn", "error"] {
+            let px = render_rgba(level, size);
+            let c = (0.74 * size as f32) as u32;
+            assert_eq!(
+                &at(&px, c, c)[..3],
+                &level_rgb(level),
+                "{level}: badge centre"
+            );
+            assert_eq!(at(&px, c, c)[3], 255);
+            assert_eq!(
+                at(&px, 1, 1),
+                at(&base, 1, 1),
+                "{level}: far corner untouched"
+            );
+        }
     }
 
     #[test]
@@ -143,12 +133,10 @@ mod tests {
     }
 
     #[test]
-    fn the_ico_has_a_directory_and_its_images() {
-        let ico = ico_bytes("ok", &[16, 32]);
-        assert_eq!(&ico[..6], &[0, 0, 1, 0, 2, 0]);
-        let size = u32::from_le_bytes(ico[14..18].try_into().unwrap()) as usize;
-        let off = u32::from_le_bytes(ico[18..22].try_into().unwrap()) as usize;
-        assert_eq!(off, 6 + 32);
-        assert_eq!(size, 40 + 16 * 16 * 4 + 4 * 16);
+    fn the_ico_resource_has_the_standard_sizes() {
+        let ico = include_bytes!("../assets/icon.ico");
+        assert_eq!(&ico[..4], &[0, 0, 1, 0]);
+        let n = u16::from_le_bytes([ico[4], ico[5]]);
+        assert!(n >= 4, "{n} images");
     }
 }

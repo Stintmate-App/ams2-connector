@@ -111,9 +111,9 @@ fn run() -> i32 {
             .with_min_inner_size([560.0, 380.0])
             .with_title(&title)
             .with_icon(std::sync::Arc::new(egui::IconData {
-                rgba: ams2_connector_ui::icons::render_rgba("ok", 64),
-                width: 64,
-                height: 64,
+                rgba: ams2_connector_ui::icons::artwork_rgba(ams2_connector_ui::icons::WINDOW_SIZE),
+                width: ams2_connector_ui::icons::WINDOW_SIZE,
+                height: ams2_connector_ui::icons::WINDOW_SIZE,
             })),
         ..Default::default()
     };

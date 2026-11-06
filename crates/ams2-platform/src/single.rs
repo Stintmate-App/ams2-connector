@@ -31,7 +31,7 @@ pub struct Names {
 }
 
 impl Default for Names {
-    /// The production names, or the tagged ones when `AMS2_CONNECTOR_DEV_INSTANCE` is set.
+    /// The production names, or the tagged ones when `STINTMATE_DEV_INSTANCE` is set.
     fn default() -> Self {
         match crate::dev::tag() {
             Some(t) => Self::tagged(&t),
@@ -41,7 +41,7 @@ impl Default for Names {
 }
 
 impl Names {
-    /// The production names, ignoring `AMS2_CONNECTOR_DEV_INSTANCE`.
+    /// The production names, ignoring `STINTMATE_DEV_INSTANCE`.
     pub fn production() -> Self {
         Self {
             ui: "Local\\Ams2Connector.UI".into(),

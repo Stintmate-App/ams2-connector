@@ -1,13 +1,13 @@
 //! Development isolation: a second connector that shares nothing with the installed one.
 //!
-//! `AMS2_CONNECTOR_DEV_INSTANCE=<tag>` is read here and nowhere else. When set, the
+//! `STINTMATE_DEV_INSTANCE=<tag>` is read here and nowhere else. When set, the
 //! single-instance names ([`crate::single::Names::default`]) carry the tag and every pipe the
 //! three executables build uses the pipe user `<user>-<tag>`, so the connector's own endpoint
 //! and the Pitwall pipe it dials are a separate set from the real ones. For development and
 //! desk tests only (see `docs/usage.md`); production never sets it.
 
 /// The environment variable.
-pub const ENV: &str = "AMS2_CONNECTOR_DEV_INSTANCE";
+pub const ENV: &str = "STINTMATE_DEV_INSTANCE";
 
 /// Longest tag kept.
 const MAX_TAG: usize = 24;
@@ -72,6 +72,11 @@ pub fn pipe_path_if_dev(app: &str) -> Option<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_variable_is_the_connector_kits() {
+        assert_eq!(ENV, "STINTMATE_DEV_INSTANCE");
+    }
 
     #[test]
     fn tags_are_normalised() {

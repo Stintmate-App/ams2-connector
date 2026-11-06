@@ -1,6 +1,26 @@
 # Changelog
 
-## Unreleased
+## 3.4.1 (2026-11-07)
+
+- **The control app ignores options it does not know.** It used to print the usage and exit 2;
+  now it ignores them (so a newer launcher can append options), says so on the console for the
+  commands that have one (`ignoring the unknown argument ...`) and logs a warning in `ui.log`.
+  A known option with a bad or missing value still exits 2.
+- **The development instance variable is `STINTMATE_DEV_INSTANCE`**, the name the connector kit
+  uses, in all three programs. `AMS2_CONNECTOR_DEV_INSTANCE` is no longer read. Behaviour is the
+  same: the tag separates the mutexes and pipes from an installed connector.
+- **The descriptor declares `window` and `features`.** `window: true` (the control app serves
+  `control.show` and `control.hide`) and the 19 features this connector offers, from the
+  kit's list: `live_frame`, `lap_status`, `capture_target`, `brake_cues`, `setups`, `fuel`,
+  `sectors`, `conditions`, `rivals`, `wheel_channels`, `off_track`, `announcements`, `spotter`,
+  `guidance`, `actions`, `window`, `notices`, `translated_texts` and `options`. Re-run
+  `--register` (the setup does) to write them. `remembered_services` is not declared: the
+  services have `delegable` and `default`, but no `refusal` after a failed start.
+- **A new icon.** The three programs and the setup use the Stintmate artwork for the AMS2
+  connector (`bins/ams2-connector-ui/assets/`) instead of the "A" on a coloured disc drawn in
+  code. The tray icon still shows the state: a badge in the lower right corner, grey, green,
+  amber or red as the disc was. The window's icon is the artwork alone. The artwork is ours and
+  is released under the repository's licence (Apache-2.0).
 
 - The README has a code signing policy section: how the release binaries are built, who commits,
   reviews and approves, and the privacy statement. Each release's notes end with a link to it.

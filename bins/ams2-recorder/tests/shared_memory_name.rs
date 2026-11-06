@@ -62,7 +62,7 @@ fn a_replayed_session_drives_the_real_recorder() {
             "--hz",
             "200",
         ])
-        .env("AMS2_CONNECTOR_DEV_INSTANCE", &tag)
+        .env("STINTMATE_DEV_INSTANCE", &tag)
         .env("STINTMATE_CONNECTORS_DIR", dir.path().join("connectors"))
         .env("STINTMATE_SETTINGS_FILE", dir.path().join("settings.json"))
         .stdout(Stdio::null())

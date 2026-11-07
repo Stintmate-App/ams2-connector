@@ -131,12 +131,26 @@ pub fn build(
     if let Some(f) = flavour.filter(|f| !f.is_empty()) {
         d["flavour"] = json!(f);
     }
+    if let Some(icon) = installed_icon(launcher) {
+        d["icon"] = json!(icon.display().to_string());
+    }
     if let Some(u) = uninstall {
         let mut argv = vec![u.display().to_string()];
         argv.extend(UNINSTALL_SWITCHES.iter().map(|s| (*s).to_string()));
         d["uninstall"] = json!(argv);
     }
     d
+}
+
+/// The connector's icon file name: the setup installs it next to the control app.
+pub const ICON_FILE: &str = "icon.png";
+
+/// The connector's icon: `icon.png` next to the launcher, when the install put one there. The
+/// key is optional, so it is left out when the file is missing or the launcher's path is not
+/// absolute.
+fn installed_icon(launcher: &Path) -> Option<PathBuf> {
+    let icon = launcher.parent()?.join(ICON_FILE);
+    (icon.is_absolute() && icon.is_file()).then_some(icon)
 }
 
 /// Equal but for `written_at`.
@@ -386,6 +400,20 @@ mod tests {
                 "/NORESTART"
             ])
         );
+    }
+
+    #[test]
+    fn the_icon_is_declared_when_the_install_has_one_and_left_out_otherwise() {
+        let dir = tempfile::tempdir().unwrap();
+        let exe = dir.path().join("ams2-connector-ui.exe");
+        let d = build(&exe, r"Local\M", None, None);
+        assert!(d.get("icon").is_none());
+        let icon = dir.path().join(ICON_FILE);
+        std::fs::write(&icon, b"png").unwrap();
+        let d = build(&exe, r"Local\M", None, None);
+        assert_eq!(d["icon"], icon.display().to_string());
+        let d = build(Path::new("ams2-connector-ui.exe"), r"Local\M", None, None);
+        assert!(d.get("icon").is_none());
     }
 
     #[test]

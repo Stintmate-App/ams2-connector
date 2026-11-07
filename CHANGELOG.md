@@ -1,5 +1,22 @@
 # Changelog
 
+## 3.4.2 (2026-11-07)
+
+Behaviour changes found by the connector kit's checker; the protocol does not change.
+
+- **A refusal after the hello is shown as refused.** When Pitwall closes the connection with a
+  refusal (`unauthorized`, `bad_request`, `busy`, `connector_busy`, `connector_id_taken`) right
+  after the hello, the link now reports `refused` (and the control app's `control.state.pitwall`
+  follows) instead of "connection lost", and retries after the refusal wait, not the short backoff.
+- **After `connector_id_taken` the connector waits 60 s** before the next attempt, also when the
+  refusal arrives after the hello.
+- **The development instance names its mutexes `<name>.<tag>`.** With `STINTMATE_DEV_INSTANCE`
+  the single-instance mutexes are the production names with `.<tag>` appended, for example
+  `Local\Ams2Connector.UI.<tag>` (they were `Local\Ams2Connector.Dev-<tag>.UI`), as the kit's
+  guide says. The pipes are unchanged.
+- **Every process runs below normal priority.** The recorder already did; the control app and
+  the game window now lower their own priority at start (logged in `ui.log` and `window.log`).
+
 ## 3.4.1 (2026-11-07)
 
 - **The control app ignores options it does not know.** It used to print the usage and exit 2;

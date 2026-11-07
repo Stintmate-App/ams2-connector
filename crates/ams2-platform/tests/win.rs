@@ -380,7 +380,7 @@ fn procinfo_sees_this_process_and_its_chain() {
 fn tagged_names_are_separate_from_the_production_ones() {
     let p = Names::production();
     let t = Names::tagged("desk1");
-    assert_eq!(t.ui, r"Local\Ams2Connector.Dev-desk1.UI");
+    assert_eq!(t.ui, r"Local\Ams2Connector.UI.desk1");
     for (a, b) in [
         (&p.ui, &t.ui),
         (&p.window, &t.window),

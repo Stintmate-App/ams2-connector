@@ -302,15 +302,26 @@ pub fn quote_arg(arg: &str) -> String {
     out
 }
 
-/// Puts this process at below-normal priority (the recorder never competes with the
-/// game). The control app already starts it so; this covers a recorder started by hand.
-pub fn lower_process_priority() {
+/// Puts this process at below-normal priority (none of the connector's processes competes
+/// with the game). Every process calls it at its start: the recorder, the control app and
+/// the window. Returns whether the system accepted it.
+pub fn lower_process_priority() -> bool {
     // SAFETY: the pseudo handle of this process; a failure leaves the priority as it was.
     unsafe {
         windows_sys::Win32::System::Threading::SetPriorityClass(
             windows_sys::Win32::System::Threading::GetCurrentProcess(),
             BELOW_NORMAL_PRIORITY_CLASS,
-        );
+        ) != 0
+    }
+}
+
+/// The priority class of this process (`GetPriorityClass`; 0 when it cannot be read).
+pub fn process_priority_class() -> u32 {
+    // SAFETY: the pseudo handle of this process.
+    unsafe {
+        windows_sys::Win32::System::Threading::GetPriorityClass(
+            windows_sys::Win32::System::Threading::GetCurrentProcess(),
+        )
     }
 }
 

@@ -54,10 +54,10 @@ impl Names {
     /// The names of the development instance `tag` (see [`crate::dev`]).
     pub fn tagged(tag: &str) -> Self {
         Self {
-            ui: format!("Local\\Ams2Connector.Dev-{tag}.UI"),
-            window: format!("Local\\Ams2Connector.Dev-{tag}.Window"),
-            recorder: format!("Local\\Ams2Connector.Dev-{tag}.Recorder"),
-            recorder_stop: format!("Local\\Ams2Connector.Dev-{tag}.Recorder.Stop"),
+            ui: format!("Local\\Ams2Connector.UI.{tag}"),
+            window: format!("Local\\Ams2Connector.Window.{tag}"),
+            recorder: format!("Local\\Ams2Connector.Recorder.{tag}"),
+            recorder_stop: format!("Local\\Ams2Connector.Recorder.Stop.{tag}"),
         }
     }
 

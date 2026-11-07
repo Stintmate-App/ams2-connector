@@ -65,6 +65,11 @@ fn run() -> i32 {
     let _ = std::fs::create_dir_all(&loc.data_dir);
     let _guard = logging::init(&LogConfig::new(&loc.data_dir, "window"));
     logging::install_panic_hook();
+    if ams2_platform::proc::lower_process_priority() {
+        tracing::info!("Priority: below normal");
+    } else {
+        tracing::warn!("Cannot lower the priority of the window");
+    }
     let mutex = args
         .mutex
         .clone()

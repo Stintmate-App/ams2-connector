@@ -289,8 +289,8 @@ unattended mode Stintmate uses, its parameters, progress lines and exit codes ar
 
 **Development only:** the environment variable `STINTMATE_DEV_INSTANCE=<tag>` (the connector kit's variable; letters
 and digits; anything else becomes `-`, 24 characters at most) makes a second connector that
-shares nothing with the installed one: the single-instance mutexes become
-`Local\Ams2Connector.Dev-<tag>.*` and every pipe the three programs build uses the pipe user
+shares nothing with the installed one: the single-instance mutexes are
+the production names with `.<tag>` appended (`Local\Ams2Connector.UI.<tag>`) and every pipe the three programs build uses the pipe user
 `<user>-<tag>` (their own `connector-ams2` endpoint and the `pitwall` pipe they dial), so
 pairing it with a Pitwall started with the same pipe naming gives a separate set of endpoints.
 It does not move the workspace: use `--workspace <dir>` or `STINTMATE_WORKSPACE` for that. It

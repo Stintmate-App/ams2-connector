@@ -38,7 +38,8 @@ its connected processes declare. A method whose process is off answers
 
 **Why separate processes.** A GUI toolkit, a graphics context and a message loop must never
 share a process with the 50 Hz loop: a UI crash or hang must not lose a lap, and the recorder
-runs at below-normal priority with no GUI library in its address space. The window is a third
+runs at below-normal priority with no GUI library in its address space (the control app and the
+window lower their own priority too: no process of the connector competes with the game). The window is a third
 process, not a part of the tray, because its toolkit always creates a graphics context while it
 exists (observed once in a throwaway test, not reproducible from this repository: an OpenGL context
 for an idle hidden window). The tray process, which is always running, therefore has no graphics context at all,
@@ -131,6 +132,8 @@ connector's own endpoint.
   (0.25, 0.5, 1, 2 s, then every 2 s with 20 % jitter). Refused with `connector_busy` (another
   connector id is connected) or `unauthorized` (another key): state `refused`, wait about 10 s (10 s with the same 20 % jitter). Refused with
   `connector_id_taken` (the id `ams2` was first seen with another product key): state `refused`, wait 60 s, no jitter below that.
+  The same refusals count when the `bye` arrives right after the hello: the link reads the close
+  code and shows `refused` with the same waits.
   Pitwall absent: `waiting`.
 - **The control link**: the recorder's connection to the control app's endpoint, declaring the
   state channel `service.status`. A recorder started by hand without the control app just keeps

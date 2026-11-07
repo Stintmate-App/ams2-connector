@@ -102,6 +102,8 @@ try {
     }
     foreach ($doc in 'LICENSE', 'NOTICE') { Copy-Item (Join-Path $root $doc) $stage }
     Copy-Item (Join-Path $root 'installer\README.txt') $stage
+    # The connector's icon, declared in the descriptor (the file next to the control app).
+    Copy-Item (Join-Path $root 'bins\ams2-connector-ui\assets\icon.png') $stage
 
     Run 'cargo about generate' {
         cargo about generate --config about.toml --output-file (Join-Path $stage 'THIRD-PARTY-NOTICES.txt') installer\THIRD-PARTY-NOTICES.hbs

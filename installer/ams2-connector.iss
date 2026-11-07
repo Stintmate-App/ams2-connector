@@ -87,6 +87,7 @@ Source: "{#Stage}\LICENSE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\NOTICE"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\THIRD-PARTY-NOTICES.txt"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#Stage}\README.txt"; DestDir: "{app}"; Flags: ignoreversion
+Source: "{#Stage}\icon.png"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 ; The connector's shortcut never starts a connector of its own (it would run unmanaged next to

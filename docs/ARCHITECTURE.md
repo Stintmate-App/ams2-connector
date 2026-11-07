@@ -387,8 +387,9 @@ window is the separate process described above.
   the `logs` (in `<workspace>\connectors\ams2\`), `window: true` (the control app serves
   `control.show` and `control.hide`), `features` (`descriptor::FEATURES`: the kit's features this
   connector offers; `remembered_services` is not declared because the services carry no `refusal`)
-  and two optional keys: `flavour` (`dev` for the development build) and `uninstall` (the argv
-  that removes this install). Written
+  and three optional keys: `flavour` (`dev` for the development build), `icon` (the absolute path
+  of the `icon.png` the setup installed next to the control app, a square PNG; left out when the
+  file is missing) and `uninstall` (the argv that removes this install). Written
   atomically by the setup, through `--register`, and never by the control app at start; removed
   by `--unregister` only when `launcher` names this install and `product` is this connector's;
   `--register` refuses to overwrite a descriptor holding another `product` (one with none, from an

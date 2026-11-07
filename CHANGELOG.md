@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.3 (2026-11-07)
+
+- **The descriptor declares the connector's icon.** The setup installs `icon.png` (256 x 256)
+  next to the control app, and the descriptor's optional `icon` key holds its absolute path, so
+  other apps can show the connector with its own icon. The key is left out when the file is
+  missing. The protocol does not change.
+
 ## 3.4.2 (2026-11-07)
 
 Behaviour changes found by the connector kit's checker; the protocol does not change.

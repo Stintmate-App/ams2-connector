@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.4.4 (2026-11-09)
+
+- Source formatting only, so the release checks pass; no behaviour or protocol change.
+- The `ci` workflow runs on every pull request to `main`, and the repository has hooks
+  (`.githooks/`, enabled with `git config core.hooksPath .githooks`) that check the formatting
+  before a commit and run clippy before a push.
+
 ## 3.4.3 (2026-11-07)
 
 - **The descriptor declares the connector's icon.** The setup installs `icon.png` (256 x 256)

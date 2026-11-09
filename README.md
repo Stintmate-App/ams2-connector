@@ -43,8 +43,17 @@ To run the connector from the build, register it once and start the control app 
 Checks:
 
 ```
-cargo test --workspace
+cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
+cargo test --workspace
+```
+
+The `ci` workflow runs these, `cargo deny` and a development build of the installer on every pull
+request to `main`; a pull request merges only when it passes. To run the first two before each commit
+and push, enable the repository's hooks once per clone:
+
+```
+git config core.hooksPath .githooks
 ```
 
 ## Releases

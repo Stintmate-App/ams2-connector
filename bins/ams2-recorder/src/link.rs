@@ -458,13 +458,15 @@ fn classify_bye(code: &str, message: &str) -> Option<(LinkState, String, Wait)> 
 /// State, message and the wait for the error of a failed attempt.
 fn classify(e: Option<&Error>) -> (LinkState, String, Wait) {
     match e {
-        Some(Error::PeerBye { code, message }) => classify_bye(code, message).unwrap_or_else(|| {
-            (
-                LinkState::Waiting,
-                format!("cannot reach Pitwall: bye {code}"),
-                Wait::Short,
-            )
-        }),
+        Some(Error::PeerBye { code, message }) => {
+            classify_bye(code, message).unwrap_or_else(|| {
+                (
+                    LinkState::Waiting,
+                    format!("cannot reach Pitwall: bye {code}"),
+                    Wait::Short,
+                )
+            })
+        }
         Some(Error::KeyFile(k)) => (LinkState::Waiting, k.to_string(), Wait::Long),
         Some(Error::PipeNotFound(_)) | None => (
             LinkState::Waiting,

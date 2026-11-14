@@ -233,6 +233,18 @@ produced a junk session: a single out lap at 0 km/h.
   pit lane (the official time on the first flying lap).
 - The segmentation fix also validated across a race weekend (five sessions, 2026-10-07).
 
+## Car repair request (2026-11)
+
+Observed in a 20 Hz read-only recording of the shared memory (a Ginetta G40 Cup, damage "full"):
+
+- After a frontal hit, `mPitSchedule` went to 3 (`PIT_SCHEDULE_DAMAGE_REQUESTED` in `SharedMemory.h`)
+  about 3 s later, stayed 3 through the drive to the box and the repair, and went back to 0 at the pit
+  exit. The game showed the black flag with an orange disc and said the car was damaged and must pit.
+  The connector sends this as `car.repair_needed`; 5 and 6 stay `car.penalty`.
+- The damage fields: 0 is healthy and they grow with damage (0.53 on the suspension of the corner
+  that took the hit); the values held during the repair and dropped to 0 at its end. Tyre flags were
+  not seen changing.
+
 ## Proximity for the spotter (2026-10-27)
 
 Observed on the race capture 20261025-215838 (Oulton Park, 19 cars, 909 s); the capture is not in this repository.

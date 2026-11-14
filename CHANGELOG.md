@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.5.0 (2026-11-14)
+
+- **The live frame says when the car must be repaired.** `car.repair_needed` is `true` while the
+  game asks the car to pit for damage (the pit schedule's damage request) and `false` otherwise.
+  The descriptor declares the feature `repair` (connector kit 0.8.0). Readers that do not know the
+  field ignore it; the protocol is otherwise unchanged.
+
 ## 3.4.4 (2026-11-09)
 
 - Source formatting only, so the release checks pass; no behaviour or protocol change.

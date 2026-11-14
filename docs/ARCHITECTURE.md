@@ -217,7 +217,7 @@ session. Units, signs and the reasons behind each choice: [FINDINGS.md](FINDINGS
   `phase` (`garage`, `on_track`, `paused`, `menus`), the session type, Pitwall's pit codes,
   units converted (km/h, litres, degrees C, kPa, seconds), "not given" as `null`, the safety
   car flagged. `lap.current_lap` is the game's own counter, as the protocol defines it.
-  Optional fields say why a lap is not timed or valid: `session.started`, `car.penalty`,
+  Optional fields say why a lap is not timed or valid: `session.started`, `car.penalty`, `car.repair_needed` (the pit schedule's damage request),
   `lap.lap_type`, and once the tracker took the game's flag, `lap.invalid_cause`,
   `lap.invalid_cause_certain` and `lap.invalid_at_m`. The cause is decided once, from the lap's
   own samples in the 10 s before the flag: two or more wheels on an off-track surface or a wall

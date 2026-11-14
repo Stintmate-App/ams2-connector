@@ -21,7 +21,8 @@
 //! * the safety car is flagged (`is_safety_car`): named "Safety Car" or of class "SafetyCar".
 //!
 //! Why the lap is not timed or not valid: `session.started` (races only),
-//! `car.penalty` (drive-through and stop-and-go from the pit schedule) and the tracker's view
+//! `car.penalty` (drive-through and stop-and-go from the pit schedule), `car.repair_needed` (the
+//! pit schedule's damage request: the game itself says the car must be repaired) and the tracker's view
 //! of the open lap ([`LiveLap`]: `lap_type`, `invalid_cause`, `invalid_cause_certain`,
 //! `invalid_at_m`).
 
@@ -40,6 +41,9 @@ const PIT_IN_GARAGE: i64 = 4;
 const PIT_UNKNOWN: i64 = 2;
 /// Wheel names in the game's order.
 pub const WHEELS: [&str; 4] = ["fl", "fr", "rl", "rr"];
+/// `PIT_SCHEDULE_DAMAGE_REQUESTED` in the game's `SharedMemory.h`: the game asks the car to pit
+/// for repairs. Observed: set a few seconds after a hit and cleared at the pit exit.
+const SCHEDULE_DAMAGE_REQUESTED: u32 = 3;
 const SCHEDULE_DRIVE_THROUGH: u32 = 5;
 const SCHEDULE_STOP_GO: u32 = 6;
 const RACE_NOT_STARTED: u32 = 1;
@@ -207,6 +211,7 @@ pub fn live_frame(d: &SharedMemory, opts: &FrameOptions<'_>) -> Value {
             "fuel_l": f64::from(d.fuel_level) * f64::from(d.fuel_capacity),
             "fuel_capacity_l": if d.fuel_capacity > 0.0 { json!(f64::from(d.fuel_capacity)) } else { Value::Null },
             "penalty": penalty,
+            "repair_needed": d.pit_schedule == SCHEDULE_DAMAGE_REQUESTED,
             "wheels": Value::Object(wheels),
         }),
     );

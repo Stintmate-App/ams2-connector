@@ -133,6 +133,7 @@ fn register_needs_no_workspace_and_writes_every_field() {
         "translated_texts",
         "remembered_services",
         "options",
+        "repair",
     ];
     assert!(features.iter().all(|f| known.contains(f)), "{features:?}");
     assert!(features.contains(&"window") && features.contains(&"live_frame"));

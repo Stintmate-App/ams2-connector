@@ -34,7 +34,7 @@ pub const UNINSTALL_SWITCHES: [&str; 3] = ["/VERYSILENT", "/SUPPRESSMSGBOXES", "
 /// The features the descriptor declares, from the kit's list: what this connector offers.
 /// `remembered_services` is not among them: the services carry `delegable` and `default`, but no
 /// `refusal` on a failed start.
-pub const FEATURES: [&str; 19] = [
+pub const FEATURES: [&str; 20] = [
     "live_frame",
     "lap_status",
     "capture_target",
@@ -54,6 +54,7 @@ pub const FEATURES: [&str; 19] = [
     "notices",
     "translated_texts",
     "options",
+    "repair",
 ];
 
 /// What [`remove`] did.

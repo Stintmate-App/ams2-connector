@@ -142,7 +142,7 @@ fn without_tracker_view_fields(frame: &mut Value) -> Map<String, Value> {
     let mut taken = Map::new();
     for (group, fields) in [
         ("session", &["started"][..]),
-        ("car", &["penalty"][..]),
+        ("car", &["penalty", "repair_needed"][..]),
         (
             "lap",
             &[
@@ -277,6 +277,21 @@ fn frame_penalty_from_the_pit_schedule() {
             penalty.map_or(Value::Null, Value::from),
             "{schedule}"
         );
+    }
+}
+
+#[test]
+fn frame_repair_needed_from_the_damage_request() {
+    for (schedule, repair, penalty) in [
+        (0, false, Value::Null),
+        (3, true, Value::Null),
+        (5, false, Value::from("drive_through")),
+    ] {
+        let mut d = shm(session_state::PRACTICE);
+        d.pit_schedule = schedule;
+        let f = live_frame(&d, &FrameOptions::default());
+        assert_eq!(f["car"]["repair_needed"], Value::from(repair), "{schedule}");
+        assert_eq!(f["car"]["penalty"], penalty, "{schedule}");
     }
 }
 

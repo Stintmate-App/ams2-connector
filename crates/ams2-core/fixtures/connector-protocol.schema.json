@@ -565,6 +565,7 @@
             "fuel_l": {"description": "Fuel in the tank, L.", "type": ["number", "null"], "minimum": 0},
             "fuel_capacity_l": {"description": "Tank capacity, L.", "type": ["number", "null"], "exclusiveMinimum": 0},
             "penalty": {"description": "Optional: a penalty the simulator has pending for the player; null = none or not known.", "enum": ["drive_through", "stop_go", "other", null]},
+            "repair_needed": {"description": "Optional: true when the simulator itself says the car must be repaired (its own damaged, come-in-for-repairs state); false when the simulator publishes that state and it is off; leave the field out when the simulator does not publish such a state. Never derived from thresholds the connector chooses on damage values.", "type": "boolean"},
             "wheels": {
               "type": "object",
               "properties": {

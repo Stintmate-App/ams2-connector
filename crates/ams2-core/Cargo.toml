@@ -11,6 +11,7 @@ publish.workspace = true
 
 [dependencies]
 ams2-shm.workspace = true
+stintmate-connector-wire.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 thiserror.workspace = true

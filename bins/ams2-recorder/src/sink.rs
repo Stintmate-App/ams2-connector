@@ -14,25 +14,31 @@
 //! remaining time not higher, laps completed not lower), continues it under the same key (Pitwall keeps
 //! the session open across restarts and replays the first answer to `session_start`, so nothing
 //! is announced twice). Anything else gets a new key. Each write has an idempotency key
-//! `ams2/<session_key>/start|lap/<seq>|setup/<seq>|pit_exit/<seq>|participants/<seq>|end`,
-//! `ams2/catalog/<sha256-12>` for a catalogue, assigned here and stored with the write.
+//! `ams2/<session_key>/start|lap/<seq>|setup/<seq>|pit_exit/<seq>|participants/<seq>|sim_data/<seq>|end`,
+//! `ams2/catalog/<sha256-12>` for a catalogue and `ams2/sim_data_kinds/<sha256-12>` for the
+//! description of the simulator data kinds, assigned here and stored with the write.
 
 use crate::link::{Transport, to_value};
 use crate::outbox::{OnChange, Outbox, Summary};
 use ams2_core::CONNECTOR_ID;
 use ams2_core::announce::catalog::{canonical, sha12};
 use ams2_core::channels::Row;
+use ams2_core::damage::{DamageReading, pit_request_name};
 use ams2_core::messages::{
     self, Catalog, LapRecord, ParticipantLap, ParticipantLaps, PitExit, SessionEnd, SessionInfo,
 };
 use ams2_core::names::{self, Names};
 use ams2_core::setup::{SetupSnapshot, setup_message};
+use ams2_core::sim_data::DAMAGE;
 use ams2_core::tracker::Sink;
 use ams2_shm::SessionClock;
 use std::collections::{BTreeSet, HashMap};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
+use stintmate_connector_wire::messages::{SimData, SimDataKind, SimDataKinds};
+use stintmate_connector_wire::round_to;
+use stintmate_connector_wire::sim_data as limits;
 use stintmate_ipc::codec::{self, Value};
 
 /// What the outbox may still deliver at shutdown (under the 10 s forced stop).
@@ -40,6 +46,42 @@ pub const CLOSE_DRAIN: Duration = Duration::from_secs(5);
 
 fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|p| p.into_inner())
+}
+
+/// A damage reading as a number of the record: rounded to 3 decimals, or none when it is not a
+/// number within the game's range (a reading outside it is left out, never clamped).
+fn damage_value(v: f32) -> Option<f64> {
+    let v = round_to(f64::from(v), 3);
+    (v.is_finite() && (-0.001..=1.001).contains(&v)).then_some(v)
+}
+
+/// The `data` of a `damage` record: described by [`ams2_core::sim_data::kinds`].
+pub fn damage_data(r: &DamageReading) -> serde_json::Map<String, serde_json::Value> {
+    use serde_json::{Value, json};
+    let mut data = serde_json::Map::new();
+    let put = |data: &mut serde_json::Map<String, Value>, key: &str, v: f32| {
+        if let Some(v) = damage_value(v) {
+            data.insert(key.to_owned(), json!(v));
+        }
+    };
+    put(&mut data, "aero", r.aero);
+    put(&mut data, "engine", r.engine);
+    data.insert(
+        "pit_request".to_owned(),
+        json!(pit_request_name(r.pit_schedule)),
+    );
+    let mut wheels = serde_json::Map::new();
+    for (i, key) in ["fl", "fr", "rl", "rr"].into_iter().enumerate() {
+        let mut w = serde_json::Map::new();
+        put(&mut w, "brake", r.brake[i]);
+        put(&mut w, "suspension", r.suspension[i]);
+        // Bit 0 `TYRE_ATTACHED`, bit 1 `TYRE_INFLATED`; bit 2 (on ground) flickers in a hit.
+        w.insert("attached".to_owned(), json!(r.tyre_flags[i] & 1 != 0));
+        w.insert("inflated".to_owned(), json!(r.tyre_flags[i] & 2 != 0));
+        wheels.insert(key.to_owned(), Value::Object(w));
+    }
+    data.insert("wheels".to_owned(), Value::Object(wheels));
+    data
 }
 
 /// 16 random hex digits (contract 4.2).
@@ -68,6 +110,7 @@ struct Session {
     seq_setup: u64,
     seq_pit_exit: u64,
     seq_participants: u64,
+    seq_sim_data: u64,
     remote_id: Option<i64>,
     stint: Option<i64>,
 }
@@ -99,6 +142,14 @@ enum Job {
     Setup(u64, String, String, SetupSnapshot),
     PitExit(u64, String, Option<f64>),
     Participants(u64, Vec<ParticipantLap>),
+    /// `(session, kind, taken_at, data)`.
+    SimData(
+        u64,
+        String,
+        String,
+        serde_json::Map<String, serde_json::Value>,
+    ),
+    SimDataKinds(Box<SimDataKinds>),
     Split(String, Vec<Value>),
     Mark(Sender<()>),
     Quit,
@@ -119,6 +170,8 @@ struct Core {
     stop_clock: Mutex<Option<SessionClock>>,
     /// The clock of the frame that opens a session (set by the recorder while none is open).
     start_clock: Mutex<Option<SessionClock>>,
+    /// The last kinds message `(ik, params)`, sent again before every session start.
+    kinds: Mutex<Option<(String, Value)>>,
 }
 
 /// What a stopped recorder leaves for the next one.
@@ -127,7 +180,7 @@ fn resume_json(token: u64, s: &Session, clock: &SessionClock) -> Option<serde_js
     Some(serde_json::json!({
         "game": token, "clock": clock.to_json(), "key": s.key, "car": i.car, "track": i.track,
         "variation": i.variation, "session_state": i.session_state,
-        "seq": [s.seq_lap, s.seq_setup, s.seq_pit_exit, s.seq_participants],
+        "seq": [s.seq_lap, s.seq_setup, s.seq_pit_exit, s.seq_participants, s.seq_sim_data],
     }))
 }
 
@@ -140,7 +193,7 @@ fn take_resume(
     token: Option<u64>,
     info: &SessionInfo,
     now: Option<&SessionClock>,
-) -> Option<(String, [u64; 4])> {
+) -> Option<(String, [u64; 5])> {
     let text = std::fs::read_to_string(path).ok()?;
     let _ = std::fs::remove_file(path);
     let v: serde_json::Value = serde_json::from_str(&text).ok()?;
@@ -158,7 +211,7 @@ fn take_resume(
         && text_of("session_state") == Some(info.session_state.as_str());
     let key = text_of("key").filter(|k| same && !k.is_empty())?;
     let seq = v.get("seq")?.as_array()?;
-    let mut n = [0u64; 4];
+    let mut n = [0u64; 5];
     for (slot, x) in n.iter_mut().zip(seq) {
         *slot = x.as_u64()?;
     }
@@ -190,6 +243,7 @@ impl PitwallSink {
             game_token: Mutex::new(None),
             stop_clock: Mutex::new(None),
             start_clock: Mutex::new(None),
+            kinds: Mutex::new(None),
         });
         let (c1, c2) = (core.clone(), core.clone());
         let on_result: crate::outbox::OnResult = Box::new(move |m, p, r| c1.delivered(m, p, r));
@@ -256,6 +310,20 @@ impl PitwallSink {
     /// no session is open, so a session opened by that frame knows where the clock stood.
     pub fn note_clock(&self, clock: SessionClock) {
         *lock(&self.core.start_clock) = Some(clock);
+    }
+
+    /// Describes the kinds of simulator data this connector writes (what a record is, and what
+    /// each field means and measures). The sink keeps the last description given and sends it
+    /// again before every session start, under a key made of its content, so Pitwall stores it
+    /// once. Checked here against the limits of the wire crate; a description that breaks one is
+    /// logged at error level and dropped.
+    pub fn sim_data_kinds(&mut self, kinds: Vec<SimDataKind>) {
+        if let Err(e) = limits::check_kinds(&kinds) {
+            tracing::error!("Simulator data kinds refused locally: {e} (dropped)");
+            return;
+        }
+        self.core
+            .send(Job::SimDataKinds(Box::new(SimDataKinds { kinds })));
     }
 
     /// The session key of a tracker session.
@@ -326,7 +394,7 @@ impl Sink for PitwallSink {
             let token = *lock(&self.core.game_token);
             let now = *lock(&self.core.start_clock);
             let (key, seq) = take_resume(&self.core.resume_path, token, info, now.as_ref())
-                .unwrap_or_else(|| (new_session_key(), [0; 4]));
+                .unwrap_or_else(|| (new_session_key(), [0; 5]));
             sh.by_key.insert(key.clone(), local);
             sh.sessions.insert(
                 local,
@@ -337,6 +405,7 @@ impl Sink for PitwallSink {
                     seq_setup: seq[1],
                     seq_pit_exit: seq[2],
                     seq_participants: seq[3],
+                    seq_sim_data: seq[4],
                     ..Session::default()
                 },
             );
@@ -378,6 +447,20 @@ impl Sink for PitwallSink {
 
     fn insert_participant_laps(&mut self, session_id: u64, rows: Vec<ParticipantLap>) {
         self.core.send(Job::Participants(session_id, rows));
+    }
+
+    fn damage(&mut self, session_id: u64, taken_at: &str, reading: &DamageReading) {
+        let data = damage_data(reading);
+        if let Err(e) = limits::check_data(DAMAGE, &data) {
+            tracing::error!("Damage record refused locally: {e} (dropped)");
+            return;
+        }
+        self.core.send(Job::SimData(
+            session_id,
+            DAMAGE.to_owned(),
+            taken_at.to_owned(),
+            data,
+        ));
     }
 }
 
@@ -429,6 +512,13 @@ impl Core {
         self.put("catalog", &catalog_key(&json), to_value(cat));
     }
 
+    fn put_kinds(&self) {
+        let kinds = lock(&self.kinds).clone();
+        if let Some((ik, params)) = kinds {
+            self.put("sim_data_kinds", &ik, params);
+        }
+    }
+
     /// Takes the next sequence number of `kind` for a session and returns it with the key.
     fn next(&self, local: u64, kind: &str) -> Option<(String, u64)> {
         let mut sh = lock(&self.shared);
@@ -437,7 +527,12 @@ impl Core {
             "lap" => &mut s.seq_lap,
             "setup" => &mut s.seq_setup,
             "pit_exit" => &mut s.seq_pit_exit,
-            _ => &mut s.seq_participants,
+            "sim_data" => &mut s.seq_sim_data,
+            "participants" => &mut s.seq_participants,
+            other => {
+                tracing::error!("Unknown write sequence kind {other}");
+                return None;
+            }
         };
         *seq += 1;
         Some((s.key.clone(), *seq))
@@ -460,6 +555,8 @@ impl Core {
                         .extend(cat.cars.iter().map(|c| c.car_id.clone()));
                     self.catalog(&cat);
                 }
+                // The descriptions go before every session: Pitwall writes a content once.
+                self.put_kinds();
                 let params = with(
                     to_value(&start),
                     vec![("session_key", Value::from(key.as_str()))],
@@ -554,6 +651,40 @@ impl Core {
                     &format!("{CONNECTOR_ID}/{key}/pit_exit/{seq}"),
                     params,
                 );
+            }
+            Job::SimData(local, kind, taken_at, data) => {
+                let Some((key, seq)) = self.next(local, "sim_data") else {
+                    return;
+                };
+                if seq > limits::MAX_PER_SESSION {
+                    tracing::error!(
+                        "Session {key} already holds {} simulator data records (dropped)",
+                        limits::MAX_PER_SESSION
+                    );
+                    return;
+                }
+                let params = with(
+                    to_value(&SimData {
+                        taken_at,
+                        kind,
+                        data,
+                    }),
+                    vec![
+                        ("session_key", Value::from(key.as_str())),
+                        ("seq", Value::from(seq)),
+                    ],
+                );
+                self.put(
+                    "sim_data",
+                    &format!("{CONNECTOR_ID}/{key}/sim_data/{seq}"),
+                    params,
+                );
+            }
+            Job::SimDataKinds(msg) => {
+                let json = serde_json::to_value(&*msg).expect("kinds serialize");
+                let ik = format!("{CONNECTOR_ID}/sim_data_kinds/{}", sha12(&canonical(&json)));
+                *lock(&self.kinds) = Some((ik, to_value(&*msg)));
+                self.put_kinds();
             }
             Job::Participants(local, rows) => {
                 if rows.is_empty() || !lock(&self.shared).sessions.contains_key(&local) {
@@ -655,6 +786,7 @@ impl Core {
 mod tests {
     use super::*;
     use crate::link::CallError;
+    use ams2_core::damage::DamageReading;
 
     fn contains(hay: &[u8], needle: &[u8]) -> bool {
         hay.windows(needle.len()).any(|w| w == needle)
@@ -858,6 +990,242 @@ mod tests {
         let mut b = recorder(dir.path(), 4242);
         let id = b.start_session(&info("PRACTICE"));
         assert_ne!(b.session_key(Some(id)).unwrap(), key);
+        b.close(Duration::ZERO);
+    }
+
+    // ------------------------------------------------------------ simulator data
+
+    use serde_json::json;
+    use stintmate_connector_wire::schema_check::{WRITE_API_SCHEMA, definition};
+
+    /// The writes stored in the outbox, in order, as JSON: `{method, ik, p}`.
+    fn stored(dir: &std::path::Path) -> Vec<serde_json::Value> {
+        let mut names: Vec<_> = std::fs::read_dir(dir.join("outbox"))
+            .unwrap()
+            .filter_map(|e| e.ok().map(|e| e.path()))
+            .filter(|p| p.extension().is_some_and(|e| e == SUFFIX_FOR_TESTS))
+            .collect();
+        names.sort();
+        names
+            .iter()
+            .map(|p| rmp_serde::from_slice(&std::fs::read(p).unwrap()).unwrap())
+            .collect()
+    }
+    const SUFFIX_FOR_TESTS: &str = crate::outbox::SUFFIX;
+
+    /// Checks the params of a write against the schema of its message: the schema describes the
+    /// message as Pitwall sees it (a `type`, the `session_id` Pitwall answered), not the
+    /// connector's `session_key` and `seq`.
+    fn schema(name: &str, params: &serde_json::Value) {
+        let mut v = params.clone();
+        let o = v.as_object_mut().unwrap();
+        o.remove("session_key");
+        o.remove("seq");
+        o.insert("type".into(), json!(name));
+        if name == "sim_data" {
+            o.insert("session_id".into(), json!(1));
+        }
+        let docs = vec![serde_json::from_str(WRITE_API_SCHEMA).unwrap()];
+        definition(&docs, name, &v).unwrap_or_else(|e| {
+            panic!(
+                "{e}
+{v}"
+            )
+        });
+    }
+
+    /// The settled readings of a frontal hit (a real recording, 20 Hz probe).
+    fn hit() -> DamageReading {
+        DamageReading {
+            aero: 0.4066,
+            engine: 0.2005,
+            brake: [0.0009, 0.0009, 0.0002, 0.0002],
+            suspension: [0.0, 0.5272, 0.0, 0.0],
+            tyre_flags: [7; 4],
+            pit_schedule: 0,
+        }
+    }
+
+    #[test]
+    fn the_damage_data_of_a_hit() {
+        let r = |v: f32| round_to(f64::from(v), 3);
+        let wheel = |brake: f32, susp: f32| json!({"brake": r(brake), "suspension": r(susp), "attached": true, "inflated": true});
+        let expected = json!({
+            "aero": 0.407,
+            "engine": r(0.2005),
+            "pit_request": "PIT_SCHEDULE_NONE",
+            "wheels": {
+                "fl": wheel(0.0009, 0.0),
+                "fr": wheel(0.0009, 0.5272),
+                "rl": wheel(0.0002, 0.0),
+                "rr": wheel(0.0002, 0.0),
+            },
+        });
+        let data = damage_data(&hit());
+        assert_eq!(serde_json::Value::Object(data.clone()), expected);
+        assert_eq!(data["wheels"]["fr"]["suspension"], json!(0.527));
+        assert_eq!(limits::check_data(DAMAGE, &data), Ok(()));
+        // The description covers the record and passes the limits.
+        assert_eq!(limits::check_kinds(&ams2_core::sim_data::kinds()), Ok(()));
+    }
+
+    #[test]
+    fn tyre_flags_and_the_pit_request_are_read_by_bit_and_name() {
+        let mut r = hit();
+        r.tyre_flags = [7, 5, 3, 6]; // bit 2 (on ground) is never used
+        r.pit_schedule = 3;
+        let data = damage_data(&r);
+        assert_eq!(data["pit_request"], json!("PIT_SCHEDULE_DAMAGE_REQUESTED"));
+        let w = |k: &str| {
+            (
+                data["wheels"][k]["attached"].clone(),
+                data["wheels"][k]["inflated"].clone(),
+            )
+        };
+        assert_eq!(w("fl"), (json!(true), json!(true)));
+        assert_eq!(w("fr"), (json!(true), json!(false)));
+        assert_eq!(w("rl"), (json!(true), json!(true)));
+        assert_eq!(w("rr"), (json!(false), json!(true)));
+        r.pit_schedule = 99;
+        assert_eq!(damage_data(&r)["pit_request"], json!("unknown"));
+    }
+
+    #[test]
+    fn a_value_outside_the_range_is_left_out() {
+        let mut r = hit();
+        r.aero = f32::NAN;
+        r.engine = 1.5;
+        r.brake[0] = -2.0;
+        let data = damage_data(&r);
+        assert!(data.get("aero").is_none() && data.get("engine").is_none());
+        assert!(data["wheels"]["fl"].get("brake").is_none());
+        assert!(data["wheels"]["fr"].get("brake").is_some());
+        assert_eq!(limits::check_data(DAMAGE, &data), Ok(()));
+    }
+
+    #[test]
+    fn damage_records_are_numbered_and_match_the_schema() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut sink = recorder(dir.path(), 4242);
+        let key = open(&mut sink, "PRACTICE");
+        sink.damage(1, "2026-11-14T17:44:22.000+01:00", &hit());
+        let mut cleared = hit();
+        cleared.aero = 0.0;
+        sink.damage(1, "2026-11-14T17:46:43.000+01:00", &cleared);
+        assert!(sink.queued(Duration::from_secs(5)));
+        let docs: Vec<_> = stored(dir.path())
+            .into_iter()
+            .filter(|d| d["method"] == "pitwall.write.sim_data")
+            .collect();
+        assert_eq!(docs.len(), 2);
+        for (i, d) in docs.iter().enumerate() {
+            assert_eq!(d["ik"], json!(format!("ams2/{key}/sim_data/{}", i + 1)));
+            assert_eq!(d["p"]["seq"], json!(i + 1));
+            assert_eq!(d["p"]["session_key"], json!(key));
+            assert_eq!(d["p"]["kind"], json!("damage"));
+            schema("sim_data", &d["p"]);
+        }
+        assert_eq!(docs[0]["p"]["data"]["aero"], json!(0.407));
+        assert_eq!(docs[1]["p"]["data"]["aero"], json!(0.0));
+        sink.close(Duration::ZERO);
+    }
+
+    #[test]
+    fn the_kinds_go_before_every_session_start_under_one_key() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut sink = recorder(dir.path(), 4242);
+        let kinds = ams2_core::sim_data::kinds();
+        let message = SimDataKinds {
+            kinds: kinds.clone(),
+        };
+        sink.sim_data_kinds(kinds);
+        open(&mut sink, "PRACTICE");
+        sink.end_session(1, "t");
+        let id = sink.start_session(&info("QUALIFY"));
+        assert_eq!(id, 2);
+        assert!(sink.queued(Duration::from_secs(5)));
+        let docs = stored(dir.path());
+        let method = |d: &serde_json::Value| d["method"].as_str().unwrap().to_owned();
+        let kinds_docs: Vec<_> = docs
+            .iter()
+            .filter(|d| method(d) == "pitwall.write.sim_data_kinds")
+            .collect();
+        // Once when given, then before each of the two session starts.
+        assert_eq!(kinds_docs.len(), 3);
+        let json = serde_json::to_value(&message).unwrap();
+        let wire_key = format!(
+            "ams2/sim_data_kinds/{}",
+            stintmate_connector_wire::catalog::sha12(
+                &stintmate_connector_wire::catalog::canonical(&json)
+            )
+        );
+        for d in &kinds_docs {
+            assert_eq!(d["ik"], json!(wire_key), "the wire crate's own hash");
+            schema("sim_data_kinds", &d["p"]);
+        }
+        for (i, d) in docs.iter().enumerate() {
+            if method(d) == "pitwall.write.session_start" {
+                let before = docs[..i]
+                    .iter()
+                    .rev()
+                    .find(|p| method(p) != "pitwall.write.catalog")
+                    .unwrap();
+                assert_eq!(method(before), "pitwall.write.sim_data_kinds");
+            }
+        }
+        sink.close(Duration::ZERO);
+    }
+
+    #[test]
+    fn a_resume_file_keeps_a_fifth_sequence_and_a_four_entry_one_resumes_at_zero() {
+        let dir = tempfile::tempdir().unwrap();
+        let mut a = recorder(dir.path(), 4242);
+        let key = open(&mut a, "PRACTICE");
+        a.damage(1, "t", &hit());
+        assert!(a.queued(Duration::from_secs(5)));
+        stop(a, 1, true);
+        let path = dir.path().join("session-resume.json");
+        let text = std::fs::read_to_string(&path).unwrap();
+        let v: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(v["seq"], json!([0, 0, 0, 0, 1]));
+
+        // A file written by the previous version has four entries: the sequence starts again.
+        let mut old = v.clone();
+        old["seq"] = json!([0, 0, 0, 0]);
+        std::fs::write(&path, old.to_string()).unwrap();
+        let mut b = recorder(dir.path(), 4242);
+        assert_eq!(open(&mut b, "PRACTICE"), key);
+        b.damage(1, "t", &hit());
+        assert!(b.queued(Duration::from_secs(5)));
+        let iks: Vec<_> = stored(dir.path())
+            .into_iter()
+            .filter(|d| d["method"] == "pitwall.write.sim_data")
+            .map(|d| d["ik"].as_str().unwrap().to_owned())
+            .collect();
+        // The first record of the earlier recorder and this one share a number: the file had no fifth entry.
+        assert_eq!(iks, vec![format!("ams2/{key}/sim_data/1"); 2]);
+        b.close(Duration::ZERO);
+
+        // A five-entry file keeps it.
+        let dir = tempfile::tempdir().unwrap();
+        let mut a = recorder(dir.path(), 4242);
+        let key = open(&mut a, "PRACTICE");
+        stop(a, 1, true);
+        let path = dir.path().join("session-resume.json");
+        let mut v: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        v["seq"] = json!([0, 0, 0, 0, 7]);
+        std::fs::write(&path, v.to_string()).unwrap();
+        let mut b = recorder(dir.path(), 4242);
+        assert_eq!(open(&mut b, "PRACTICE"), key);
+        b.damage(1, "t", &hit());
+        assert!(b.queued(Duration::from_secs(5)));
+        let iks: Vec<_> = stored(dir.path())
+            .into_iter()
+            .filter(|d| d["method"] == "pitwall.write.sim_data")
+            .map(|d| d["ik"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(iks, vec![format!("ams2/{key}/sim_data/8")]);
         b.close(Duration::ZERO);
     }
 }

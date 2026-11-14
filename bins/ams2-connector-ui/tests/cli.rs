@@ -134,9 +134,11 @@ fn register_needs_no_workspace_and_writes_every_field() {
         "remembered_services",
         "options",
         "repair",
+        "sim_data",
     ];
     assert!(features.iter().all(|f| known.contains(f)), "{features:?}");
     assert!(features.contains(&"window") && features.contains(&"live_frame"));
+    assert!(features.contains(&"sim_data"));
     assert!(!features.contains(&"remembered_services"));
     assert_eq!(
         features.len(),

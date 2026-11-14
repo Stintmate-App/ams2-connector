@@ -43,7 +43,7 @@ const PIT_UNKNOWN: i64 = 2;
 pub const WHEELS: [&str; 4] = ["fl", "fr", "rl", "rr"];
 /// `PIT_SCHEDULE_DAMAGE_REQUESTED` in the game's `SharedMemory.h`: the game asks the car to pit
 /// for repairs. Observed: set a few seconds after a hit and cleared at the pit exit.
-const SCHEDULE_DAMAGE_REQUESTED: u32 = 3;
+pub(crate) const SCHEDULE_DAMAGE_REQUESTED: u32 = 3;
 const SCHEDULE_DRIVE_THROUGH: u32 = 5;
 const SCHEDULE_STOP_GO: u32 = 6;
 const RACE_NOT_STARTED: u32 = 1;

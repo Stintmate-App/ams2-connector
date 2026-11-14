@@ -53,6 +53,9 @@ pub fn call_json(call: &Call) -> Value {
         Call::Participants { rows, .. } => {
             json!({"call": "insert_participant_laps", "params": {"laps": rows}})
         }
+        Call::Damage { reading, .. } => {
+            json!({"call": "damage", "aero": reading.aero, "engine": reading.engine, "brake": reading.brake, "suspension": reading.suspension, "tyre_flags": reading.tyre_flags, "pit_schedule": reading.pit_schedule})
+        }
         Call::Event(e) => {
             let mut v = serde_json::to_value(e).unwrap();
             let t = v.as_object_mut().unwrap().remove("type").unwrap();

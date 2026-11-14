@@ -27,8 +27,9 @@ Documentation: [`docs/`](docs/README.md): [usage](docs/usage.md), [installer](do
 Windows only. Requirements: Rust through [rustup](https://rustup.rs) (`rust-toolchain.toml` pins
 the toolchain, 1.99, with `rustfmt`, `clippy` and the `x86_64-pc-windows-msvc` target, and rustup
 installs it on the first `cargo` call), the Visual Studio Build Tools C++ workload (MSVC linker),
-and git: the Stintmate IPC library is fetched by cargo from its repository
-(`github.com/Stintmate-App/stintmate-ipc`, tag in `Cargo.toml`). No other tool is needed.
+and git: cargo fetches the Stintmate IPC library (`github.com/Stintmate-App/stintmate-ipc`) and the
+connector runtime's wire crate (`github.com/Stintmate-App/connector-runtime`) from their repositories,
+each at the tag in `Cargo.toml`. No other tool is needed.
 
 ```
 cargo build --release

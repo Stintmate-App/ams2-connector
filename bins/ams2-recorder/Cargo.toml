@@ -17,6 +17,7 @@ path = "src/lib.rs"
 ams2-shm.workspace = true
 ams2-core.workspace = true
 ams2-platform.workspace = true
+stintmate-connector-wire.workspace = true
 stintmate-ipc.workspace = true
 serde.workspace = true
 serde_json.workspace = true
@@ -28,6 +29,7 @@ embed-resource = "3"
 
 [dev-dependencies]
 tempfile.workspace = true
+tracing-subscriber.workspace = true
 
 [features]
 # `capture-raw`: record the game's frames to a file for test fixtures (dev builds

@@ -174,12 +174,13 @@ impl Recorder {
         let dirty = Arc::new(AtomicBool::new(true));
         let d = dirty.clone();
         let transport: Arc<dyn Transport> = link.clone();
-        let sink = PitwallSink::new(
+        let mut sink = PitwallSink::new(
             &cfg.data_dir.join("outbox"),
             transport.clone(),
             Some(Box::new(move || d.store(true, Ordering::Relaxed))),
         )
         .map_err(|e| err(&e))?;
+        sink.sim_data_kinds(ams2_core::sim_data::kinds());
         let (clock_fn, iso): (Arc<dyn Fn() -> f64 + Send + Sync>, Option<String>) = match ov.clock {
             Some((f, iso)) => (f, Some(iso)),
             None => {

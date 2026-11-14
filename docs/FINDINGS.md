@@ -242,8 +242,26 @@ Observed in a 20 Hz read-only recording of the shared memory (a Ginetta G40 Cup,
   exit. The game showed the black flag with an orange disc and said the car was damaged and must pit.
   The connector sends this as `car.repair_needed`; 5 and 6 stay `car.penalty`.
 - The damage fields: 0 is healthy and they grow with damage (0.53 on the suspension of the corner
-  that took the hit); the values held during the repair and dropped to 0 at its end. Tyre flags were
-  not seen changing.
+  that took the hit). The values did not hold through the stop: they dropped to 0 on the frame after
+  the car stopped in its box (`mPitMode` went to `IN_PIT`), and the engine's value crept up from 0
+  again while the car waited (0.0003 after 100 s). The car driving out of the box (`mPitMode`
+  "driving out") is not the repair; the pit schedule stayed 3 until the car left and was cleared
+  at the exit.
+- A frontal hit moved aero, engine (to about 0.2) and the suspension of the corner that took it,
+  within about 0.1 s, in two steps, so a reader that takes the first frame sees a half-applied hit. A side
+  hit moved only the aero. Engine and brake damage creep slowly while driving (0.2005 to 0.2009 in
+  two minutes, brakes about 0.0001 per 10 s).
+- The tyre flags `TYRE_ATTACHED` (bit 0) and `TYRE_INFLATED` (bit 1) stayed set in every playing
+  frame (10 092 of them); `TYRE_IS_ON_GROUND` (bit 2) flickers during a hit (the rear wheels read
+  7, then 3, for about 0.15 s), so it says nothing about damage. No puncture or lost wheel was
+  recorded.
+- Menu frames (`mGameState` 3) carry garbage: every damage value 0 and the tyre flags 0,
+  alternating with real frames. Damage is only read in playing frames.
+- What the header says: `SharedMemory.h` gives the damage fields a range of 0 to 1 (`mAeroDamage`,
+  `mEngineDamage`, `mBrakeDamage`, `mSuspensionDamage`) and names the pit schedule values; it states
+  no direction (which end is healthy), no thresholds and no rule for when the game clears the damage
+  request. Third-party readers agree on 0 as healthy, and our recordings do too. The request can
+  stay set after the car was repaired another way, so read the values beside it.
 
 ## Proximity for the spotter (2026-10-27)
 

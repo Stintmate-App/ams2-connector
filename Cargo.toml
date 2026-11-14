@@ -14,7 +14,7 @@ members = [
 ]
 
 [workspace.package]
-version = "3.5.0"
+version = "3.6.0"
 edition = "2024"
 rust-version = "1.88"
 license = "Apache-2.0"
@@ -31,6 +31,8 @@ ams2-connector-ui = { path = "bins/ams2-connector-ui" }
 # The IPC library, pinned to a release tag like any dependency.
 stintmate-ipc = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.3" }
 stintmate-ipc-check = { git = "https://github.com/Stintmate-App/stintmate-ipc", tag = "v0.3.3" }
+# The connector runtime's wire formats, pinned to a release tag.
+stintmate-connector-wire = { git = "https://github.com/Stintmate-App/connector-runtime", tag = "v0.6.0" }
 windows-sys = "0.61"
 zerocopy = { version = "0.8", features = ["derive", "alloc"] }
 thiserror = "2"

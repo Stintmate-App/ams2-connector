@@ -249,6 +249,37 @@ The detection rules were written from the game's header and checked on recorded 
 every situation of a real race: the flag and race-state calls are the least tested, so confirm them
 in a race before relying on them.
 
+## Simulator data
+
+Besides laps, the connector writes **simulator data**: records of values the game gives that
+Pitwall has no typed message for, in a structure the connector designs and describes to Pitwall
+(`pitwall.write.sim_data_kinds`, sent before every session) so the race engineer reads them
+without guessing. Pitwall stores a record as sent, with the session; the latest record of a kind
+is the state it describes. The descriptor declares the feature `sim_data`. An older Pitwall that
+does not take these writes skips them (logged once per connection) and the laps are not held up.
+
+One kind so far, **`damage`**: the car's damage as the game reports it.
+
+| Field | What |
+|---|---|
+| `aero`, `engine` | damage from 0 to 1 (the game's range); 0 is healthy |
+| `wheels.fl`, `fr`, `rl`, `rr` | front left, front right, rear left, rear right |
+| `wheels.*.brake`, `wheels.*.suspension` | damage of that wheel, 0 to 1 |
+| `wheels.*.attached`, `wheels.*.inflated` | the game's tyre flags; not yet seen false in a recording |
+| `pit_request` | the game's pit schedule by its `SharedMemory.h` name (`PIT_SCHEDULE_NONE`, `PIT_SCHEDULE_DAMAGE_REQUESTED`...); the damage request may stay after the car was repaired another way, so compare it with the values |
+
+Values are rounded to three decimals; one that is not a number in range is left out. The game does
+not document which end of the range is healthy; every known reader and our recordings show 0
+healthy, growing with damage.
+
+**When a record is written.** The values of one hit arrive over a few frames, so the connector
+waits until they have held still for 1 s and then writes one record; its `taken_at` is about 1 s
+after the change. A change is a value that moved by more than 0.005, a tyre flag that flipped,
+or the damage pit request set or cleared (other pit requests do not count). Slow wear is not a
+change until it adds up to 0.005 (brakes: about every 30 minutes). A session's first frames, with
+no damage, write nothing. Only frames of a car on track are read: menu frames carry zeros. A
+recorder restarted in the middle of a session may write the last record once more.
+
 ## Troubleshooting
 
 Pitwall's live tools reach the connector through Pitwall's core. When there is no answer the

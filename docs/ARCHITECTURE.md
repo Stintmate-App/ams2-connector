@@ -174,8 +174,27 @@ it opens, and never twice.
 `session_key` (16 hex digits) when it opens; every write carries it, never Pitwall's session
 id, which the connector may not know yet (a session can be started, driven and ended while
 Pitwall is closed). Idempotency keys: `ams2/<session_key>/start`, `.../lap/<seq>`,
-`.../setup/<seq>`, `.../pit_exit/<seq>`, `.../participants/<seq>`, `.../end`, and
-`ams2/catalog/<hash>`.
+`.../setup/<seq>`, `.../pit_exit/<seq>`, `.../participants/<seq>`, `.../sim_data/<seq>`,
+`.../end`, and `ams2/catalog/<hash>` and `ams2/sim_data_kinds/<hash>`.
+
+**Simulator data.** `ams2-core`'s `DamageWatch` (`damage.rs`) is fed the damage readings of every
+playing frame by the tracker and hands the sink a reading once it held still for 1 s and differs
+from the last one sent (`Sink::damage`, optional). The sink builds the record's `data` on the
+tracker's thread (rare: a few per session), checks it against the limits of the wire crate
+(`stintmate-connector-wire`, the connector runtime's wire formats, pinned to a tag) and queues it
+as one more writer job, so a record keeps its place among the laps and pit exits. Each session has
+a fifth write sequence, `sim_data`, kept in the resume file (a file with four entries resumes
+with it at zero). The description of the kinds (`ams2-core`'s `sim_data::kinds`) is given once to
+the sink, which keeps the last one and writes it before every session start under a key made of
+its content, so Pitwall stores it once.
+
+**Optional methods.** `pitwall.write.sim_data_kinds`, `pitwall.write.sim_data` and
+`pitwall.write.lap_positions` are the writes an older Pitwall may lack. The sender skips one of
+them (deletes the file; not a refusal, not counted in `rejected`, not reported to the sink) when
+the connected Pitwall declares its methods and this one is not among them, or when Pitwall
+answers `unknown_method` to it; the first skip of a method on a connection is logged with
+Pitwall's version, and the log is cleared when the connection drops. `unknown_method` to any
+other write is still a refusal.
 
 ## Shared memory reader
 

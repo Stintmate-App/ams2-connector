@@ -23,6 +23,7 @@ pub mod actions;
 pub mod announce;
 pub mod channels;
 pub mod codes;
+pub mod damage;
 pub mod frame;
 pub mod garage;
 pub mod golden;
@@ -31,11 +32,14 @@ pub mod messages;
 pub mod names;
 pub mod rivals;
 pub mod setup;
+pub mod sim_data;
 pub mod telemetry;
 pub mod testing;
 pub mod tracker;
 pub mod vocab;
 
+#[cfg(test)]
+mod damage_tests;
 #[cfg(test)]
 mod frame_tests;
 #[cfg(test)]

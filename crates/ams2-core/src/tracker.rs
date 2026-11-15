@@ -44,6 +44,7 @@
 
 use crate::channels::{FUEL, PIT, Row, SPEED, T, TERRAIN, extract_into};
 use crate::codes::{game_state, pit_mode, session_state};
+use crate::damage::{DamageReading, DamageWatch};
 use crate::garage::{GarageSeat, MOVING_KMH};
 use crate::messages::{LapRecord, ParticipantLap, SessionInfo};
 use crate::rivals::RivalTracker;
@@ -144,6 +145,8 @@ pub trait Sink {
     fn insert_pit_exit(&mut self, session_id: u64, at: &str, fuel_l: Option<f64>);
     /// A batch of rival rows.
     fn insert_participant_laps(&mut self, session_id: u64, rows: Vec<ParticipantLap>);
+    /// The car's damage readings settled on new values (see [`crate::damage`]). Optional.
+    fn damage(&mut self, _session_id: u64, _taken_at: &str, _reading: &DamageReading) {}
     /// An event for tools and tests (the recorder ignores them).
     fn event(&mut self, _event: Event) {}
 }
@@ -468,6 +471,7 @@ pub struct SessionTracker {
     prev_dist: Option<f64>,
     prev_t: Option<f64>,
     garage: GarageSeat,
+    damage: DamageWatch,
 }
 
 impl SessionTracker {
@@ -486,6 +490,7 @@ impl SessionTracker {
             prev_dist: None,
             prev_t: None,
             garage: GarageSeat::new(),
+            damage: DamageWatch::default(),
         }
     }
 
@@ -640,6 +645,12 @@ impl SessionTracker {
             }
         }
 
+        let reading = DamageReading::of(d);
+        if let Some(r) = self.damage.observe(reading, self.clock.now())
+            && let Some(id) = self.session_id()
+        {
+            sink.damage(id, &self.clock.iso(), &r);
+        }
         self.sample(d, &p);
         self.feed_rivals(d, sink);
     }
@@ -737,6 +748,7 @@ impl SessionTracker {
             discarded: s.laps_saved == 0,
         });
         self.lap = None;
+        self.damage = DamageWatch::default();
     }
 
     // ----------------------------------------------------------------- session
@@ -783,6 +795,7 @@ impl SessionTracker {
             fuel_per_lap: Vec::new(),
         });
         self.last_pit_mode = d.pit_mode;
+        self.damage = DamageWatch::default();
         self.prev_dist = None;
         self.prev_t = None;
         self.snapshot_setup(d, "session_start", sink);

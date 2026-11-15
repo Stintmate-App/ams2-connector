@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.6.0 (2026-11-15)
+
+- **Simulator data: the `damage` record.** The connector writes a `damage` record (aero, engine,
+  brakes and suspension per wheel, the tyre attached and inflated flags, and the game's pit
+  request) when the values settle after a change: a hit, a repair, or the game's damage pit
+  request set or cleared. The connector describes the kind to Pitwall before every session. The
+  descriptor declares the feature `sim_data`. An older Pitwall that does not take simulator data
+  skips those writes without blocking the outbox. Depends on `stintmate-connector-wire` 0.6.0.
+  Session resume files keep a fifth sequence (a file from an earlier version resumes with it at
+  zero). A recorder restarted in the middle of a session may repeat the last record once.
+- Findings about the damage readings (repair timing, hits, tyre flags, menu frames) are in
+  `docs/FINDINGS.md`, and the record is described in `docs/usage.md`.
+
 ## 3.5.0 (2026-11-14)
 
 - **The live frame says when the car must be repaired.** `car.repair_needed` is `true` while the

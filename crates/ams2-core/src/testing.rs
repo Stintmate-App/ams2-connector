@@ -6,6 +6,7 @@
 
 use crate::channels::Row;
 use crate::codes::{game_state, pit_mode, race_state, session_state};
+use crate::damage::DamageReading;
 use crate::messages::{LapRecord, ParticipantLap, SessionInfo, lap_type};
 use crate::round_to;
 use crate::setup::SetupSnapshot;
@@ -84,6 +85,13 @@ pub enum Call {
         /// The rows.
         rows: Vec<ParticipantLap>,
     },
+    /// `damage`.
+    Damage {
+        /// Session id.
+        session_id: u64,
+        /// The settled readings.
+        reading: DamageReading,
+    },
     /// An event.
     Event(Event),
 }
@@ -161,10 +169,22 @@ impl RecordingSink {
                 Call::Setup { .. } => out.push("setup"),
                 Call::PitExit { .. } => out.push("pit_exit"),
                 Call::Participants { .. } => out.push("participant_laps"),
+                Call::Damage { .. } => out.push("sim_data"),
                 Call::Event(_) => {}
             }
         }
         out
+    }
+
+    /// The damage readings in order.
+    pub fn damages(&self) -> Vec<DamageReading> {
+        self.calls
+            .iter()
+            .filter_map(|c| match c {
+                Call::Damage { reading, .. } => Some(*reading),
+                _ => None,
+            })
+            .collect()
     }
 
     /// The events in order.
@@ -238,6 +258,12 @@ impl Sink for RecordingSink {
     fn insert_participant_laps(&mut self, session_id: u64, rows: Vec<ParticipantLap>) {
         self.calls.push(Call::Participants { session_id, rows });
     }
+    fn damage(&mut self, session_id: u64, _taken_at: &str, reading: &DamageReading) {
+        self.calls.push(Call::Damage {
+            session_id,
+            reading: *reading,
+        });
+    }
     fn event(&mut self, event: Event) {
         self.calls.push(Call::Event(event));
     }
@@ -282,6 +308,7 @@ impl Sim {
         d.air_pressure = [174.0, 174.0, 192.0, 192.0];
         d.tyre_temp_left = [50.0, 60.0, 30.0, 33.0];
         d.tyre_temp_right = [60.0, 50.0, 33.0, 30.0];
+        d.tyre_flags = [7; 4]; // attached, inflated, on the ground: a car with its wheels
         d.participant_info[0].is_active = 1;
         Self { seq: 0, d }
     }
@@ -473,6 +500,7 @@ impl Script {
         d.fuel_capacity = TANK as f32;
         d.fuel_level = (20.0 / TANK) as f32;
         d.brake_bias = 0.42;
+        d.tyre_flags = [7; 4]; // wheels attached, inflated, on the ground
         d.anti_lock_setting = -1;
         d.traction_control_setting = -1;
         d.ambient_temperature = 18.0;

@@ -64,7 +64,7 @@ pub fn kinds() -> Vec<SimDataKind> {
             (
                 "wheels.*.inflated".to_owned(),
                 field(
-                    "The game's tyre flag: the tyre holds air; not yet seen false in a recording",
+                    "The game's tyre flag: the tyre holds air (false for a flat or torn-off tyre)",
                     None,
                 ),
             ),

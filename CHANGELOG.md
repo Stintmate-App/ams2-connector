@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.6.1 (2026-11-16)
+
+- **`car.repair_needed` no longer stays on after the game resets the car.** It is `true` only
+  while the game requests the damage stop and the car has damage (aero, engine, a brake or a
+  suspension above 0, or a wheel not attached or not inflated). Observed in the game: returning
+  to the garage through the menu resets every damage value to 0 but leaves the pit schedule at
+  the damage request until a stop is driven into the box, and after a driven repair the request
+  stays for about two minutes with every value already 0.
+- The text of the `damage` kind's `wheels.*.inflated` field no longer says the flag was not seen
+  false: it is false for a flat or torn-off tyre.
+
 ## 3.6.0 (2026-11-15)
 
 - **Simulator data: the `damage` record.** The connector writes a `damage` record (aero, engine,

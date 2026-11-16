@@ -289,10 +289,52 @@ fn frame_repair_needed_from_the_damage_request() {
     ] {
         let mut d = shm(session_state::PRACTICE);
         d.pit_schedule = schedule;
+        d.aero_damage = 0.5;
         let f = live_frame(&d, &FrameOptions::default());
         assert_eq!(f["car"]["repair_needed"], Value::from(repair), "{schedule}");
         assert_eq!(f["car"]["penalty"], penalty, "{schedule}");
     }
+}
+
+/// The frame's `car.repair_needed` for the given damage readings: schedule, aero, engine,
+/// suspensions and the tyre flags.
+fn damaged(schedule: u32, aero: f32, engine: f32, susp: [f32; 4], flags: [u32; 4]) -> Value {
+    let mut d = shm(session_state::PRACTICE);
+    d.pit_schedule = schedule;
+    d.aero_damage = aero;
+    d.engine_damage = engine;
+    d.brake_damage = [0.0; 4];
+    d.suspension_damage = susp;
+    d.tyre_flags = flags;
+    live_frame(&d, &FrameOptions::default())["car"]["repair_needed"].clone()
+}
+
+#[test]
+fn frame_repair_needed_needs_the_request_and_damage() {
+    let ok = [3; 4];
+    // Request, damage and a wheel torn off and flat.
+    assert_eq!(
+        damaged(3, 0.542, 0.4, [1.0, 0.0, 0.0, 0.0], [0, 3, 3, 3]),
+        Value::from(true)
+    );
+    // Request, damage on aero, engine and suspensions, all wheels on.
+    assert_eq!(
+        damaged(3, 0.467, 0.2, [0.4, 0.046, 0.08, 0.0], ok),
+        Value::from(true)
+    );
+    // Request after a menu return or a driven repair: every value 0, wheels on and inflated.
+    assert_eq!(damaged(3, 0.0, 0.0, [0.0; 4], ok), Value::from(false));
+    // No request, with or without damage.
+    assert_eq!(
+        damaged(0, 0.5, 0.4, [0.3; 4], [0, 0, 3, 3]),
+        Value::from(false)
+    );
+    assert_eq!(damaged(0, 0.0, 0.0, [0.0; 4], ok), Value::from(false));
+    // Request and only a deflated wheel.
+    assert_eq!(
+        damaged(3, 0.0, 0.0, [0.0; 4], [3, 1, 3, 3]),
+        Value::from(true)
+    );
 }
 
 #[test]

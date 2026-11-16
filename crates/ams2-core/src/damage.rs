@@ -59,6 +59,16 @@ impl DamageReading {
         }
     }
 
+    /// Whether the car has damage: any of aero, engine, the four brakes or the four suspensions
+    /// above 0, or any wheel not attached or not inflated.
+    pub fn has_damage(&self) -> bool {
+        self.floats().iter().any(|v| *v > 0.0)
+            || self
+                .tyre_flags
+                .iter()
+                .any(|f| f & TYRE_FLAGS_USED != TYRE_FLAGS_USED)
+    }
+
     fn floats(&self) -> [f32; 10] {
         let [b0, b1, b2, b3] = self.brake;
         let [s0, s1, s2, s3] = self.suspension;

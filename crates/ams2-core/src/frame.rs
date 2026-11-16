@@ -22,7 +22,8 @@
 //!
 //! Why the lap is not timed or not valid: `session.started` (races only),
 //! `car.penalty` (drive-through and stop-and-go from the pit schedule), `car.repair_needed` (the
-//! pit schedule's damage request: the game itself says the car must be repaired) and the tracker's view
+//! game requests the damage stop and the car has damage: the request alone stays after the car was
+//! reset through the menu or repaired, while every value is already 0) and the tracker's view
 //! of the open lap ([`LiveLap`]: `lap_type`, `invalid_cause`, `invalid_cause_certain`,
 //! `invalid_at_m`).
 
@@ -211,7 +212,8 @@ pub fn live_frame(d: &SharedMemory, opts: &FrameOptions<'_>) -> Value {
             "fuel_l": f64::from(d.fuel_level) * f64::from(d.fuel_capacity),
             "fuel_capacity_l": if d.fuel_capacity > 0.0 { json!(f64::from(d.fuel_capacity)) } else { Value::Null },
             "penalty": penalty,
-            "repair_needed": d.pit_schedule == SCHEDULE_DAMAGE_REQUESTED,
+            "repair_needed": d.pit_schedule == SCHEDULE_DAMAGE_REQUESTED
+                && crate::damage::DamageReading::of(d).has_damage(),
             "wheels": Value::Object(wheels),
         }),
     );

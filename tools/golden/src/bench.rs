@@ -50,6 +50,7 @@ impl Hot {
             Meta {
                 in_garage: self.tracker.in_garage(),
                 lap: self.tracker.live_lap(),
+                repair_request_stale: self.tracker.repair_request_stale(),
                 last_change: Instant::now(),
             },
         );

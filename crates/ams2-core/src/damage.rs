@@ -9,11 +9,21 @@
 
 use crate::frame::SCHEDULE_DAMAGE_REQUESTED;
 use ams2_shm::SharedMemory;
+use stintmate_connector_wire::round_to;
 
 /// A change of a reading smaller than this is not a change (the game's wear creeps by less).
 pub const CHANGE: f32 = 0.005;
 /// How long the readings must stay put before they are reported, in seconds.
 pub const SETTLE_S: f64 = 1.0;
+
+/// A damage reading as a number of the `damage` record: rounded to 3 decimals, or none when it is
+/// not a number within the game's range (a reading outside it is left out, never clamped).
+/// [`DamageReading::has_damage`] reads the values through it too, so the live frame and the
+/// record never disagree.
+pub fn record_value(v: f32) -> Option<f64> {
+    let v = round_to(f64::from(v), 3);
+    (v.is_finite() && (-0.001..=1.001).contains(&v)).then_some(v)
+}
 
 /// `TYRE_ATTACHED` and `TYRE_INFLATED` of the game's tyre flags. `TYRE_IS_ON_GROUND` (bit 2)
 /// flickers during a hit and is not used.
@@ -59,10 +69,14 @@ impl DamageReading {
         }
     }
 
-    /// Whether the car has damage: any of aero, engine, the four brakes or the four suspensions
-    /// above 0, or any wheel not attached or not inflated.
+    /// Whether the car has damage as the `damage` record shows it: any of aero, engine, the four
+    /// brakes or the four suspensions above 0 once rounded by [`record_value`], or any wheel not
+    /// attached or not inflated. A value the record shows as 0 (a residual below 0.0005) is no
+    /// damage.
     pub fn has_damage(&self) -> bool {
-        self.floats().iter().any(|v| *v > 0.0)
+        self.floats()
+            .iter()
+            .any(|v| record_value(*v).is_some_and(|x| x > 0.0))
             || self
                 .tyre_flags
                 .iter()
@@ -89,6 +103,57 @@ pub fn differs(a: &DamageReading, b: &DamageReading) -> bool {
             .any(|(x, y)| (x ^ y) & TYRE_FLAGS_USED != 0)
         || (a.pit_schedule == SCHEDULE_DAMAGE_REQUESTED)
             != (b.pit_schedule == SCHEDULE_DAMAGE_REQUESTED)
+}
+
+/// How far a damage value must rise within [`SETTLE_S`] to count as a new hit while the request
+/// is stale. The recorded wear creeps by about 0.0001 in 10 s (brakes); the smallest recorded hit
+/// moved aero by 0.042 within one 20 Hz frame.
+pub const NEW_HIT: f32 = 0.01;
+
+/// Whether the game's damage pit request still means something. The game keeps
+/// `PIT_SCHEDULE_DAMAGE_REQUESTED` after it reset the car (a return to the garage through the menu,
+/// a repair in the box) until a stop is driven, while the car reads healthy and the game shows no
+/// flag. The latch marks the request stale on the first playing frame that reads no damage
+/// ([`DamageReading::has_damage`]) and keeps it stale while the wear creeps, until the game clears
+/// the request or a new hit: a value up by more than [`NEW_HIT`] against readings at most
+/// [`SETTLE_S`] old (so creep never adds up to a hit), or a wheel off or deflated.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct RepairLatch {
+    /// While stale: the readings compared with, and when they were taken.
+    stale_ref: Option<(DamageReading, f64)>,
+}
+
+impl RepairLatch {
+    /// Takes the readings of a playing frame at monotonic time `now`.
+    pub fn observe(&mut self, r: &DamageReading, now: f64) {
+        if r.pit_schedule != SCHEDULE_DAMAGE_REQUESTED {
+            self.stale_ref = None;
+            return;
+        }
+        match self.stale_ref {
+            None if !r.has_damage() => self.stale_ref = Some((*r, now)),
+            None => {}
+            Some((base, _)) if new_hit(&base, r) => self.stale_ref = None,
+            Some((_, since)) if now - since >= SETTLE_S => self.stale_ref = Some((*r, now)),
+            Some(_) => {}
+        }
+    }
+
+    /// The game requests the damage stop but the car was reset since and took no new hit.
+    pub fn request_stale(&self) -> bool {
+        self.stale_ref.is_some()
+    }
+}
+
+/// A value rose by more than [`NEW_HIT`] above `base`, or a wheel came off or went flat.
+fn new_hit(base: &DamageReading, r: &DamageReading) -> bool {
+    base.floats()
+        .iter()
+        .zip(r.floats())
+        .any(|(b, v)| v - b > NEW_HIT)
+        || base.tyre_flags.iter().zip(r.tyre_flags).any(|(b, f)| {
+            b & TYRE_FLAGS_USED == TYRE_FLAGS_USED && f & TYRE_FLAGS_USED != TYRE_FLAGS_USED
+        })
 }
 
 /// The header's name of a pit schedule value (`PIT_SCHEDULE_*` of the game's `SharedMemory.h`),

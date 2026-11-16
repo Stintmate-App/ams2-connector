@@ -4,7 +4,7 @@
 //! the next one.
 
 use crate::codes::game_state;
-use crate::damage::{DamageReading, DamageWatch, HEALTHY, differs, pit_request_name};
+use crate::damage::{DamageReading, DamageWatch, HEALTHY, RepairLatch, differs, pit_request_name};
 use crate::testing::{Call, Harness};
 
 /// `(time_s, game_state, pit_mode, reading)`.
@@ -291,4 +291,75 @@ fn a_new_session_starts_from_a_healthy_car() {
         .collect();
     assert_eq!(ids.len(), 2);
     assert_ne!(ids[0], ids[1]);
+}
+
+/// The latch over the recording: the request means something from the hit until the repair in
+/// the box (3705.5, every value 0, the request still set), then it is stale until the game clears
+/// it at the pit exit.
+#[test]
+fn the_request_goes_stale_at_the_repair_in_the_box() {
+    let mut latch = RepairLatch::default();
+    let mut seen = Vec::new();
+    for (t, row) in playing_frames() {
+        latch.observe(&row.3, t);
+        let needed = row.3.pit_schedule == 3 && !latch.request_stale() && row.3.has_damage();
+        if seen.last().map(|(_, n)| *n) != Some(needed) {
+            seen.push((t, needed));
+        }
+    }
+    let times: Vec<(i64, bool)> = seen.iter().map(|(t, n)| (t.round() as i64, *n)).collect();
+    assert_eq!(
+        times,
+        [(3382, false), (3569, true), (3706, false)],
+        "{seen:?}"
+    );
+    // At the pit exit the game cleared the request: the latch forgets.
+    assert!(!latch.request_stale());
+}
+
+/// A menu return with the request kept (two damage records of a recorded session, as the record
+/// rounds them), then the wear creeping for an hour, then a new hit and a wheel lost.
+#[test]
+fn a_menu_return_makes_the_request_stale_until_a_new_hit() {
+    let request = 3;
+    let hit = reading(0.49, 0.4, ZERO, [1.0, 0.761, 0.0, 0.0], [3; 4], request);
+    let reset = reading(0.0, 0.0, ZERO, ZERO, [3; 4], request);
+    let mut latch = RepairLatch::default();
+    latch.observe(&hit, 0.0);
+    assert!(!latch.request_stale());
+    latch.observe(&reset, 1.0);
+    assert!(latch.request_stale());
+    // An hour of 50 Hz frames with the brakes and the engine creeping at 0.0001 per 10 s: past
+    // what the record shows as 0 within a minute, and up to 0.036 in the end; still stale.
+    let mut t = 1.0;
+    let mut creep = reset;
+    for _ in 0..(3600 * 50) {
+        t += 0.02;
+        let v = (t as f32 - 1.0) * 0.00001;
+        creep.engine = v;
+        creep.brake = [v; 4];
+        creep.tyre_flags = [7; 4];
+        latch.observe(&creep, t);
+        assert!(latch.request_stale(), "{t}");
+    }
+    assert!(creep.has_damage() && creep.engine > 0.03);
+    // A new hit with the request still set: it means something again.
+    let mut side = creep;
+    side.aero = 0.042;
+    latch.observe(&side, t + 0.05);
+    assert!(!latch.request_stale());
+    // Reset again, then a wheel comes off.
+    latch.observe(&reset, t + 10.0);
+    assert!(latch.request_stale());
+    latch.observe(
+        &reading(0.0, 0.0, ZERO, ZERO, [3, 0, 3, 3], request),
+        t + 11.0,
+    );
+    assert!(!latch.request_stale());
+    // The game clears the request: nothing is kept.
+    latch.observe(&reading(0.0, 0.0, ZERO, ZERO, [3; 4], 0), t + 12.0);
+    assert!(!latch.request_stale());
+    // A request set while the car reads healthy is stale at once (only a reset leaves that).
+    latch.observe(&reset, t + 13.0);
+    assert!(latch.request_stale());
 }

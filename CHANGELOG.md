@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.6.2 (2026-11-16)
+
+- **`car.repair_needed` now goes off for good after the game resets the car.** In 3.6.1 it could
+  stay on after a return to the garage through the menu: the reset leaves damage values below
+  0.0005 (the `damage` record shows them as 0), and the wear creeps up from there. Now the
+  recorder remembers that the request went stale: on the first playing frame that reads no
+  damage while the game still requests the stop, `repair_needed` turns false and stays false
+  while the wear creeps, until the game clears the request or the car takes a new hit (a damage
+  value up by more than 0.01 within a second, or a wheel off or deflated). "No damage" uses the
+  `damage` record's own precision (3 decimals), so the live frame and the record never disagree.
+- The recorder log writes the unrounded damage readings with each `damage` record.
+- No protocol change.
+
 ## 3.6.1 (2026-11-16)
 
 - **`car.repair_needed` no longer stays on after the game resets the car.** It is `true` only

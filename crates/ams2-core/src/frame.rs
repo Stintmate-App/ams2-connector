@@ -22,8 +22,9 @@
 //!
 //! Why the lap is not timed or not valid: `session.started` (races only),
 //! `car.penalty` (drive-through and stop-and-go from the pit schedule), `car.repair_needed` (the
-//! game requests the damage stop and the car has damage: the request alone stays after the car was
-//! reset through the menu or repaired, while every value is already 0) and the tracker's view
+//! game requests the damage stop, the car has damage as the `damage` record shows it, and the
+//! tracker has not seen the car reset since the request: the game keeps the request after a
+//! menu return or a repair while the values read 0 or creep up from it) and the tracker's view
 //! of the open lap ([`LiveLap`]: `lap_type`, `invalid_cause`, `invalid_cause_certain`,
 //! `invalid_at_m`).
 
@@ -61,6 +62,8 @@ pub struct FrameOptions<'a> {
     /// The tracker says the player's car is in the garage (also while the game says "driving
     /// out of the garage" before the car moved): its pit mode is 4.
     pub in_garage: bool,
+    /// The tracker says the game's damage pit request is stale ([`crate::damage::RepairLatch`]).
+    pub repair_request_stale: bool,
 }
 
 /// `session.started`: `false` before a race start, `true` once started, `None` when not known
@@ -213,6 +216,7 @@ pub fn live_frame(d: &SharedMemory, opts: &FrameOptions<'_>) -> Value {
             "fuel_capacity_l": if d.fuel_capacity > 0.0 { json!(f64::from(d.fuel_capacity)) } else { Value::Null },
             "penalty": penalty,
             "repair_needed": d.pit_schedule == SCHEDULE_DAMAGE_REQUESTED
+                && !opts.repair_request_stale
                 && crate::damage::DamageReading::of(d).has_damage(),
             "wheels": Value::Object(wheels),
         }),

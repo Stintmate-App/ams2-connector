@@ -466,6 +466,7 @@ impl Recorder {
                 Meta {
                     in_garage: self.tracker.in_garage(),
                     lap: self.tracker.live_lap(),
+                    repair_request_stale: self.tracker.repair_request_stale(),
                     last_change: self.last_change,
                 },
             );

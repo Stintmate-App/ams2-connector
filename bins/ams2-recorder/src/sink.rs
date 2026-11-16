@@ -23,7 +23,7 @@ use crate::outbox::{OnChange, Outbox, Summary};
 use ams2_core::CONNECTOR_ID;
 use ams2_core::announce::catalog::{canonical, sha12};
 use ams2_core::channels::Row;
-use ams2_core::damage::{DamageReading, pit_request_name};
+use ams2_core::damage::{DamageReading, pit_request_name, record_value};
 use ams2_core::messages::{
     self, Catalog, LapRecord, ParticipantLap, ParticipantLaps, PitExit, SessionEnd, SessionInfo,
 };
@@ -37,7 +37,7 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::time::Duration;
 use stintmate_connector_wire::messages::{SimData, SimDataKind, SimDataKinds};
-use stintmate_connector_wire::round_to;
+
 use stintmate_connector_wire::sim_data as limits;
 use stintmate_ipc::codec::{self, Value};
 
@@ -48,19 +48,12 @@ fn lock<T>(m: &Mutex<T>) -> MutexGuard<'_, T> {
     m.lock().unwrap_or_else(|p| p.into_inner())
 }
 
-/// A damage reading as a number of the record: rounded to 3 decimals, or none when it is not a
-/// number within the game's range (a reading outside it is left out, never clamped).
-fn damage_value(v: f32) -> Option<f64> {
-    let v = round_to(f64::from(v), 3);
-    (v.is_finite() && (-0.001..=1.001).contains(&v)).then_some(v)
-}
-
 /// The `data` of a `damage` record: described by [`ams2_core::sim_data::kinds`].
 pub fn damage_data(r: &DamageReading) -> serde_json::Map<String, serde_json::Value> {
     use serde_json::{Value, json};
     let mut data = serde_json::Map::new();
     let put = |data: &mut serde_json::Map<String, Value>, key: &str, v: f32| {
-        if let Some(v) = damage_value(v) {
+        if let Some(v) = record_value(v) {
             data.insert(key.to_owned(), json!(v));
         }
     };
@@ -450,6 +443,8 @@ impl Sink for PitwallSink {
     }
 
     fn damage(&mut self, session_id: u64, taken_at: &str, reading: &DamageReading) {
+        // The game's values as read, unrounded (the record rounds to 3 decimals).
+        tracing::info!("Damage reading (raw): {reading:?}");
         let data = damage_data(reading);
         if let Err(e) = limits::check_data(DAMAGE, &data) {
             tracing::error!("Damage record refused locally: {e} (dropped)");
@@ -787,6 +782,7 @@ mod tests {
     use super::*;
     use crate::link::CallError;
     use ams2_core::damage::DamageReading;
+    use stintmate_connector_wire::round_to;
 
     fn contains(hay: &[u8], needle: &[u8]) -> bool {
         hay.windows(needle.len()).any(|w| w == needle)
@@ -1067,6 +1063,71 @@ mod tests {
         assert_eq!(limits::check_data(DAMAGE, &data), Ok(()));
         // The description covers the record and passes the limits.
         assert_eq!(limits::check_kinds(&ams2_core::sim_data::kinds()), Ok(()));
+    }
+
+    /// The live frame's `has_damage` and the record agree on every reading: damage exactly when
+    /// the record shows a value above 0 or a wheel off or deflated.
+    #[test]
+    fn has_damage_agrees_with_the_damage_record() {
+        let values = [
+            0.0f32,
+            0.0001,
+            0.0002,
+            0.0004,
+            0.00049,
+            0.0005,
+            0.0009,
+            0.001,
+            0.2005,
+            1.0,
+            -0.0004,
+            1.5,
+            f32::NAN,
+        ];
+        let shows_damage = |data: &serde_json::Map<String, serde_json::Value>| {
+            let above_0 =
+                |v: Option<&serde_json::Value>| v.and_then(|v| v.as_f64()).is_some_and(|x| x > 0.0);
+            above_0(data.get("aero"))
+                || above_0(data.get("engine"))
+                || data["wheels"].as_object().unwrap().values().any(|w| {
+                    above_0(w.get("brake"))
+                        || above_0(w.get("suspension"))
+                        || w["attached"] == json!(false)
+                        || w["inflated"] == json!(false)
+                })
+        };
+        for (i, &v) in values.iter().enumerate() {
+            for flags in [[3u32; 4], [7, 7, 7, 7], [3, 1, 3, 3], [2, 3, 3, 3]] {
+                let mut r = DamageReading {
+                    aero: 0.0,
+                    engine: 0.0,
+                    brake: [0.0; 4],
+                    suspension: [0.0; 4],
+                    tyre_flags: flags,
+                    pit_schedule: 3,
+                };
+                match i % 4 {
+                    0 => r.aero = v,
+                    1 => r.engine = v,
+                    2 => r.brake[i % 4] = v,
+                    _ => r.suspension[(i + 1) % 4] = v,
+                }
+                assert_eq!(
+                    r.has_damage(),
+                    shows_damage(&damage_data(&r)),
+                    "{v} {flags:?}"
+                );
+            }
+        }
+        // The brakes of a real hit (0.0002) are no damage alone; 0.0009 shows as 0.001.
+        let mut r = hit();
+        r.aero = 0.0;
+        r.engine = 0.0;
+        r.suspension = [0.0; 4];
+        r.brake = [0.0002; 4];
+        assert!(!r.has_damage());
+        r.brake[0] = 0.0009;
+        assert!(r.has_damage());
     }
 
     #[test]

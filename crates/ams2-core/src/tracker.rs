@@ -44,7 +44,7 @@
 
 use crate::channels::{FUEL, PIT, Row, SPEED, T, TERRAIN, extract_into};
 use crate::codes::{game_state, pit_mode, session_state};
-use crate::damage::{DamageReading, DamageWatch};
+use crate::damage::{DamageReading, DamageWatch, RepairLatch};
 use crate::garage::{GarageSeat, MOVING_KMH};
 use crate::messages::{LapRecord, ParticipantLap, SessionInfo};
 use crate::rivals::RivalTracker;
@@ -472,6 +472,7 @@ pub struct SessionTracker {
     prev_t: Option<f64>,
     garage: GarageSeat,
     damage: DamageWatch,
+    repair: RepairLatch,
 }
 
 impl SessionTracker {
@@ -491,6 +492,7 @@ impl SessionTracker {
             prev_t: None,
             garage: GarageSeat::new(),
             damage: DamageWatch::default(),
+            repair: RepairLatch::default(),
         }
     }
 
@@ -498,6 +500,11 @@ impl SessionTracker {
     /// before it moved (pit mode "driving out of the garage" at 0 km/h).
     pub fn in_garage(&self) -> bool {
         self.garage.in_garage
+    }
+
+    /// The game's damage pit request is stale: the car was reset since ([`RepairLatch`]).
+    pub fn repair_request_stale(&self) -> bool {
+        self.repair.request_stale()
     }
 
     /// What the recorder's status shows of the open session (allocates: ask twice a second).
@@ -646,6 +653,7 @@ impl SessionTracker {
         }
 
         let reading = DamageReading::of(d);
+        self.repair.observe(&reading, self.clock.now());
         if let Some(r) = self.damage.observe(reading, self.clock.now())
             && let Some(id) = self.session_id()
         {

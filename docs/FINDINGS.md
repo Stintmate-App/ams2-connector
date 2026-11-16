@@ -255,6 +255,13 @@ Observed in a 20 Hz read-only recording of the shared memory (a Ginetta G40 Cup,
   frame (10 092 of them); `TYRE_IS_ON_GROUND` (bit 2) flickers during a hit (the rear wheels read
   7, then 3, for about 0.15 s), so it says nothing about damage. No puncture or lost wheel was
   recorded.
+- A return to the garage through the menu after the damage request (observed in two sessions,
+  2026-11): the car is reset (every value of the `damage` record 0 at 3 decimals, every wheel on
+  and inflated) but `mPitSchedule` stays 3 in the garage and on track, and the game shows no flag
+  or pit message. The values after the reset were not seen unrounded (the recorder logs them from
+  3.6.2); the creep described above starts again from them. The connector marks such a request
+  stale (`RepairLatch`) and sends `car.repair_needed` false until the request is cleared or a new
+  hit.
 - Menu frames (`mGameState` 3) carry garbage: every damage value 0 and the tyre flags 0,
   alternating with real frames. Damage is only read in playing frames.
 - What the header says: `SharedMemory.h` gives the damage fields a range of 0 to 1 (`mAeroDamage`,

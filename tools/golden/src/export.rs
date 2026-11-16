@@ -94,6 +94,7 @@ pub fn run(capture: &Path, out: &mut impl Write) -> Result<Summary, String> {
                 data_age_s: Some(0.0),
                 lap_info: lap.as_ref(),
                 in_garage: tracker.in_garage(),
+                repair_request_stale: tracker.repair_request_stale(),
             };
             let line = json!({"t_ms": t_ms, "kind": "live", "frame": live_frame(frame, &opts)});
             put(out, &line).map_err(io)?;

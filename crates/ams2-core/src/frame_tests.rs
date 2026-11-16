@@ -338,6 +338,46 @@ fn frame_repair_needed_needs_the_request_and_damage() {
 }
 
 #[test]
+fn frame_repair_needed_ignores_what_the_record_shows_as_0() {
+    // A menu return left the request with every value of the damage record at 0, and the frame
+    // still said true in a recorded session: values below 0.0005 round to 0 in the record.
+    let frame = |aero: f32, brake: f32, susp: f32| {
+        let mut d = shm(session_state::PRACTICE);
+        d.pit_schedule = 3;
+        d.aero_damage = aero;
+        d.engine_damage = 0.0;
+        d.brake_damage = [brake; 4];
+        d.suspension_damage = [susp; 4];
+        d.tyre_flags = [3; 4];
+        live_frame(&d, &FrameOptions::default())["car"]["repair_needed"].clone()
+    };
+    assert_eq!(frame(0.0, 0.0004, 0.0), Value::from(false));
+    assert_eq!(frame(0.0004, 0.0, 0.0004), Value::from(false));
+    assert_eq!(frame(0.0, 0.0002, 0.0001), Value::from(false));
+    // From 0.0005 the record shows 0.001: damage.
+    assert_eq!(frame(0.0, 0.0009, 0.0), Value::from(true));
+    assert_eq!(frame(0.0, 0.0, 0.001), Value::from(true));
+    assert_eq!(frame(0.49, 0.0, 0.761), Value::from(true));
+}
+
+#[test]
+fn frame_repair_needed_is_false_while_the_tracker_says_the_request_is_stale() {
+    let mut d = shm(session_state::PRACTICE);
+    d.pit_schedule = 3;
+    d.engine_damage = 0.0009;
+    d.tyre_flags = [3; 4];
+    let frame = |stale: bool| {
+        let opts = FrameOptions {
+            repair_request_stale: stale,
+            ..Default::default()
+        };
+        live_frame(&d, &opts)["car"]["repair_needed"].clone()
+    };
+    assert_eq!(frame(false), Value::from(true));
+    assert_eq!(frame(true), Value::from(false));
+}
+
+#[test]
 fn frame_lap_info_from_the_tracker() {
     let mut d = shm(session_state::PRACTICE);
     d.lap_invalidated = 1;

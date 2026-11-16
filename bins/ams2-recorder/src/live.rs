@@ -29,6 +29,8 @@ pub struct Meta {
     pub in_garage: bool,
     /// The tracker's open lap.
     pub lap: Option<LiveLap>,
+    /// The tracker's damage pit request is stale.
+    pub repair_request_stale: bool,
     /// When the game last changed the data.
     pub last_change: Instant,
 }
@@ -223,6 +225,7 @@ impl LiveServer {
             data_age_s: Some(age.as_secs_f64()),
             lap_info: meta.lap.as_ref(),
             in_garage: meta.in_garage,
+            repair_request_stale: meta.repair_request_stale,
         };
         Ok(to_value(&live_frame(&d, &opts)))
     }
@@ -244,6 +247,7 @@ mod tests {
     fn meta(n: u32, base: Instant) -> Meta {
         Meta {
             in_garage: n.is_multiple_of(2),
+            repair_request_stale: false,
             lap: None,
             last_change: base + Duration::from_millis(u64::from(n)),
         }

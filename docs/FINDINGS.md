@@ -255,13 +255,17 @@ Observed in a 20 Hz read-only recording of the shared memory (a Ginetta G40 Cup,
   frame (10 092 of them); `TYRE_IS_ON_GROUND` (bit 2) flickers during a hit (the rear wheels read
   7, then 3, for about 0.15 s), so it says nothing about damage. No puncture or lost wheel was
   recorded.
-- A return to the garage through the menu after the damage request (observed in two sessions,
-  2026-11): the car is reset (every value of the `damage` record 0 at 3 decimals, every wheel on
-  and inflated) but `mPitSchedule` stays 3 in the garage and on track, and the game shows no flag
-  or pit message. The values after the reset were not seen unrounded (the recorder logs them from
-  3.6.2); the creep described above starts again from them. The connector marks such a request
-  stale (`RepairLatch`) and sends `car.repair_needed` false until the request is cleared or a new
-  hit.
+- A return to the garage through the menu after the damage request (observed in three sessions,
+  2026-11). The car is reset and every wheel is on and inflated. The unrounded readings in the
+  recorder log are exactly 0.0 for aero, engine, the four brakes and the four suspensions. But
+  `mPitSchedule` stays 3 in the garage and on track, and the game shows no flag or pit message.
+  From 0 the values creep at once: the brakes reached about 0.0005 and the engine 0.0005 within
+  three minutes, so a rule that counts any value above 0 as damage turns on again almost at
+  once. The request was still 3 several minutes and a second hit later; in that recording only a
+  stop driven into the box cleared it. The connector marks such a request stale (`RepairLatch`)
+  and sends `car.repair_needed` false until the request is cleared or a new hit. In the same
+  recording a light touch moved aero by 0.0086 and the brakes by about 0.0005: it stayed below
+  the new-hit rise of 0.01. A hard hit moved aero by 0.53 and gave `true` again.
 - Menu frames (`mGameState` 3) carry garbage: every damage value 0 and the tyre flags 0,
   alternating with real frames. Damage is only read in playing frames.
 - What the header says: `SharedMemory.h` gives the damage fields a range of 0 to 1 (`mAeroDamage`,

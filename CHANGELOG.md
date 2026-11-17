@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+- **Tests:** a recorder test waited a fixed 10 seconds for the writer to store the outbox files
+  (each one is synced to disk) and failed once on a slow machine. It now waits for the writer's
+  confirmation, with a long deadline that only guards against a hang (no behaviour change).
+
 ## 3.6.2 (2026-11-16)
 
 - **`car.repair_needed` now goes off for good after the game resets the car.** In 3.6.1 it could

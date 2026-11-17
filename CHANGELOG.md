@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## 3.6.3 (2026-11-17)
 
 - **Tests:** a recorder test waited a fixed 10 seconds for the writer to store the outbox files
   (each one is synced to disk) and failed once on a slow machine. It now waits for the writer's

@@ -312,7 +312,13 @@ fn pitwall_opened_after_the_session_gets_the_outbox_in_order() {
     let pipe = pitwall_pipe(&user);
     let mut run = start(&pipe);
     run.play_all();
-    assert!(run.rec.sink().queued(Duration::from_secs(10)));
+    // `queued` returns the moment the writer has stored everything queued so far (every record
+    // is an fsync'd file), so the deadline is only a hang guard: a slow disk must not trip it.
+    assert!(
+        run.rec.sink().queued(Duration::from_secs(120)),
+        "the writer did not store the queued records: {:?}",
+        run.rec.sink().outbox_summary()
+    );
     let summary = run.rec.sink().outbox_summary();
     assert!(summary.pending > 20, "{summary:?}");
     let files = std::fs::read_dir(run.rec.sink().outbox_dir())

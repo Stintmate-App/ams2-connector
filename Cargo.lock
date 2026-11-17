@@ -40,7 +40,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-connector-ui"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "ams2-i18n",
  "ams2-platform",
@@ -59,7 +59,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-connector-window"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "ams2-connector-ui",
  "ams2-i18n",
@@ -74,7 +74,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-core"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "ams2-shm",
  "criterion",
@@ -90,7 +90,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-golden"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "ams2-core",
  "ams2-platform",
@@ -104,7 +104,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-i18n"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "hex",
  "serde_json",
@@ -115,7 +115,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-measure"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "ams2-core",
  "ams2-platform",
@@ -128,7 +128,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-platform"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "serde",
  "serde_json",
@@ -143,7 +143,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-recorder"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "ams2-core",
  "ams2-platform",
@@ -161,7 +161,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-replay"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "ams2-core",
  "ams2-platform",
@@ -170,7 +170,7 @@ dependencies = [
 
 [[package]]
 name = "ams2-shm"
-version = "3.6.2"
+version = "3.6.3"
 dependencies = [
  "proptest",
  "serde_json",
